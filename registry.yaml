@@ -1,0 +1,23 @@
+skills:
+  autodl:
+    status: active
+    source: self
+    risk: high
+    reason: Controls paid GPU resources and SSH access.
+    last_verified: "2026-05-28"
+    path: skills/autodl
+    verification:
+      - "skills-ref validate skills/autodl"
+      - "uv run --project skills/autodl pytest skills/autodl/tests"
+      - "uv run --project skills/autodl ruff check skills/autodl"
+
+  skill-authoring:
+    status: active
+    source: self
+    risk: low
+    reason: Documentation-only portable skill authoring guide.
+    last_verified: "2026-05-28"
+    path: skills/skill-authoring
+    verification:
+      - "skills-ref validate skills/skill-authoring"
+      - "uv run --with pytest pytest skills/skill-authoring/tests/test_docs.py"
