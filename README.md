@@ -9,6 +9,13 @@ Canonical repository for maintained personal Agent Skills.
 
 See `registry.yaml` for status, risk, and verification commands. See `SKILLS_INDEX.md` for the index and maintenance rules.
 
+## Link skills to agent config
+
+```bash
+just link-skills          # symlink skills/* → ~/.agent/skills/
+just link-skills --force  # replace stale symlinks (never replaces real files)
+```
+
 ## Verify
 
 ```bash
