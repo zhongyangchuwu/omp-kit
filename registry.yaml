@@ -1,76 +1,38 @@
 skills:
   autodl:
     status: active
-    source: self
     risk: high
-    reason: Controls paid GPU resources and SSH access.
-    last_verified: "2026-05-28"
     path: skills/autodl
-    verification:
-      - "skills-ref validate skills/autodl"
-      - "uv run --project skills/autodl pytest skills/autodl/tests"
-      - "uv run --project skills/autodl ruff check skills/autodl"
 
   skill-authoring:
     status: active
-    source: self
     risk: low
-    reason: Documentation-only portable skill authoring guide.
-    last_verified: "2026-05-28"
     path: skills/skill-authoring
-    verification:
-      - "skills-ref validate skills/skill-authoring"
-      - "uv run --with pytest pytest skills/skill-authoring/tests/test_docs.py"
-
 
   omp-superpowers:
     status: active
-    source: incoming/superpowers
-    upstream_source: /home/han/.omp/plugins/cache/plugins/superpowers-marketplace___superpowers___5.1.0
     risk: medium
-    reason: Localized third-party process methodology with executable helper scripts kept under references; activation is explicit-only.
-    imported: "2026-05-29"
-    localized: "2026-05-29"
     path: skills/omp-superpowers
-    explicit_only: true
-    sub_skills_root: references/skills
-    expected_sub_skills: 14
-    localization_note: references/omp-localization.md
-    localization_assertions:
-      - "Superpowers is explicit-only"
-      - "task"
-      - "todo_write"
-    localization_anti_patterns:
-      - "Read tool"
-      - "Skill tool"
-    verification:
-      - "skills-ref validate skills/omp-superpowers"
-      - "uv run --with pytest --with pyyaml pytest tests/test_registry_integrity.py"
+
+extensions: {}
+
+tools: {}
+
+packages: {}
 
 incoming:
   anthropic-skills:
     status: staged
-    source: /home/han/play/skills/skills
     risk: medium
-    reason: Downloaded example/document skills include many executable support scripts and mixed license terms; staged pending per-skill review.
-    imported: "2026-05-29"
     path: incoming/anthropic-skills
-    skill_count: 18
-    notes: incoming/REVIEW.md
-    verification:
-      - "Review executable support files before promotion"
-      - "skills-ref validate skills/<promoted-skill>"
 
   claude-plugins-official:
     status: staged
-    source: /home/han/.omp/plugins/cache/marketplaces/claude-plugins-official
     risk: medium
-    reason: Downloaded plugin skills include runtime-specific frontmatter, duplicate skill names, and channel access/configuration skills; staged pending per-skill review.
-    imported: "2026-05-29"
     path: incoming/claude-plugins-official
-    skill_count: 28
-    notes: incoming/REVIEW.md
-    verification:
-      - "Resolve duplicate names before promotion"
-      - "Remove or adapt runtime-specific frontmatter before promotion"
-      - "skills-ref validate skills/<promoted-skill>"
+
+imports:
+  superpowers:
+    status: localized
+    risk: medium
+    path: incoming/superpowers

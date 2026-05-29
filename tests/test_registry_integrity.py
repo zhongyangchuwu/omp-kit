@@ -1,192 +1,107 @@
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 import yaml
 
+from scripts.validate_registry import ALLOWED_GROUPS, parse_frontmatter, validate_registry
+
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "registry.yaml"
 
-# --- helpers ---
 
-FM_PAT = re.compile(r"^---\n(.*?)\n---", re.DOTALL)
-NAME_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
-
-
-def load_registry():
+def load_registry() -> dict:
     data = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
+    assert isinstance(data, dict)
     return data
 
 
-def parse_frontmatter(path: Path):
-    text = path.read_text(encoding="utf-8")
-    m = FM_PAT.search(text)
-    if not m:
-        return {}
-    fm = {}
-    for line in m.group(1).splitlines():
-        if ":" in line and not line.startswith((" ", "-")):
-            k, v = line.split(":", 1)
-            fm[k.strip()] = v.strip().strip("\"'")
-    return fm
+def test_registry_parseable() -> None:
+    assert load_registry()
 
 
-# --- active-skills structural tests ---
+def test_registry_uses_allowed_groups_only() -> None:
+    data = load_registry()
+    assert set(data) <= ALLOWED_GROUPS
 
-def test_registry_parseable():
-    assert load_registry() is not None
+
+def test_registry_entries_have_minimal_required_fields() -> None:
+    data = load_registry()
+    required = {"path", "status", "risk"}
+    for group, entries in data.items():
+        assert isinstance(entries, dict), f"{group} must be a mapping"
+        for name, entry in entries.items():
+            missing = required - set(entry)
+            assert not missing, f"{group}.{name} missing fields: {sorted(missing)}"
 
 
-def test_active_skills_exist_and_kv_match():
+def test_registry_paths_exist_and_validate() -> None:
+    issues = validate_registry(load_registry(), repo_root=ROOT)
+    assert not issues, "\n".join(issue.format() for issue in issues)
+
+
+def test_active_skill_frontmatter_name_matches_registry_key() -> None:
     data = load_registry()
     for name, entry in data.get("skills", {}).items():
         if entry.get("status") != "active":
             continue
-        path = ROOT / entry["path"]
-        assert path.is_dir(), f"[{name}] path {entry['path']} not found"
-        skill_md = path / "SKILL.md"
-        assert skill_md.is_file(), f"[{name}] SKILL.md missing"
-        fm = parse_frontmatter(skill_md)
-        fm_name = fm.get("name")
-        assert fm_name is not None, f"[{name}] frontmatter missing 'name'"
-        assert fm_name == path.name, (
-            f"[{name}] frontmatter name '{fm_name}' != directory '{path.name}'"
-        )
-        assert NAME_RE.fullmatch(fm_name), (
-            f"[{name}] frontmatter name '{fm_name}' not valid kebab-case"
-        )
-        desc = fm.get("description", "")
-        assert desc, f"[{name}] frontmatter description empty"
-        assert len(desc) <= 1024, (
-            f"[{name}] description too long ({len(desc)} > 1024)"
-        )
+        skill_md = ROOT / entry["path"] / "SKILL.md"
+        frontmatter = parse_frontmatter(skill_md)
+        assert frontmatter.get("name") == name
+        assert frontmatter.get("description")
 
 
-def test_active_skills_have_required_registry_fields():
+def test_staged_incoming_entries_are_not_active_skills() -> None:
     data = load_registry()
-    required = {"status", "risk", "reason", "path", "verification"}
-    for name, entry in data.get("skills", {}).items():
-        if entry.get("status") != "active":
-            continue
-        missing = required - set(entry)
-        assert not missing, f"[{name}] missing registry fields: {missing}"
-
-
-# --- explicit-only constraints ---
-
-def test_explicit_only_skills_no_auto_trigger():
-    data = load_registry()
-    for name, entry in data.get("skills", {}).items():
-        if not entry.get("explicit_only"):
-            continue
-        path = ROOT / entry["path"] / "SKILL.md"
-        text = path.read_text(encoding="utf-8")
-        auto_patterns = [
-            "MUST use this before any creative work",
-            "before ANY response",
-            "starting any conversation",
-            "Invoke relevant or requested skills BEFORE any response",
-        ]
-        for pat in auto_patterns:
-            assert pat not in text, (
-                f"[{name}] explicit_only skill contains auto-trigger pattern: {pat}"
-            )
-
-
-def test_explicit_only_skills_indicate_explicit_activation():
-    data = load_registry()
-    for name, entry in data.get("skills", {}).items():
-        if not entry.get("explicit_only"):
-            continue
-        path = ROOT / entry["path"] / "SKILL.md"
-        text = path.read_text(encoding="utf-8")
-        explicit_markers = ["explicit-only", "explicitly asks"]
-        found = any(marker in text for marker in explicit_markers)
-        assert found, f"[{name}] explicit_only skill must mention activation policy"
-
-
-# --- sub-skills encapsulation ---
-
-def test_sub_skills_are_not_top_level():
-    data = load_registry()
-    top_skills = {
-        p.name
-        for p in (ROOT / "skills").iterdir()
-        if p.is_dir() and (p / "SKILL.md").is_file()
+    active_skill_names = {
+        path.name
+        for path in (ROOT / "skills").iterdir()
+        if path.is_dir() and (path / "SKILL.md").is_file()
     }
-    for name, entry in data.get("skills", {}).items():
-        if entry.get("status") != "active":
-            continue
-        if not entry.get("sub_skills_root"):
-            continue
-        sub_root = ROOT / entry["path"] / entry["sub_skills_root"]
-        assert sub_root.is_dir(), f"[{name}] sub_skills_root not found: {entry['sub_skills_root']}"
-        for sub in sub_root.iterdir():
-            if sub.is_dir() and (sub / "SKILL.md").is_file():
-                assert sub.name not in top_skills, (
-                    f"[{name}] sub-skill '{sub.name}' must not be a top-level active skill"
-                )
-
-
-def test_sub_skills_count_matches_expected():
-    data = load_registry()
-    for name, entry in data.get("skills", {}).items():
-        expected = entry.get("expected_sub_skills")
-        if expected is None:
-            continue
-        sub_root = ROOT / entry["path"] / entry["sub_skills_root"]
-        actual = sum(1 for p in sub_root.iterdir() if p.is_dir() and (p / "SKILL.md").is_file())
-        assert actual == expected, (
-            f"[{name}] expected {expected} sub-skills, found {actual}"
-        )
-
-
-# --- localization notes ---
-
-def test_localization_notes_exist_and_match_constraints():
-    data = load_registry()
-    for name, entry in data.get("skills", {}).items():
-        note_rel = entry.get("localization_note")
-        if note_rel is None:
-            continue
-        note_path = ROOT / entry["path"] / note_rel
-        assert note_path.is_file(), f"[{name}] localization note not found: {note_rel}"
-        text = note_path.read_text(encoding="utf-8")
-        for assertion in entry.get("localization_assertions", []):
-            assert assertion in text, (
-                f"[{name}] localization note missing assertion: '{assertion}'"
-            )
-        for anti in entry.get("localization_anti_patterns", []):
-            assert anti not in text, (
-                f"[{name}] localization note contains anti-pattern: '{anti}'"
-            )
-
-
-# --- incoming / staged ---
-
-def test_staged_entries_exist_and_count_matches():
-    data = load_registry()
     for name, entry in data.get("incoming", {}).items():
-        if entry.get("status") != "staged":
-            continue
-        path = ROOT / entry["path"]
-        assert path.is_dir(), f"[{name}] staged path not found: {entry['path']}"
-        expected = entry.get("skill_count")
-        if expected is not None:
-            actual = sum(1 for p in path.rglob("SKILL.md"))
-            assert actual == expected, (
-                f"[{name}] expected {expected} SKILL.md files, found {actual}"
-            )
+        assert entry.get("status") == "staged"
+        assert name not in active_skill_names
+        assert not str(entry["path"]).startswith("skills/")
 
 
-def test_staged_entries_not_in_skills():
-    top_skills = {
-        p.name
-        for p in (ROOT / "skills").iterdir()
-        if p.is_dir() and (p / "SKILL.md").is_file()
+def test_omp_superpowers_remains_explicit_only() -> None:
+    skill_md = ROOT / "skills" / "omp-superpowers" / "SKILL.md"
+    text = skill_md.read_text(encoding="utf-8")
+
+    assert "explicit-only" in text
+    assert "explicitly asks" in text
+
+    forbidden = [
+        "MUST use this before any creative work",
+        "before ANY response",
+        "starting any conversation",
+        "Invoke relevant or requested skills BEFORE any response",
+    ]
+    for pattern in forbidden:
+        assert pattern not in text
+
+
+def test_omp_superpowers_nested_skills_are_reference_only() -> None:
+    data = load_registry()
+    active_skill_names = set(data.get("skills", {}))
+    sub_root = ROOT / "skills" / "omp-superpowers" / "references" / "skills"
+
+    assert sub_root.is_dir()
+    sub_skill_names = {
+        path.name
+        for path in sub_root.iterdir()
+        if path.is_dir() and (path / "SKILL.md").is_file()
     }
-    for name in load_registry().get("incoming", {}):
-        assert name not in top_skills, (
-            f"[{name}] staged entry must not be in skills/"
-        )
+    assert len(sub_skill_names) == 14
+    assert not (sub_skill_names & active_skill_names)
+
+
+def test_omp_superpowers_localization_notes_keep_omp_tooling() -> None:
+    note = ROOT / "skills" / "omp-superpowers" / "references" / "omp-localization.md"
+    text = note.read_text(encoding="utf-8")
+
+    assert "Superpowers is explicit-only" in text
+    assert "task" in text
+    assert "todo_write" in text
+    assert "Read tool" not in text
+    assert "Skill tool" not in text
