@@ -17,7 +17,7 @@ def make_skill(root: Path, name: str) -> Path:
 def test_links_each_skill_directory_under_agent_skills(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     source = make_skill(repo, "alpha")
-    target_root = tmp_path / "home" / ".agent"
+    target_root = tmp_path / "home" / ".agents"
 
     actions = link_skills(repo_root=repo, agent_root=target_root)
 
@@ -30,7 +30,7 @@ def test_links_each_skill_directory_under_agent_skills(tmp_path: Path) -> None:
 def test_existing_correct_link_is_left_unchanged(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     source = make_skill(repo, "alpha")
-    target_root = tmp_path / "home" / ".agent"
+    target_root = tmp_path / "home" / ".agents"
     link_dir = target_root / "skills"
     link_dir.mkdir(parents=True)
     (link_dir / "alpha").symlink_to(source, target_is_directory=True)
@@ -44,7 +44,7 @@ def test_existing_correct_link_is_left_unchanged(tmp_path: Path) -> None:
 def test_refuses_to_replace_unrelated_existing_target_without_force(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     make_skill(repo, "alpha")
-    target_root = tmp_path / "home" / ".agent"
+    target_root = tmp_path / "home" / ".agents"
     existing = target_root / "skills" / "alpha"
     existing.mkdir(parents=True)
     (existing / "note.txt").write_text("keep", encoding="utf-8")
@@ -61,7 +61,7 @@ def test_force_replaces_only_symlink_targets(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     source = make_skill(repo, "alpha")
     old = make_skill(tmp_path / "old_repo", "alpha")
-    target_root = tmp_path / "home" / ".agent"
+    target_root = tmp_path / "home" / ".agents"
     link_dir = target_root / "skills"
     link_dir.mkdir(parents=True)
     target = link_dir / "alpha"
@@ -77,7 +77,7 @@ def test_force_replaces_only_symlink_targets(tmp_path: Path) -> None:
 def test_force_still_refuses_to_replace_real_directory(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     make_skill(repo, "alpha")
-    target_root = tmp_path / "home" / ".agent"
+    target_root = tmp_path / "home" / ".agents"
     existing = target_root / "skills" / "alpha"
     existing.mkdir(parents=True)
 
@@ -86,3 +86,33 @@ def test_force_still_refuses_to_replace_real_directory(tmp_path: Path) -> None:
 
     assert existing.is_dir()
     assert not existing.is_symlink()
+
+
+def test_ignores_incoming_skill_directories(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    active = make_skill(repo, "alpha")
+    incoming = repo / "incoming" / "downloaded" / "skills" / "beta"
+    incoming.mkdir(parents=True)
+    (incoming / "SKILL.md").write_text("---\nname: beta\ndescription: staged\n---\n", encoding="utf-8")
+    target_root = tmp_path / "home" / ".agents"
+
+    actions = link_skills(repo_root=repo, agent_root=target_root)
+
+    assert actions == [("linked", "alpha", active, target_root / "skills" / "alpha")]
+    assert not (target_root / "skills" / "beta").exists()
+
+
+def test_force_removes_obsolete_repository_symlink(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    (repo / "skills").mkdir(parents=True)
+    old = make_skill(tmp_path / "old_repo", "old-name")
+    target_root = tmp_path / "home" / ".agents"
+    link_dir = target_root / "skills"
+    link_dir.mkdir(parents=True)
+    target = link_dir / "old-name"
+    target.symlink_to(old, target_is_directory=True)
+
+    actions = link_skills(repo_root=repo, agent_root=target_root, force=True, prune=True)
+
+    assert actions == [("removed", "old-name", old.resolve(), target)]
+    assert not target.exists()
