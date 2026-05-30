@@ -19,7 +19,7 @@ This repository makes skills auditable, testable, reviewable, and reversible:
 | `autodl` | High | AutoDL Pro GPU instance management, balance checks, SSH smoke tests |
 | `skill-authoring` | Low | Create, review, localize, and maintain Agent Skills |
 | `doc-coauthoring` | Low | Structured workflow for co-authoring specs, RFCs, proposals, decision docs |
-| `omp-superpowers` | Medium | Superpowers development methodology; explicit-only activation |
+| `omp-superpowers` | Medium | Superpowers development methodology with fast path for simple tasks |
 
 ## Staged imports
 

@@ -64,12 +64,13 @@ def test_staged_incoming_entries_are_not_active_skills() -> None:
         assert not str(entry["path"]).startswith("skills/")
 
 
-def test_omp_superpowers_remains_explicit_only() -> None:
+def test_omp_superpowers_has_fast_path_activation() -> None:
     skill_md = ROOT / "skills" / "omp-superpowers" / "SKILL.md"
     text = skill_md.read_text(encoding="utf-8")
 
-    assert "explicit-only" in text
-    assert "explicitly asks" in text
+    assert "Fast path" in text
+    assert "non-trivial software work" in text
+    assert "simple, low-risk" in text
 
     forbidden = [
         "MUST use this before any creative work",
@@ -100,7 +101,8 @@ def test_omp_superpowers_localization_notes_keep_omp_tooling() -> None:
     note = ROOT / "skills" / "omp-superpowers" / "references" / "omp-localization.md"
     text = note.read_text(encoding="utf-8")
 
-    assert "Superpowers is explicit-only" in text
+    assert "fast path" in text
+    assert "non-trivial software work" in text
     assert "task" in text
     assert "todo_write" in text
     assert "Read tool" not in text

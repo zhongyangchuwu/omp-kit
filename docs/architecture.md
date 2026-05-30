@@ -12,7 +12,7 @@ This repository is the canonical workbench for maintained personal agent capabil
 - Detailed constraints live with the resource they govern.
 - Python maintenance scripts provide repository automation.
 - Tests validate registry consistency, script behavior, and active skill safety invariants.
-- Superpowers stays explicit-only; upstream nested Superpowers skills remain reference material, not active skills.
+- Superpowers may activate automatically for non-trivial software work; upstream nested Superpowers skills remain reference material, not active skills.
 
 ## Directory layout
 
@@ -154,7 +154,7 @@ Repository tests cover:
 - generated `registry.yaml` matching `resource.yaml` files;
 - active skill frontmatter name matching;
 - incoming entries staying out of active `skills/`;
-- `omp-superpowers` explicit-only and nested-skill encapsulation invariants;
+- `omp-superpowers` fast-path activation and nested-skill encapsulation invariants;
 - maintenance script behavior;
 - safe skill-linking behavior.
 

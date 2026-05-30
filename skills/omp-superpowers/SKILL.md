@@ -1,11 +1,20 @@
 ---
 name: omp-superpowers
-description: Use when the user explicitly asks to use the local Oh My Pi Superpowers workflow collection, localize Superpowers workflows, or follow the Superpowers software-development methodology.
+description: Use for non-trivial software work that benefits from structured methodology: feature design, implementation planning, debugging, TDD, verification, code review, or skill/workflow authoring. Includes a fast path for simple, low-risk tasks so routine edits are not forced through the full Superpowers lifecycle.
 ---
 
 # Superpowers for Oh My Pi
 
-This is the local Oh My Pi entrypoint for the Superpowers skill collection. Superpowers is explicit-only in this repository: do not activate it merely because a task involves coding, debugging, planning, review, TDD, or skill authoring. Use it only when the user explicitly asks for Superpowers or asks to work on this Superpowers collection.
+This is the local Oh My Pi entrypoint for the Superpowers skill collection. Use it as lightweight process guidance by default for non-trivial software work, but do not force the full methodology onto simple tasks.
+
+## Fast path first
+
+Before loading upstream workflow files, classify the task:
+
+- Fast path: simple, low-risk, well-bounded tasks where the correct action is obvious and no durable plan/spec/review loop is needed. Examples: answer a narrow question, make a small text/metadata edit, run a requested validation command, fix an obvious typo, or inspect one known file. Proceed directly using normal Oh My Pi tools; keep verification proportional.
+- Full workflow: ambiguous requirements, multi-file implementation, debugging without known cause, behavior changes, tests or safety implications, refactors, skill authoring, code review, or tasks likely to benefit from planning/subagents/TDD. Load `references/omp-localization.md`, then read only the specific workflow files needed.
+
+If the task starts simple but evidence shows broader risk or uncertainty, switch from fast path to the relevant full workflow.
 
 ## What is included
 
@@ -27,14 +36,15 @@ The original Superpowers skills are stored as reviewed reference material under 
 
 ## Oh My Pi activation policy
 
-- Default behavior: do not use Superpowers.
-- Use Superpowers when the user explicitly says to use Superpowers, asks about Superpowers, asks to localize/modify this collection, or asks to follow a Superpowers workflow by name.
-- When active, read `references/omp-localization.md` first, then read only the specific upstream skill files needed for the requested workflow.
-- Upstream instructions that say to activate before every conversation or before any creative work are not active policy here.
+- Default behavior: use this skill for non-trivial software work, then choose fast path or full workflow.
+- Use the fast path when the task is simple enough that full Superpowers process would add ceremony without reducing risk.
+- Use the full workflow when the user explicitly asks for Superpowers, asks to localize/modify this collection, names a Superpowers workflow, or the task has meaningful uncertainty, risk, or scope.
+- When using full workflow, read `references/omp-localization.md` first, then read only the specific upstream skill files needed.
+- Upstream instructions that say to activate before every conversation, before any response, or before any creative work are not active policy here.
 
 ## Workflow routing
 
-Use these reference files when explicitly requested:
+Use these reference files when full workflow is warranted:
 
 | Request | Read |
 | --- | --- |

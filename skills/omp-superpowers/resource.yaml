@@ -5,18 +5,18 @@ path: skills/omp-superpowers
 
 source:
   type: upstream-localized
-  origin: incoming/superpowers
+  origin: references/superpowers
   upstream: /home/han/.omp/plugins/cache/plugins/superpowers-marketplace___superpowers___5.1.0
   imported: "2026-05-29"
   localized: "2026-05-29"
 
 risk:
   level: medium
-  reason: Localized third-party process methodology with executable helper scripts kept under references; activation is explicit-only.
+  reason: Localized third-party process methodology with executable helper scripts kept under references; automatic activation is bounded by a fast path for simple tasks.
 
 activation:
-  mode: explicit-only
-  notes: Use only when the user explicitly asks to use Superpowers, asks about Superpowers, or names a Superpowers workflow.
+  mode: automatic
+  notes: Use for non-trivial software work that benefits from structured methodology; take the fast path for simple, low-risk tasks.
 
 verification:
   commands:
@@ -28,12 +28,12 @@ verification:
 maintenance:
   last_reviewed: "2026-05-29"
   notes:
-    - Upstream bootstrap auto-activation is intentionally disabled locally.
-    - OMP localization notes must keep Oh My Pi tool mappings current.
+    - Upstream bootstrap auto-activation is intentionally narrowed to non-trivial software work with a local fast path for simple tasks.
+    - OMP localization notes must keep Oh My Pi tool mappings and fast-path policy current.
 
 relationships:
   extensions: []
   tools: []
   packages: []
   upstream:
-    - incoming/superpowers
+    - references/superpowers

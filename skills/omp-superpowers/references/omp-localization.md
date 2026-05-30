@@ -1,13 +1,13 @@
 # Oh My Pi Localization Notes
 
-Superpowers is explicit-only in this repository. Do not apply the upstream auto-bootstrap rule globally. The user must explicitly ask for Superpowers, ask about Superpowers, ask to localize/modify this collection, or name a Superpowers workflow.
+Superpowers is automatic for non-trivial software work in this repository, but it is bounded by a local fast path. Do not apply the upstream auto-bootstrap rule globally; simple, low-risk tasks may proceed without loading upstream workflow files.
 
 ## Activation
 
 - Active skill: `omp-superpowers`.
 - Upstream files under `references/skills/*` are reference material, not separately auto-discovered skills.
 - Do not treat `references/skills/using-superpowers/SKILL.md` as a session-start policy.
-- When the user asks for a specific workflow, read that workflow's `SKILL.md` and adapt it through these notes.
+- When the task warrants full workflow, read the requested workflow's `SKILL.md` and adapt it through these notes.
 
 ## Tool mapping
 
@@ -15,7 +15,7 @@ Use Oh My Pi tools and policies instead of upstream Claude/Codex/Gemini tool nam
 
 | Upstream wording | Oh My Pi handling |
 | --- | --- |
-| Upstream skill invocation mechanisms | Load the relevant file under `references/skills/<name>/SKILL.md` when Superpowers is explicitly active. |
+| Upstream skill invocation mechanisms | Load the relevant file under `references/skills/<name>/SKILL.md` only when full workflow is warranted. |
 | Upstream file-access wording | `read` for files, directories, archives, URLs, and documents. |
 | Upstream file-creation wording | `write` for new files; prefer `edit` for existing files. |
 | Upstream todo tracker wording | `todo_write`. |
@@ -36,9 +36,9 @@ If `.superpowers/`, `.worktrees/`, or `worktrees/` are used in a project, ensure
 
 ## Workflow policy
 
-- Do not start using Superpowers for ordinary coding by default.
+- Start with the local fast-path check: simple, low-risk, well-bounded tasks may proceed directly with proportional verification.
+- Use the full methodology for ambiguous requirements, multi-file implementation, debugging without known cause, behavior changes, tests or safety implications, refactors, skill authoring, code review, or explicit Superpowers requests.
 - If the user asks to use the full methodology, route through design -> spec -> plan -> isolated execution -> TDD -> review -> verification -> finish.
-- Treat upstream hard gates as active only after explicit Superpowers activation.
 - User instructions and repository-specific instructions still override Superpowers.
 - For implementation work, use the repository's existing tool/test conventions and Oh My Pi dedicated tools.
 
@@ -65,4 +65,4 @@ Upstream examples may use shell commands such as `ls`, `grep`, `cat <<EOF`, `awk
 
 ## Upstream bootstrap override
 
-The upstream `using-superpowers` skill says Superpowers should be checked before every response. That rule is intentionally disabled in this local version. The local trigger is explicit user intent only.
+The upstream `using-superpowers` skill says Superpowers should be checked before every response. That rule is intentionally narrowed in this local version. The local trigger is non-trivial software work, with a fast path for simple tasks.
