@@ -1,0 +1,114 @@
+reviewed: "2026-05-30"
+source: incoming/anthropic-skills
+summary:
+  total_skills: 17
+  promoted: 1
+  promote_now: 0
+  localize_first: 4
+  defer_needs_tooling: 8
+  reject_or_reference_only: 4
+
+decisions:
+  algorithmic-art:
+    decision: localize-first
+    risk: medium
+    reason: Instruction-heavy generative art workflow with no bundled scripts, but produces HTML/JS artifacts and includes proprietary license terms.
+    next_action: Localize output/tool wording for Oh My Pi and decide whether generated code belongs in a future creative-tools package.
+
+  brand-guidelines:
+    decision: reject-or-reference-only
+    risk: medium
+    reason: Anthropic-specific brand identity and typography; not appropriate as a personal active skill without replacing all brand content.
+    next_action: Keep staged as source material only or replace with a personal brand-guidelines skill later.
+
+  canvas-design:
+    decision: defer-needs-tooling
+    risk: medium
+    reason: Visual artifact generation workflow includes many bundled assets and guidance to download/use fonts; promotion should wait for an explicit design/tool boundary.
+    next_action: Revisit after deciding whether visual generation belongs in a designer skill, tool package, or reference-only collection.
+
+  claude-api:
+    decision: reject-or-reference-only
+    risk: medium
+    reason: Highly Anthropic/Claude API specific; current repo should prefer current external docs and Context7 lookups over importing a stale SDK guide as an active skill.
+    next_action: Keep as reference only unless a dedicated Anthropic API package is planned.
+
+  doc-coauthoring:
+    decision: promoted
+    risk: low
+    reason: Instruction-only documentation workflow with no bundled scripts or manifests; Claude-specific wording was localized to Oh My Pi tools.
+    active_path: skills/doc-coauthoring
+    localized_path: localized/doc-coauthoring
+    next_action: Use as the reference pattern for future low-risk workflow promotions.
+
+  docx:
+    decision: defer-needs-tooling
+    risk: medium
+    reason: Document-processing skill includes executable Office scripts, XML validators, schemas, and proprietary source-available license terms.
+    next_action: Split into skill + tool/package after reviewing scripts and deciding the supported local DOCX toolchain.
+
+  frontend-design:
+    decision: localize-first
+    risk: medium
+    reason: Useful design guidance with no scripts, but overlaps with existing designer/subagent workflows and includes proprietary license terms.
+    next_action: Localize as an OMP design reference only if trigger boundaries do not conflict with existing designer workflows.
+
+  internal-comms:
+    decision: localize-first
+    risk: medium
+    reason: Mostly instruction/reference material with no scripts, but company-specific communication formats and license terms need adaptation.
+    next_action: Replace Anthropic/company-specific examples with personal/team-neutral templates before promotion.
+
+  mcp-builder:
+    decision: defer-needs-tooling
+    risk: medium
+    reason: MCP server guide includes scripts and requirements, external documentation fetch patterns, and overlaps with live library documentation workflows.
+    next_action: Revisit as a future package or skill-authoring reference after defining MCP tooling conventions.
+
+  pdf:
+    decision: defer-needs-tooling
+    risk: medium
+    reason: PDF skill includes executable form/OCR/helper scripts, broad file transformation scope, and proprietary source-available license terms.
+    next_action: Split into skill + deterministic PDF tool/package after reviewing scripts and supported dependencies.
+
+  pptx:
+    decision: defer-needs-tooling
+    risk: medium
+    reason: PPTX skill includes executable Office scripts, XML validators, schemas, and broad creation/editing behavior.
+    next_action: Revisit as a future presentation package with tool-backed operations rather than a prose-only active skill.
+
+  skill-creator:
+    decision: reject-or-reference-only
+    risk: medium
+    reason: Overlaps directly with active skill-authoring; includes eval/scripts workflow assumptions that should be merged selectively rather than promoted as a competing skill.
+    next_action: Mine useful ideas into skill-authoring references if needed; do not promote as active skill.
+
+  slack-gif-creator:
+    decision: defer-needs-tooling
+    risk: medium
+    reason: GIF creation depends on Python/Pillow utilities and requirements.txt; useful only with a tested image/GIF toolchain.
+    next_action: Revisit after tools/ supports image or GIF generation workflows.
+
+  theme-factory:
+    decision: localize-first
+    risk: medium
+    reason: Theme guidance may be useful, but bundled theme assets and proprietary license terms require review and possible replacement.
+    next_action: Localize or recreate themes as personal assets before promotion.
+
+  web-artifacts-builder:
+    decision: reject-or-reference-only
+    risk: medium
+    reason: Built for claude.ai HTML artifacts and initialization/bundling scripts; not aligned with current Oh My Pi runtime model.
+    next_action: Keep as reference only; use OMP/browser/frontend tooling instead.
+
+  webapp-testing:
+    decision: defer-needs-tooling
+    risk: medium
+    reason: Playwright workflow includes helper scripts and overlaps with OMP browser tooling; should be adapted around native browser tools before activation.
+    next_action: Revisit after defining OMP web testing conventions and whether helper scripts are still needed.
+
+  xlsx:
+    decision: defer-needs-tooling
+    risk: medium
+    reason: Spreadsheet skill includes executable Office scripts, recalculation behavior, schemas, and broad file mutation scope.
+    next_action: Revisit as a future spreadsheet package with explicit dependencies, dry-run behavior, and tests.

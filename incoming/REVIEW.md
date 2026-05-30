@@ -6,7 +6,7 @@ Per-resource metadata now lives in `resource.yaml` files:
 
 | Resource | Metadata | Status |
 | --- | --- | --- |
-| `anthropic-skills` | `incoming/anthropic-skills/resource.yaml` | staged |
+| `anthropic-skills` | `incoming/anthropic-skills/resource.yaml`, `incoming/anthropic-skills/review.yaml` | staged, classified |
 | `claude-plugins-official` | `incoming/claude-plugins-official/resource.yaml` | staged |
 | `superpowers` | `incoming/superpowers/resource.yaml` | localized source copy |
 

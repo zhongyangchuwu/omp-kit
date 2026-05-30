@@ -20,14 +20,16 @@ activation:
 verification:
   commands: []
   notes:
+    - Classification review is recorded in incoming/anthropic-skills/review.yaml.
     - Review executable support files before promotion.
     - Run structural validation after promoting individual skills.
 
 maintenance:
   last_reviewed: "2026-05-30"
   notes:
-    - Contains 18 SKILL.md files.
+    - Contains 17 upstream SKILL.md files plus one promoted localized skill.
     - doc-coauthoring has been localized and promoted to skills/doc-coauthoring.
+    - review.yaml classifies remaining candidates by promotion readiness.
     - Resolve non-standard license frontmatter before promoting skills that include license fields.
     - Resolve overlap with claude-plugins-official before promoting duplicate capabilities.
 
