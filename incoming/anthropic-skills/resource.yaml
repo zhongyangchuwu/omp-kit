@@ -24,10 +24,11 @@ verification:
     - Run structural validation after promoting individual skills.
 
 maintenance:
-  last_reviewed: "2026-05-29"
+  last_reviewed: "2026-05-30"
   notes:
     - Contains 18 SKILL.md files.
-    - Resolve non-standard license frontmatter before promotion.
+    - doc-coauthoring has been localized and promoted to skills/doc-coauthoring.
+    - Resolve non-standard license frontmatter before promoting skills that include license fields.
     - Resolve overlap with claude-plugins-official before promoting duplicate capabilities.
 
 relationships:

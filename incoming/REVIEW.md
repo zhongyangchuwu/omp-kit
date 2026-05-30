@@ -10,6 +10,12 @@ Per-resource metadata now lives in `resource.yaml` files:
 | `claude-plugins-official` | `incoming/claude-plugins-official/resource.yaml` | staged |
 | `superpowers` | `incoming/superpowers/resource.yaml` | localized source copy |
 
+Promoted localized skills:
+
+| Skill | Source | Active path |
+| --- | --- | --- |
+| `doc-coauthoring` | `incoming/anthropic-skills/skills/doc-coauthoring` | `skills/doc-coauthoring` |
+
 Useful commands:
 
 ```bash

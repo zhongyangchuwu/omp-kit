@@ -1,0 +1,42 @@
+name: doc-coauthoring
+kind: skill
+status: active
+path: skills/doc-coauthoring
+
+source:
+  type: upstream-localized
+  origin: incoming/anthropic-skills/skills/doc-coauthoring
+  localized: localized/doc-coauthoring
+  upstream: https://github.com/anthropics/skills
+  imported: "2026-05-29"
+  promoted: "2026-05-30"
+
+risk:
+  level: low
+  reason: Instruction-only documentation workflow with no bundled scripts, manifests, secrets, network calls, or destructive operations.
+
+activation:
+  mode: automatic
+  notes: Use for substantial documentation, proposals, RFCs, decision docs, and technical specs when the user wants structured co-authoring support.
+
+verification:
+  commands:
+    - just test
+  notes:
+    - Localized Claude-specific artifact, connector, and subagent wording to Oh My Pi tools.
+    - Original scan only found an HTTPS reference in SKILL.md.
+
+maintenance:
+  last_reviewed: "2026-05-30"
+  notes:
+    - First promoted Anthropic example skill used to exercise the import/localize/promote workflow.
+    - Source copy remains staged under incoming/anthropic-skills.
+    - Localized copy remains under localized/doc-coauthoring for review history.
+
+relationships:
+  extensions: []
+  tools: []
+  packages: []
+  upstream:
+    - incoming/anthropic-skills
+    - localized/doc-coauthoring

@@ -10,6 +10,7 @@ Resource-local `resource.yaml` files are the canonical metadata source. `registr
 | --- | --- | --- |
 | `autodl` | High | AutoDL Pro GPU resource and SSH operations helper. |
 | `skill-authoring` | Low | Portable Agent Skills authoring, review, and maintenance guide. |
+| `doc-coauthoring` | Low | Localized Anthropic documentation co-authoring workflow for specs, RFCs, proposals, and decision docs. |
 | `omp-superpowers` | Medium | Localized Superpowers collection; explicit-only activation. Upstream skills nested under `references/skills/`, not auto-discovered. |
 
 ## Staged imports

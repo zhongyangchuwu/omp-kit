@@ -32,14 +32,18 @@ def test_resource_metadata_files_validate() -> None:
 
 def test_every_registry_resource_has_resource_yaml() -> None:
     discovered = {(resource.kind, resource.name) for resource in resources()}
-    expected = {
-        ("skill", "autodl"),
-        ("skill", "skill-authoring"),
-        ("skill", "omp-superpowers"),
-        ("incoming", "anthropic-skills"),
-        ("incoming", "claude-plugins-official"),
-        ("import", "superpowers"),
-    }
+    registry = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
+    expected = set()
+    for group, kind in {
+        "skills": "skill",
+        "extensions": "extension",
+        "tools": "tool",
+        "packages": "package",
+        "incoming": "incoming",
+        "imports": "import",
+    }.items():
+        for name in registry.get(group, {}):
+            expected.add((kind, name))
     assert discovered == expected
 
 

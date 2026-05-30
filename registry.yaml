@@ -5,6 +5,10 @@ skills:
     status: active
     risk: high
     path: skills/autodl
+  doc-coauthoring:
+    status: active
+    risk: low
+    path: skills/doc-coauthoring
   omp-superpowers:
     status: active
     risk: medium
