@@ -21,10 +21,14 @@ Core principle: `SKILL.md` is a control panel, not an encyclopedia. Put core wor
 6. Add examples, gotchas, evals, maintenance notes, and scripts only when they add clear reusable value.
 7. Validate before completion: check names, frontmatter, links, template paths, and any available validator output.
 
+
 ## Reference Routing
 
 | Need | Read |
 | --- | --- |
+| Repository resource model and activation policies | ../../docs/resource-model.md |
+| Daily workflows: import, localize, promote, verify | ../../docs/workflows.md |
+| Repository architecture and operating principles | ../../docs/architecture.md |
 | Agent Skills format, directories, frontmatter, validation | [agent-skills-standard.md](references/agent-skills-standard.md) |
 | Quality rubric for creating, updating, or reviewing a skill | [authoring-rubric.md](references/authoring-rubric.md) |
 | Improve triggering and `description` wording | [description-guide.md](references/description-guide.md) |

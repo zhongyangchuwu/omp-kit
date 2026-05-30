@@ -164,10 +164,9 @@ Repository tests cover:
 
 The next upgrade phases should be incremental:
 
-1. Promote `autodl` into the first full high-risk package: skill + extension + tool + package.
-2. Upgrade `skill-authoring` into the maintenance center for registry validation, risk scanning, and promotion workflows.
-3. Add OMP extension linking only after real extensions exist and their loading convention is validated.
-4. Add import and promotion implementation only after the first reviewed third-party candidate exercises the full path.
-5. Add detailed operation guides after the framework stabilizes.
+1. Promote `autodl` into the first full high-risk package.
+2. Classify and process `incoming/claude-plugins-official` staged imports.
+3. Add OMP extension linking only after real extensions exist.
+4. Add detailed operation guides after the framework stabilizes.
 
 The long-term target is a personal agent workbench: a tested local capability system rather than a loose collection of prompts and scripts.
