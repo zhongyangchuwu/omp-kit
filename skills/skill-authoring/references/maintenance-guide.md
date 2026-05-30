@@ -1,72 +1,75 @@
 # Maintenance Guide
 
-Use this file for long-term personal skill library care.
+Use this guide for long-term personal skill library care. Detailed workflows, resource schema, and daily operations are in `docs/workflows.md` and `docs/resource-model.md`.
 
-## Suggested library structure
+## Metadata model
 
-```text
-personal-skills/
-  README.md
-  registry.yaml
-  SKILLS_INDEX.md
-  skills/
-  incoming/
-  archive/
-```
-
-- `skills/`: active reviewed skills.
-- `incoming/`: downloaded or generated skills awaiting review.
-- `archive/`: retired skills kept for history.
-- `registry.yaml`: inventory of source, risk, status, and review date.
-- `SKILLS_INDEX.md`: human and fallback agent index.
-
-## Registry fields
+Every tracked resource has a `resource.yaml`:
 
 ```yaml
-skills:
-  skill-authoring:
-    status: active
-    source: self
-    risk: low
-    last_reviewed: "2026-05-28"
-    notes: Portable authoring lifecycle guidance.
+name: example
+kind: skill
+status: active
+path: skills/example
+source:
+  type: self
+risk:
+  level: low
+  reason: Instruction-only, no scripts, secrets, or external actions.
+activation:
+  mode: automatic
+verification:
+  commands: []
+  notes: []
+maintenance:
+  last_reviewed: "YYYY-MM-DD"
+  notes: []
+relationships:
+  extensions: []
+  tools: []
+  packages: []
+  upstream: []
 ```
 
-## Maintenance notes
+`registry.yaml` is generated from these files. Do not edit it by hand.
 
-Use [maintenance-notes-template.md](../assets/maintenance-notes-template.md) for important skills. Track:
+## When to update maintenance notes
 
-- status: active, experimental, archived;
-- source: self, vendor, third-party, project extraction;
-- risk: low, medium, high;
-- last review date;
-- known issues;
-- quality checklist;
-- eval history.
+Update `resource.yaml` maintenance notes when:
+
+- you review a skill and confirm it is still accurate;
+- you change the activation policy or risk level;
+- you discover a false trigger, missed trigger, or unsafe instruction;
+- you add or remove scripts, references, or verification commands;
+- you promote a skill from incoming or localized.
 
 ## Update workflow
 
-1. Identify why the skill needs change: stale docs, false trigger, missed trigger, unsafe instruction, missing eval, poor output, broken link, or runtime drift.
-2. Read the current skill and maintenance notes.
-3. Add or update an eval if behavior changes.
-4. Make the smallest coherent change.
-5. Validate frontmatter and links.
-6. Run evals or relevant manual scenarios.
-7. Update notes and registry.
-8. Archive obsolete alternatives.
+1. Identify what needs to change: stale docs, missing trigger, unsafe instruction, broken link.
+2. Read the current `SKILL.md`, `resource.yaml`, and references.
+3. Make the smallest coherent change.
+4. Run `just build-registry`.
+5. Run `just test`.
 
 ## Archiving
 
-Archive a skill when:
+A skill should be archived when it is no longer correct, useful, or safe. Instead of a dedicated `archive/` directory, change the skill's `resource.yaml`:
 
-- its task is no longer relevant;
-- it duplicates a better skill;
-- its sources are stale and cannot be verified;
-- it requires unsafe or unavailable tooling;
-- it triggers too broadly and cannot be narrowed without losing value.
+```yaml
+status: archived
+```
 
-Move it to `archive/` and record the reason. Do not leave obsolete skills in active scan paths.
+And remove it from `skills/`. The archived source can be kept under `incoming/` or `localized/` for history. Do not leave obsolete skills in active scan paths.
 
-## Tool information
+## Quality checklist
 
-Portable validation can use `skills-ref validate` when available. Ecosystem installation and multi-agent management tools are useful but not standards; keep their notes in runtime-specific files and review generated or downloaded content before activation.
+Before declaring a skill ready:
+
+- [ ] name matches directory
+- [ ] description says what the skill does and when to use it
+- [ ] `SKILL.md` is concise enough for activation-time loading
+- [ ] references are linked from `SKILL.md` and exist
+- [ ] scripts have `--help` and avoid secrets and unsafe defaults
+- [ ] runtime-specific notes are isolated from portable guidance
+- [ ] `resource.yaml` is complete and accurate
+- [ ] `just test` passes
