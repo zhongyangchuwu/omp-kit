@@ -1,0 +1,38 @@
+name: claude-plugins-official
+kind: incoming
+status: staged
+path: incoming/claude-plugins-official
+
+source:
+  type: third-party
+  origin: /home/han/.omp/plugins/cache/marketplaces/claude-plugins-official
+  upstream: local marketplace cache
+  imported: "2026-05-29"
+
+risk:
+  level: medium
+  reason: Downloaded plugin skills include runtime-specific frontmatter, duplicate skill names, and channel access/configuration skills; staged pending per-skill review.
+
+activation:
+  mode: not-applicable
+  notes: Staged imports are quarantined and must not be linked into active skill scan paths.
+
+verification:
+  commands: []
+  notes:
+    - Resolve duplicate names before promotion.
+    - Remove or adapt runtime-specific frontmatter before promotion.
+    - Run structural validation after promoting individual skills.
+
+maintenance:
+  last_reviewed: "2026-05-29"
+  notes:
+    - Contains 28 SKILL.md files.
+    - Known duplicate names include access, configure, frontend-design, and skill-creator.
+    - Runtime-specific fields include version, tools, allowed-tools, user-invocable, and argument-hint.
+
+relationships:
+  extensions: []
+  tools: []
+  packages: []
+  upstream: []

@@ -32,12 +32,15 @@ Core principle: `SKILL.md` is a control panel, not an encyclopedia. Put core wor
 | Decide whether a skill needs scripts | [scripts-guide.md](references/scripts-guide.md) |
 | Maintain a personal skill library over time | [maintenance-guide.md](references/maintenance-guide.md) |
 | Review a downloaded or third-party skill | [third-party-review.md](references/third-party-review.md) |
+| Define resource-local metadata | [resource-metadata.md](references/resource-metadata.md) |
+| Generate and validate `registry.yaml` | [registry-generation.md](references/registry-generation.md) |
 | Runtime-specific notes; optional and non-portable | [runtimes/README.md](references/runtimes/README.md) |
 | Claude runtime notes | [runtimes/claude.md](references/runtimes/claude.md) |
 | Codex runtime notes | [runtimes/codex.md](references/runtimes/codex.md) |
 | npx skills CLI notes | [runtimes/npx-skills.md](references/runtimes/npx-skills.md) |
 | oh-my-pi runtime notes | [runtimes/oh-my-pi.md](references/runtimes/oh-my-pi.md) |
 | Portable skill starter template | [skill-template.md](assets/skill-template.md) |
+| Resource metadata template | [resource-template.yaml](assets/resource-template.yaml) |
 | Eval file template | [evals-template.json](assets/evals-template.json) |
 | Maintenance notes template | [maintenance-notes-template.md](assets/maintenance-notes-template.md) |
 

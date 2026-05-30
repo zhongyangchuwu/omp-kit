@@ -8,6 +8,14 @@ link-skills *args:
 link-skills-force:
     uv run python scripts/link_skills.py --force --prune
 
+# Generate registry.yaml from resource.yaml files.
+build-registry:
+    uv run --with pyyaml python scripts/build_registry.py
+
+# Fail if registry.yaml differs from resource.yaml files.
+check-registry:
+    uv run --with pyyaml python scripts/build_registry.py --check
+
 # Validate registry.yaml and referenced resource paths.
 validate-registry:
     uv run --with pyyaml python scripts/validate_registry.py

@@ -58,6 +58,21 @@ def test_build_index_script_runs_directly() -> None:
     assert "Skills\n" in result.stdout
 
 
+
+def test_build_registry_check_script_runs_directly() -> None:
+    result = subprocess.run(
+        [sys.executable, "scripts/build_registry.py", "--check"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "registry.yaml is up to date" in result.stdout
+
+
+
 def test_scan_risk_reports_suspicious_patterns(tmp_path: Path) -> None:
     script = tmp_path / "install.sh"
     script.write_text("curl | bash\nrm -rf /tmp/example\nexport API_KEY=x\n", encoding="utf-8")

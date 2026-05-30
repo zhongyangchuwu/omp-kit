@@ -8,9 +8,17 @@ from typing import Any
 
 import yaml
 
-ALLOWED_GROUPS = {"skills", "extensions", "tools", "packages", "incoming", "imports"}
-ALLOWED_RISKS = {"low", "medium", "high"}
-ALLOWED_STATUSES = {"active", "staged", "localized", "archived", "draft"}
+try:
+    from scripts.resource_metadata import (
+        ALLOWED_RISKS,
+        ALLOWED_STATUSES,
+        REGISTRY_GROUPS,
+        generated_registry,
+    )
+except ModuleNotFoundError:  # direct execution: python scripts/validate_registry.py
+    from resource_metadata import ALLOWED_RISKS, ALLOWED_STATUSES, REGISTRY_GROUPS, generated_registry
+
+ALLOWED_GROUPS = set(REGISTRY_GROUPS)
 REQUIRED_FIELDS = {"path", "status", "risk"}
 SKILL_NAME_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---", re.DOTALL)
@@ -69,10 +77,10 @@ def validate_registry(data: dict[str, Any], *, repo_root: Path) -> list[Registry
     for group in sorted(unknown_groups):
         issues.append(RegistryIssue(group, "unknown top-level registry group"))
 
-    for group in sorted(ALLOWED_GROUPS):
+    for group in REGISTRY_GROUPS:
         entries = data.get(group, {})
         if entries is None:
-            continue
+            entries = {}
         if not isinstance(entries, dict):
             issues.append(RegistryIssue(group, "group must be a mapping"))
             continue
@@ -136,11 +144,18 @@ def validate_active_skill(repo_root: Path, name: str, path_value: str, issues: l
 
 
 def validate_registry_file(path: Path, *, repo_root: Path) -> list[RegistryIssue]:
-    return validate_registry(load_registry(path), repo_root=repo_root)
+    issues = validate_registry(load_registry(path), repo_root=repo_root)
+    generated_content, resource_issues = generated_registry(repo_root)
+    issues.extend(RegistryIssue(issue.location, issue.message) for issue in resource_issues)
+    if not resource_issues:
+        current = path.read_text(encoding="utf-8") if path.exists() else ""
+        if current != generated_content:
+            issues.append(RegistryIssue(str(path), "registry.yaml is out of date; run `just build-registry`"))
+    return issues
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Validate registry.yaml and referenced resource paths")
+    parser = argparse.ArgumentParser(description="Validate generated registry.yaml and referenced resource paths")
     parser.add_argument("registry", nargs="?", type=Path, default=default_repo_root() / "registry.yaml")
     parser.add_argument("--repo-root", type=Path, default=default_repo_root())
     return parser.parse_args()
@@ -149,7 +164,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
-        issues = validate_registry_file(args.registry, repo_root=args.repo_root)
+        issues = validate_registry_file(args.registry, repo_root=args.repo_root.resolve())
     except RegistryValidationError as exc:
         for issue in exc.issues:
             print(f"error: {issue.format()}")

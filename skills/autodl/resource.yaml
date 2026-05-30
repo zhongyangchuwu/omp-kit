@@ -1,0 +1,35 @@
+name: autodl
+kind: skill
+status: active
+path: skills/autodl
+
+source:
+  type: self
+  origin: null
+
+risk:
+  level: high
+  reason: Controls paid GPU resources and SSH access.
+
+activation:
+  mode: automatic
+  notes: Use when managing AutoDL Pro GPU instances, checking balance or stock, running SSH smoke tests, or coordinating multiple AutoDL servers.
+
+verification:
+  commands:
+    - uv run --project skills/autodl pytest skills/autodl/tests
+    - uv run --project skills/autodl ruff check skills/autodl
+  notes:
+    - skills-ref validate skills/autodl when skills-ref is available.
+
+maintenance:
+  last_reviewed: "2026-05-28"
+  notes:
+    - Keep secrets out of committed files.
+    - High-risk operations should remain explicit and auditable.
+
+relationships:
+  extensions: []
+  tools: []
+  packages: []
+  upstream: []

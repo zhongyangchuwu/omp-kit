@@ -1,0 +1,37 @@
+name: anthropic-skills
+kind: incoming
+status: staged
+path: incoming/anthropic-skills
+
+source:
+  type: third-party
+  origin: /home/han/play/skills/skills
+  upstream: https://github.com/anthropics/skills
+  imported: "2026-05-29"
+
+risk:
+  level: medium
+  reason: Downloaded example/document skills include executable support scripts and mixed license terms; staged pending per-skill review.
+
+activation:
+  mode: not-applicable
+  notes: Staged imports are quarantined and must not be linked into active skill scan paths.
+
+verification:
+  commands: []
+  notes:
+    - Review executable support files before promotion.
+    - Run structural validation after promoting individual skills.
+
+maintenance:
+  last_reviewed: "2026-05-29"
+  notes:
+    - Contains 18 SKILL.md files.
+    - Resolve non-standard license frontmatter before promotion.
+    - Resolve overlap with claude-plugins-official before promoting duplicate capabilities.
+
+relationships:
+  extensions: []
+  tools: []
+  packages: []
+  upstream: []

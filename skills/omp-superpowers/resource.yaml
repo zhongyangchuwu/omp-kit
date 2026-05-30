@@ -1,0 +1,39 @@
+name: omp-superpowers
+kind: skill
+status: active
+path: skills/omp-superpowers
+
+source:
+  type: upstream-localized
+  origin: incoming/superpowers
+  upstream: /home/han/.omp/plugins/cache/plugins/superpowers-marketplace___superpowers___5.1.0
+  imported: "2026-05-29"
+  localized: "2026-05-29"
+
+risk:
+  level: medium
+  reason: Localized third-party process methodology with executable helper scripts kept under references; activation is explicit-only.
+
+activation:
+  mode: explicit-only
+  notes: Use only when the user explicitly asks to use Superpowers, asks about Superpowers, or names a Superpowers workflow.
+
+verification:
+  commands:
+    - uv run --with pytest --with pyyaml pytest tests/test_registry_integrity.py
+  notes:
+    - skills-ref validate skills/omp-superpowers when skills-ref is available.
+    - Upstream nested skills must remain under references/skills and not become active skills.
+
+maintenance:
+  last_reviewed: "2026-05-29"
+  notes:
+    - Upstream bootstrap auto-activation is intentionally disabled locally.
+    - OMP localization notes must keep Oh My Pi tool mappings current.
+
+relationships:
+  extensions: []
+  tools: []
+  packages: []
+  upstream:
+    - incoming/superpowers

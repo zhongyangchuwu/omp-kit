@@ -1,0 +1,36 @@
+name: superpowers
+kind: import
+status: localized
+path: incoming/superpowers
+
+source:
+  type: third-party
+  origin: /home/han/.omp/plugins/cache/plugins/superpowers-marketplace___superpowers___5.1.0
+  upstream: superpowers-marketplace/superpowers/5.1.0
+  imported: "2026-05-29"
+
+risk:
+  level: medium
+  reason: Third-party workflow collection retained as source copy; localized active entry is skills/omp-superpowers.
+
+activation:
+  mode: not-applicable
+  notes: Source copy only; active local usage goes through skills/omp-superpowers.
+
+verification:
+  commands: []
+  notes:
+    - Keep as import/source record unless replacing the localized active skill.
+
+maintenance:
+  last_reviewed: "2026-05-29"
+  notes:
+    - Preserved as the source copy for omp-superpowers localization.
+    - Not linked into active skills.
+
+relationships:
+  extensions: []
+  tools: []
+  packages: []
+  upstream:
+    - skills/omp-superpowers

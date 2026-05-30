@@ -2,7 +2,7 @@
 
 Canonical repository for maintained personal agent capabilities.
 
-`registry.yaml` is the single index of record for repository resources. It records what exists, where it lives, its status, and its risk class. Detailed policy belongs beside each resource: `SKILL.md`, package manifests, tool config, extension-local metadata, or review notes.
+Resource-local `resource.yaml` files are the canonical metadata source. `registry.yaml` is a committed generated index created by `scripts/build_registry.py`; it records what exists, where it lives, its status, and its risk class.
 
 ## Active skills
 
@@ -47,7 +47,9 @@ just link-skills-force    # replace stale symlinks and prune old names
 ## Maintenance commands
 
 ```bash
-just validate-registry    # validate registry.yaml and referenced paths
+just build-registry       # regenerate registry.yaml from resource.yaml files
+just check-registry       # fail if registry.yaml is stale
+just validate-registry    # validate generated registry and referenced paths
 just build-index          # print compact registry index
 just scan-risk PATH       # scan a staged/imported directory for risk indicators
 just test                 # run repository tests
@@ -57,8 +59,9 @@ just test                 # run repository tests
 
 ## Maintenance rules
 
-- Keep `registry.yaml` minimal: `path`, `status`, and `risk` only unless a future resource type needs an index-level field.
-- Put detailed constraints beside the resource they govern.
+- Do not edit `registry.yaml` manually; update `resource.yaml` and run `just build-registry`.
+- Keep `registry.yaml` generated and minimal: `path`, `status`, and `risk` only.
+- Put detailed constraints beside the resource they govern, primarily in `resource.yaml` and resource-local references.
 - Do not commit runtime caches, virtual environments, compiled files, secrets, tokens, SSH hosts, or private keys.
 - Review staged skills in `incoming/` before moving them into `skills/`, `extensions/`, `tools/`, or `packages/`.
 - After changing repository structure, scripts, registry entries, or skills, run `just test`.
