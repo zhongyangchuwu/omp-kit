@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -35,6 +37,14 @@ REQUIRED_TOP_LEVEL = {
     "relationships",
 }
 REQUIRED_RELATIONSHIPS = {"extensions", "tools", "packages", "upstream"}
+
+
+IGNORED_COPY_NAMES = {".git", "__pycache__", ".pytest_cache", ".ruff_cache", ".venv"}
+FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---", re.DOTALL)
+
+
+class ResourceWorkflowError(RuntimeError):
+    """Raised when an import or promotion workflow cannot proceed safely."""
 
 
 @dataclass(frozen=True)
@@ -230,3 +240,98 @@ def generated_registry(repo_root: Path) -> tuple[str, list[ResourceIssue]]:
     resources = discover_resources(repo_root)
     issues = validate_resources(resources, repo_root=repo_root)
     return format_registry(build_registry(resources)), issues
+
+def parse_skill_frontmatter(path: Path) -> dict[str, str]:
+    match = FRONTMATTER_RE.search(path.read_text(encoding="utf-8"))
+    if match is None:
+        return {}
+
+    values: dict[str, str] = {}
+    for line in match.group(1).splitlines():
+        if ":" not in line or line.startswith((" ", "-")):
+            continue
+        key, value = line.split(":", 1)
+        values[key.strip()] = value.strip().strip("\"'")
+    return values
+
+
+def copy_resource_tree(source: Path, destination: Path) -> None:
+    source = source.resolve()
+    if not source.is_dir():
+        raise ResourceWorkflowError(f"source is not a directory: {source}")
+    if destination.exists():
+        raise ResourceWorkflowError(f"destination already exists: {destination}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+
+    def ignore(_directory: str, names: list[str]) -> set[str]:
+        return {name for name in names if name in IGNORED_COPY_NAMES}
+
+    shutil.copytree(source, destination, ignore=ignore)
+
+
+def write_resource_metadata(resource_dir: Path, data: dict[str, Any]) -> None:
+    resource_dir.mkdir(parents=True, exist_ok=True)
+    (resource_dir / RESOURCE_FILENAME).write_text(
+        yaml.safe_dump(data, sort_keys=False, allow_unicode=True),
+        encoding="utf-8",
+    )
+
+
+def default_resource_metadata(
+    *,
+    name: str,
+    kind: str,
+    status: str,
+    path: str,
+    source_type: str,
+    source_origin: str | None,
+    risk_level: str,
+    risk_reason: str,
+    activation_mode: str,
+    activation_notes: str,
+    verification_commands: list[str] | None = None,
+    verification_notes: list[str] | None = None,
+    maintenance_last_reviewed: str,
+    maintenance_notes: list[str] | None = None,
+    upstream: list[str] | None = None,
+) -> dict[str, Any]:
+    return {
+        "name": name,
+        "kind": kind,
+        "status": status,
+        "path": path,
+        "source": {
+            "type": source_type,
+            "origin": source_origin,
+        },
+        "risk": {
+            "level": risk_level,
+            "reason": risk_reason,
+        },
+        "activation": {
+            "mode": activation_mode,
+            "notes": activation_notes,
+        },
+        "verification": {
+            "commands": verification_commands or [],
+            "notes": verification_notes or [],
+        },
+        "maintenance": {
+            "last_reviewed": maintenance_last_reviewed,
+            "notes": maintenance_notes or [],
+        },
+        "relationships": {
+            "extensions": [],
+            "tools": [],
+            "packages": [],
+            "upstream": upstream or [],
+        },
+    }
+
+
+def regenerate_registry(repo_root: Path) -> None:
+    content, issues = generated_registry(repo_root)
+    if issues:
+        details = "\n".join(issue.format() for issue in issues)
+        raise ResourceWorkflowError(f"resource metadata invalid:\n{details}")
+    (repo_root / "registry.yaml").write_text(content, encoding="utf-8")

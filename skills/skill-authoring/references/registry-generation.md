@@ -27,6 +27,8 @@ just build-registry    # overwrite registry.yaml from resource.yaml files
 just check-registry    # fail if registry.yaml is stale
 just validate-registry # validate generated registry and resource metadata
 just test              # repository gate, includes registry checks through pytest
+just import-skill /path/to/local/source --name example
+just promote-skill incoming/example --name example
 ```
 
 ## Mapping
@@ -46,3 +48,5 @@ kind: import    -> registry.imports
 - Add or update a resource's `resource.yaml`, then run `just build-registry`.
 - If `just check-registry` fails, regenerate and inspect the diff.
 - Keep detailed policy in `resource.yaml` or resource-local references, not in `registry.yaml`.
+- Use `just import-skill` for local directory imports; network imports are intentionally unsupported.
+- Use `just promote-skill` only after review; it copies into `skills/` and leaves the incoming/localized source intact.

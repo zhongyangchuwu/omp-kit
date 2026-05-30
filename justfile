@@ -10,32 +10,32 @@ link-skills-force:
 
 # Generate registry.yaml from resource.yaml files.
 build-registry:
-    uv run --with pyyaml python scripts/build_registry.py
+    uv run python scripts/build_registry.py
 
 # Fail if registry.yaml differs from resource.yaml files.
 check-registry:
-    uv run --with pyyaml python scripts/build_registry.py --check
+    uv run python scripts/build_registry.py --check
 
 # Validate registry.yaml and referenced resource paths.
 validate-registry:
-    uv run --with pyyaml python scripts/validate_registry.py
+    uv run python scripts/validate_registry.py
 
 # Print registry.yaml as a compact human-readable index.
 build-index:
-    uv run --with pyyaml python scripts/build_index.py
+    uv run python scripts/build_index.py
 
 # Scan a path for risky files and command patterns.
 scan-risk path:
     uv run python scripts/scan_risk.py {{path}}
 
-# Placeholder for future import workflow.
+# Import a local directory into incoming/ and update generated registry.yaml.
 import-skill source *args:
     uv run python scripts/import_skill.py {{source}} {{args}}
 
-# Placeholder for future promotion workflow.
+# Promote an incoming/localized skill into skills/ and update generated registry.yaml.
 promote-skill path *args:
     uv run python scripts/promote_skill.py {{path}} {{args}}
 
 # Run all repository tests (fast gate).
 test:
-    uv run --with pytest --with pyyaml pytest tests
+    uv run pytest tests

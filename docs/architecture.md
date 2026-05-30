@@ -136,11 +136,11 @@ scripts/build_registry.py     Generates or checks registry.yaml from resource.ya
 scripts/validate_registry.py  Validates generated registry shape and drift.
 scripts/build_index.py        Prints a compact index from registry.yaml.
 scripts/scan_risk.py          Scans a directory for review-worthy risk indicators.
-scripts/import_skill.py       Placeholder for future import workflow.
-scripts/promote_skill.py      Placeholder for future promotion workflow.
+scripts/import_skill.py       Imports local directories into incoming/ with resource metadata.
+scripts/promote_skill.py      Safely copies reviewed incoming/localized skills into skills/.
 ```
 
-Scaffolded scripts must fail explicitly with a clear message rather than silently doing nothing.
+Import and promotion scripts are intentionally local-path only; they do not download network sources or overwrite existing resource directories.
 
 ## Testing strategy
 

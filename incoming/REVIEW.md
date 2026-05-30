@@ -13,10 +13,12 @@ Per-resource metadata now lives in `resource.yaml` files:
 Useful commands:
 
 ```bash
+just import-skill /path/to/local/source --name <name>
+just promote-skill incoming/<name> --name <name>
 just scan-risk incoming/<name>
 just build-registry
 just check-registry
 just test
 ```
 
-Promotion remains manual until `scripts/import_skill.py` and `scripts/promote_skill.py` are implemented. Review every `SKILL.md`, executable file, dependency manifest, runtime-specific field, duplicate name, and license before moving content into active resource directories.
+`scripts/import_skill.py` imports local directories into `incoming/` and creates staged `resource.yaml` metadata. `scripts/promote_skill.py` copies reviewed incoming/localized skills into `skills/` without deleting the source copy. Review every `SKILL.md`, executable file, dependency manifest, runtime-specific field, duplicate name, and license before promotion.

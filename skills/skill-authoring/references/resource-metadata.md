@@ -65,3 +65,10 @@ relationships:
 ## Ownership
 
 `resource.yaml` is the source of truth for detailed resource metadata. Put source, risk rationale, activation policy, verification commands, and maintenance notes here rather than in top-level `registry.yaml`.
+
+## Import and promotion workflow
+
+- `just import-skill /path/to/local/source --name <name>` copies a local directory into `incoming/<name>`, creates staged `resource.yaml`, and regenerates `registry.yaml`.
+- Network imports are intentionally unsupported; clone or download sources separately, then import the local directory.
+- `just promote-skill incoming/<name> --name <name>` copies a reviewed skill into `skills/<name>`, writes active skill metadata, and keeps the source copy intact.
+- Promotion requires `SKILL.md` frontmatter `name` to match the target name.

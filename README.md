@@ -52,10 +52,12 @@ just check-registry       # fail if registry.yaml is stale
 just validate-registry    # validate generated registry and referenced paths
 just build-index          # print compact registry index
 just scan-risk PATH       # scan a staged/imported directory for risk indicators
+just import-skill PATH --name NAME
+                         # copy a local directory into incoming/ and update registry.yaml
+just promote-skill PATH --name NAME
+                         # copy an incoming/localized skill into skills/ and update registry.yaml
 just test                 # run repository tests
 ```
-
-`import-skill` and `promote-skill` recipes exist as explicit placeholders for future workflow implementation.
 
 ## Maintenance rules
 

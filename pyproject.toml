@@ -1,0 +1,9 @@
+[project]
+name = "personal-skills"
+version = "0.1.0"
+description = "Personal agent skill and capability workbench"
+requires-python = ">=3.12"
+dependencies = [
+    "pytest>=9.0.3",
+    "pyyaml>=6.0.3",
+]
