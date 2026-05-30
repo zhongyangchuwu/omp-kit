@@ -28,8 +28,8 @@ except ModuleNotFoundError:  # direct execution: python scripts/promote_skill.py
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Safely promote an incoming/localized skill into skills/")
-    parser.add_argument("path", type=Path, help="Source skill directory under incoming/ or localized/")
+    parser = argparse.ArgumentParser(description="Safely promote a draft skill into skills/")
+    parser.add_argument("path", type=Path, help="Source skill directory under drafts/")
     parser.add_argument("--name", help="Active skill name; defaults to SKILL.md frontmatter name")
     parser.add_argument("--activation", choices=sorted(ALLOWED_ACTIVATION_MODES - {"not-applicable"}), default="automatic")
     parser.add_argument("--risk", choices=sorted(ALLOWED_RISKS), default="medium")
@@ -52,8 +52,8 @@ def promote_skill(*, source: Path, name: str | None, activation: str, risk: str,
         raise ResourceWorkflowError(f"source is not a directory: {source}")
 
     relative_source = _repo_relative(source, repo_root)
-    if not (relative_source.startswith("incoming/") or relative_source.startswith("localized/")):
-        raise ResourceWorkflowError("source must be under incoming/ or localized/")
+    if not relative_source.startswith("drafts/"):
+        raise ResourceWorkflowError("source must be under drafts/")
 
     skill_md = source / "SKILL.md"
     if not skill_md.is_file():
@@ -89,8 +89,8 @@ def promote_skill(*, source: Path, name: str | None, activation: str, risk: str,
             "Run repository tests after promotion.",
         ],
         maintenance_last_reviewed=date.today().isoformat(),
-        maintenance_notes=["Created by scripts/promote_skill.py.", f"Source copy retained at {relative_source}."],
-        upstream=[relative_source],
+        maintenance_notes=["Created by scripts/promote_skill.py.", f"Draft retained at {relative_source}."],
+        upstream=[],
     )
     write_resource_metadata(destination, metadata)
     regenerate_registry(repo_root)

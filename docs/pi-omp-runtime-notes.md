@@ -147,10 +147,10 @@ Use a package      when a capability should be installed, disabled, shared, or v
 
 Do not put unreviewed third-party skills, scripts, or packages into active runtime locations.
 
-Third-party material must enter quarantine first:
+Keep upstream repositories, books, documentation snapshots, and third-party skill collections in local gitignored `references/`. Extract only reviewed, useful material into tracked resources:
 
 ```text
-incoming/ or vendor/ -> review -> localized/ -> skills/extensions/tools/packages
+references/ -> drafts/ -> skills/extensions/tools/packages
 ```
 
 Review for:

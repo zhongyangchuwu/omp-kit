@@ -88,12 +88,12 @@ def test_force_still_refuses_to_replace_real_directory(tmp_path: Path) -> None:
     assert not existing.is_symlink()
 
 
-def test_ignores_incoming_skill_directories(tmp_path: Path) -> None:
+def test_ignores_draft_skill_directories(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     active = make_skill(repo, "alpha")
-    incoming = repo / "incoming" / "downloaded" / "skills" / "beta"
-    incoming.mkdir(parents=True)
-    (incoming / "SKILL.md").write_text("---\nname: beta\ndescription: staged\n---\n", encoding="utf-8")
+    draft = repo / "drafts" / "beta"
+    draft.mkdir(parents=True)
+    (draft / "SKILL.md").write_text("---\nname: beta\ndescription: draft\n---\n", encoding="utf-8")
     target_root = tmp_path / "home" / ".agents"
 
     actions = link_skills(repo_root=repo, agent_root=target_root)

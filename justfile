@@ -28,11 +28,8 @@ build-index:
 scan-risk path:
     uv run python scripts/scan_risk.py {{path}}
 
-# Import a local directory into incoming/ and update generated registry.yaml.
-import-skill source *args:
-    uv run python scripts/import_skill.py {{source}} {{args}}
 
-# Promote an incoming/localized skill into skills/ and update generated registry.yaml.
+# Promote a draft skill into skills/ and update generated registry.yaml.
 promote-skill path *args:
     uv run python scripts/promote_skill.py {{path}} {{args}}
 

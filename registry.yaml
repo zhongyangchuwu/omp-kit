@@ -17,20 +17,11 @@ skills:
     status: active
     risk: low
     path: skills/skill-authoring
+drafts:
+  doc-coauthoring:
+    status: draft
+    risk: low
+    path: drafts/doc-coauthoring
 extensions: {}
 tools: {}
 packages: {}
-incoming:
-  anthropic-skills:
-    status: staged
-    risk: medium
-    path: incoming/anthropic-skills
-  claude-plugins-official:
-    status: staged
-    risk: medium
-    path: incoming/claude-plugins-official
-imports:
-  superpowers:
-    status: localized
-    risk: medium
-    path: incoming/superpowers

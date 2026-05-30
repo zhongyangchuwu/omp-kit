@@ -1,0 +1,37 @@
+name: doc-coauthoring
+kind: skill
+status: draft
+path: drafts/doc-coauthoring
+
+source:
+  type: upstream-localized
+  origin: references/anthropic-skills/skills/doc-coauthoring
+  upstream: https://github.com/anthropics/skills
+  imported: "2026-05-29"
+  promoted: "2026-05-30"
+
+risk:
+  level: low
+  reason: Instruction-only documentation workflow with no bundled scripts, manifests, secrets, network calls, or destructive operations.
+
+activation:
+  mode: not-applicable
+  notes: Draft history only; active local usage goes through skills/doc-coauthoring.
+
+verification:
+  commands: []
+  notes:
+    - Active promoted copy is verified through skills/doc-coauthoring.
+
+maintenance:
+  last_reviewed: "2026-05-30"
+  notes:
+    - Preserved draft used to promote skills/doc-coauthoring.
+    - Kept under drafts/ as a non-active review copy.
+
+relationships:
+  extensions: []
+  tools: []
+  packages: []
+  upstream:
+    - skills/doc-coauthoring

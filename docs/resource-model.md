@@ -1,6 +1,8 @@
 # Resource Model
 
-Every tracked resource in this repository owns a `resource.yaml` file. `registry.yaml` is generated from these files and is never edited by hand.
+Every tracked repository resource owns a `resource.yaml` file. `registry.yaml` is generated from these files and is never edited by hand.
+
+Top-level `references/` is the exception: it is local, gitignored source material for upstream repositories, books, downloaded docs, and other external references. It is intentionally outside the resource model.
 
 ## resource.yaml
 
@@ -11,8 +13,10 @@ skills/<name>/resource.yaml
 extensions/<name>/resource.yaml
 tools/<name>/resource.yaml
 packages/<name>/resource.yaml
-incoming/<name>/resource.yaml
+drafts/<name>/resource.yaml
 ```
+
+Draft skill metadata uses `kind: skill` and `status: draft`; active skill metadata uses `kind: skill` and `status: active`.
 
 ### Schema
 
@@ -27,7 +31,6 @@ source:
   origin: null
   upstream: null
   imported: null
-  localized: null
   promoted: null
 
 risk:
@@ -53,8 +56,7 @@ relationships:
   extensions: []
   tools: []
   packages: []
-  upstream:
-    - incoming/anthropic-skills/skills/doc-coauthoring
+  upstream: []
 ```
 
 ### Field reference
@@ -62,35 +64,33 @@ relationships:
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `name` | string | yes | Matches the resource directory name. |
-| `kind` | enum | yes | `skill`, `extension`, `tool`, `package`, `incoming`, `import` |
-| `status` | enum | yes | `active`, `staged`, `localized`, `archived`, `draft` |
+| `kind` | enum | yes | `skill`, `extension`, `tool`, `package` |
+| `status` | enum | yes | `active`, `draft`, `archived` |
 | `path` | string | yes | Repo-relative path to the resource directory. |
-| `source.type` | string | yes | `self`, `third-party`, `upstream-localized`, `promoted-local` |
-| `source.origin` | string\|null | — | Where the material was copied from when imported. |
-| `source.upstream` | string\|null | — | URL or reference for the upstream source. |
-| `source.imported` | string\|null | — | ISO date when the material was first imported. |
-| `source.localized` | string\|null | — | ISO date when localization was completed. |
+| `source.type` | string | yes | `self`, `third-party`, `upstream-localized`, `promoted-local`, or another explicit source classifier. |
+| `source.origin` | string\|null | — | Where the material was copied from or derived from, if tracked. May point at a local `references/` path even though references are gitignored. |
+| `source.upstream` | string\|null | — | URL or human-readable upstream reference. |
+| `source.imported` | string\|null | — | ISO date when the material was first copied or recorded as a tracked draft/resource. |
 | `source.promoted` | string\|null | — | ISO date when the resource was promoted to active. |
 | `risk.level` | enum | yes | `low`, `medium`, `high` |
 | `risk.reason` | string | yes | Human-readable risk rationale. |
 | `activation.mode` | enum | yes | `automatic`, `explicit-only`, `manual`, `not-applicable` |
-| `activation.notes` | string | yes | When or whether the agent should activate this resource. |
+| `activation.notes` | string | yes | When or whether the agent should activate this resource. Draft resources use `not-applicable`. |
 | `verification.commands` | list | yes | Commands runnable from the repository root. |
 | `verification.notes` | list | yes | Additional verification guidance. |
 | `maintenance.last_reviewed` | string | yes | ISO date of last review. |
 | `maintenance.notes` | list | yes | Free-form maintenance notes. |
-| `relationships.*` | list | yes | Future links to extensions, tools, packages. `upstream` records source or related resource paths. |
+| `relationships.*` | list | yes | Links to related tracked resources or upstream references. |
 
 ### Kind to registry mapping
 
-| `kind` | `registry.yaml` group |
+| Resource path / `kind` | `registry.yaml` group |
 | --- | --- |
-| `skill` | `skills` |
-| `extension` | `extensions` |
-| `tool` | `tools` |
-| `package` | `packages` |
-| `incoming` | `incoming` |
-| `import` | `imports` |
+| `skills/<name>` with `kind: skill` | `skills` |
+| `drafts/<name>` with `kind: skill` | `drafts` |
+| `extensions/<name>` with `kind: extension` | `extensions` |
+| `tools/<name>` with `kind: tool` | `tools` |
+| `packages/<name>` with `kind: package` | `packages` |
 
 ## registry.yaml
 
@@ -113,7 +113,7 @@ skills:
 | `automatic` | Agent loads the resource when the task matches its description. |
 | `explicit-only` | Agent loads the resource only when the user explicitly asks for it by name or workflow. |
 | `manual` | Reserved for human-initiated loading. |
-| `not-applicable` | Staged imports or source copies that are not activated. |
+| `not-applicable` | Draft or inactive resources that are not activated. |
 
 Use `explicit-only` for skills whose descriptions are too broad and would auto-trigger on unrelated tasks.
 

@@ -12,6 +12,11 @@ __pycache__/
 .worktrees/
 worktrees/
 
+
+# Local upstream source/reference checkouts
+/references/
+/incoming/
+
 # Secrets and local machine config
 secrets.json
 *.pem

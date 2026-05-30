@@ -114,10 +114,6 @@ def validate_registry(data: dict[str, Any], *, repo_root: Path) -> list[Registry
             if group == "skills" and status == "active" and isinstance(path_value, str):
                 validate_active_skill(repo_root, name, path_value, issues)
 
-            if group == "incoming" and isinstance(path_value, str):
-                path = Path(path_value)
-                if path.parts and path.parts[0] == "skills":
-                    issues.append(RegistryIssue(location, "incoming entry must not live under skills/"))
 
     return issues
 

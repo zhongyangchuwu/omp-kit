@@ -41,8 +41,9 @@ def test_build_index_prints_known_resource_groups() -> None:
 
     assert "Skills\n" in text
     assert "- autodl [active/high] skills/autodl" in text
+    assert "Drafts\n" in text
     assert "Extensions\n- none" in text
-    assert "Incoming\n" in text
+    assert "Packages\n- none" in text
 
 
 def test_build_index_script_runs_directly() -> None:

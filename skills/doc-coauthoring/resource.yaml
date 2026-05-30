@@ -5,8 +5,8 @@ path: skills/doc-coauthoring
 
 source:
   type: upstream-localized
-  origin: incoming/anthropic-skills/skills/doc-coauthoring
-  localized: localized/doc-coauthoring
+  origin: references/anthropic-skills/skills/doc-coauthoring
+  draft: drafts/doc-coauthoring
   upstream: https://github.com/anthropics/skills
   imported: "2026-05-29"
   promoted: "2026-05-30"
@@ -29,14 +29,14 @@ verification:
 maintenance:
   last_reviewed: "2026-05-30"
   notes:
-    - First promoted Anthropic example skill used to exercise the import/localize/promote workflow.
-    - Source copy remains staged under incoming/anthropic-skills.
-    - Localized copy remains under localized/doc-coauthoring for review history.
+    - First promoted Anthropic example skill used to exercise the draft/promote workflow.
+    - Upstream source can be kept locally under references/anthropic-skills.
+    - Draft copy remains under drafts/doc-coauthoring for review history.
 
 relationships:
   extensions: []
   tools: []
   packages: []
   upstream:
-    - incoming/anthropic-skills
-    - localized/doc-coauthoring
+    - references/anthropic-skills
+    - drafts/doc-coauthoring
