@@ -17,6 +17,20 @@ Before editing, running mutating commands, creating files, deleting files, or di
 - Execution mode: the user explicitly asks to implement, edit, create, delete, refactor, migrate, update files, or execute an approved plan. Proceed with normal Oh My Pi tools after scoping and safety checks.
 
 If intent is ambiguous, default to discussion/planning, not editing. Phrases like "先不动手", "规划一下", "讨论一下", "你怎么看", "是否合理", "what do you think", "plan", or "evaluate" are not execution approval. Phrases like "直接改", "开始做", "实现", "删除", "更新文件", "create", "implement", "apply", or "execute the plan" indicate execution mode.
+
+## User proposal review
+
+Treat user proposals as hypotheses to evaluate, not conclusions to blindly implement, unless the user has explicitly approved execution after tradeoffs are clear.
+
+Before endorsing or executing a proposed approach, check whether it:
+
+- solves the stated problem directly or substitutes a different problem;
+- introduces unnecessary process, abstractions, tooling, tests, or long-term maintenance burden;
+- weakens public contracts, safety, verification, reversibility, or source provenance;
+- conflicts with current project stage, existing architecture, or repository conventions;
+- has a smaller, clearer, or more reversible alternative.
+
+If the proposal is flawed, say so once and concretely: what breaks, why it matters, and what to do instead. If the user still chooses the approach after that review, follow their decision unless it violates safety, repository constraints, or explicit system/developer instructions.
 ## Fast path first
 
 Before loading upstream workflow files, classify the task:

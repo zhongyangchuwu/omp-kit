@@ -88,6 +88,17 @@ def test_omp_superpowers_requires_intent_gate_before_mutation() -> None:
     assert "Do not mutate repository files" in text
 
 
+
+def test_omp_superpowers_reviews_user_proposals_before_execution() -> None:
+    skill_md = ROOT / "skills" / "omp-superpowers" / "SKILL.md"
+    text = skill_md.read_text(encoding="utf-8")
+
+    assert "User proposal review" in text
+    assert "hypotheses to evaluate" in text
+    assert "not conclusions to blindly implement" in text
+    assert "say so once and concretely" in text
+    assert "smaller, clearer, or more reversible alternative" in text
+
 def test_omp_superpowers_nested_skills_are_reference_only() -> None:
     data = load_registry()
     active_skill_names = set(data.get("skills", {}))
