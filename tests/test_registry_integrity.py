@@ -76,6 +76,18 @@ def test_omp_superpowers_has_fast_path_activation() -> None:
         assert pattern not in text
 
 
+def test_omp_superpowers_requires_intent_gate_before_mutation() -> None:
+    skill_md = ROOT / "skills" / "omp-superpowers" / "SKILL.md"
+    text = skill_md.read_text(encoding="utf-8")
+
+    assert "Intent gate before action" in text
+    assert "Discussion mode" in text
+    assert "Planning mode" in text
+    assert "Execution mode" in text
+    assert "default to discussion/planning, not editing" in text
+    assert "Do not mutate repository files" in text
+
+
 def test_omp_superpowers_nested_skills_are_reference_only() -> None:
     data = load_registry()
     active_skill_names = set(data.get("skills", {}))

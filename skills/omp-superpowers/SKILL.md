@@ -7,6 +7,16 @@ description: Use for non-trivial software work that benefits from structured met
 
 This is the local Oh My Pi entrypoint for the Superpowers skill collection. Use it as lightweight process guidance by default for non-trivial software work, but do not force the full methodology onto simple tasks.
 
+
+## Intent gate before action
+
+Before editing, running mutating commands, creating files, deleting files, or dispatching implementation work, classify the user's intent:
+
+- Discussion mode: the user is exploring an idea, asking whether something is reasonable, asking for critique, asking "what do you think", or explicitly says not to act yet. Do not mutate repository files. Respond with analysis, risks, alternatives, and recommended next steps.
+- Planning mode: the user asks for a plan, design, checklist, migration path, or phased approach. Do not mutate repository files unless they explicitly ask to create or update a plan artifact. Produce the plan and wait for execution approval.
+- Execution mode: the user explicitly asks to implement, edit, create, delete, refactor, migrate, update files, or execute an approved plan. Proceed with normal Oh My Pi tools after scoping and safety checks.
+
+If intent is ambiguous, default to discussion/planning, not editing. Phrases like "先不动手", "规划一下", "讨论一下", "你怎么看", "是否合理", "what do you think", "plan", or "evaluate" are not execution approval. Phrases like "直接改", "开始做", "实现", "删除", "更新文件", "create", "implement", "apply", or "execute the plan" indicate execution mode.
 ## Fast path first
 
 Before loading upstream workflow files, classify the task:
