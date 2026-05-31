@@ -6,6 +6,31 @@ Load this reference when adding or reviewing tests as part of implementation, re
 
 A test should fail when user-visible behavior, API semantics, data invariants, or important side effects break. It should not fail because an internal helper was renamed, a call was inlined, or a mock component changed shape without behavior changing.
 
+Default to black-box contract tests: exercise the public API, CLI, component behavior, persisted data contract, or user-observable workflow. White-box tests are lower priority unless the internal unit is itself stable or unusually risky.
+
+## Project-stage bias
+
+For MVP-stage personal projects, tests should protect iteration speed as well as correctness:
+
+- cover exposed contracts, critical paths, and bug regressions;
+- skip exhaustive internal coverage when the behavior is already covered through a public boundary;
+- prefer a small number of strong invariants over broad fragile assertions;
+- add rigor when code touches data loss, security, money/cloud resources, public APIs, concurrency, migrations, deployment, or irreversible actions.
+
+Do not use low test volume as an excuse to skip verification entirely. Run the narrow check that proves the exposed behavior still works.
+
+## White-box exceptions
+
+White-box tests are justified when the internal unit has a stable contract or concentrated risk:
+
+- complex pure algorithms;
+- parsers, serializers, or schema transforms;
+- migrations and data repair functions;
+- security-sensitive normalization or validation;
+- tricky state machines;
+- performance-critical functions with known invariants;
+- a regression whose smallest useful reproduction is internal.
+
 ## Mock boundary rules
 
 Use real code by default. Mock only:

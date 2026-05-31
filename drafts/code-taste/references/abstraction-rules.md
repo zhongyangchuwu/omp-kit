@@ -14,6 +14,8 @@ An abstraction is justified when it removes a real maintenance burden today:
 
 An abstraction is suspect when it exists because code might need flexibility later.
 
+In MVP-stage personal projects, be willing to refactor when it deletes concepts or clarifies ownership. Git rollback reduces the cost of failed refactors, but it does not prove behavior was preserved; verify exposed contracts after the change.
+
 ## Decision tree
 
 ### Interface / protocol / trait

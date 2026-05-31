@@ -27,7 +27,7 @@ Do not use it for:
 
 ## Operating principle
 
-Make the code easier to reason about six months from now. Delete concepts before rearranging them. Add an abstraction only when it reduces the number of ideas a maintainer must hold today.
+Make the code easier to reason about six months from now. Delete concepts before rearranging them. Add an abstraction only when it reduces the number of ideas a maintainer must hold today. In MVP-stage personal projects, do not fear behavior-preserving refactors that clarify architecture or reduce future friction; use git as rollback support, but still verify exposed contracts.
 
 ## Review sequence
 
@@ -36,9 +36,9 @@ Make the code easier to reason about six months from now. Delete concepts before
 3. **Correctness** — trace representative and boundary inputs through branches, state changes, errors, and side effects.
 4. **Simplicity** — remove or inline unearned wrappers, flags, parameters, modes, and one-off extension points.
 5. **Contracts** — preserve public API semantics, response shapes, error shapes, and exported type expectations unless the caller has explicitly accepted a breaking change.
-6. **Tests** — require behavior tests for changed behavior; avoid tests that only prove mocks, plumbing, or current defaults.
+6. **Tests** — prefer black-box contract tests for exposed behavior, invariants, and critical error paths; avoid tests that only prove mocks, plumbing, private implementation, or current defaults.
 7. **Efficiency** — check hot paths for repeated work, avoidable allocation, unbounded loading, blocking I/O, and lifecycle leaks.
-8. **Verification** — run checks scoped to the affected behavior; broaden only when the changed code has a wider blast radius.
+8. **Verification** — match checks to project stage and blast radius. Broaden verification for public contracts, data, security, concurrency, deployment, or irreversible operations.
 
 ## Decision rules
 
@@ -75,10 +75,12 @@ Make the code easier to reason about six months from now. Delete concepts before
 ### Tests
 
 - Test externally meaningful behavior and invariants, not internal call counts unless the calls are the behavior.
+- Prefer black-box tests at public boundaries. White-box tests are justified for complex algorithms, parsers/serializers, migrations, security-sensitive normalization, tricky state machines, or performance-critical functions with stable internal contracts.
 - Do not add production methods used only by tests; put cleanup and fixtures in test utilities.
 - Mock only the slow, external, or nondeterministic boundary. Preserve side effects the behavior under test depends on.
 - Mock data must match the real shape consumed downstream.
-- Edge cases should target real boundaries: empty, singleton, maximum, exact page size, nullability, retries exhausted, cancellation, partial failure.
+- Edge cases should target real contract boundaries: empty, singleton, maximum, exact page size, nullability, retries exhausted, cancellation, partial failure.
+- Do not chase coverage numbers or exhaustive internal tests in low-risk MVP work; add regression tests for bugs that were actually found.
 
 ### Efficiency
 

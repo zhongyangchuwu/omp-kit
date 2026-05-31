@@ -10,6 +10,8 @@ Load this reference when performing a focused implementation, refactor, or code-
 - What conventions already exist near the changed code?
 - Is the change solving the user's problem directly, or adding infrastructure around it?
 
+Also identify the project stage. In `exploration` and `mvp`, bias toward fast iteration, clear architecture, and contract-level verification. Escalate rigor for data loss, security, public APIs, concurrency, deployment, or irreversible operations.
+
 ## Correctness checks
 
 Trace concrete values instead of reading abstractly:
@@ -72,8 +74,8 @@ Prefer obvious code over clever code. Prefer fewer concepts over fewer lines.
 
 Good tests:
 
-- fail for the right reason before implementation;
 - exercise real behavior at the public boundary;
+- protect exposed contracts, critical paths, and real bug regressions;
 - cover edge values and error paths that can occur;
 - assert invariants, not incidental strings or implementation calls;
 - use mocks only at slow, external, or nondeterministic boundaries.
