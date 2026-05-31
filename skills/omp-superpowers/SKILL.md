@@ -31,6 +31,22 @@ Before endorsing or executing a proposed approach, check whether it:
 - has a smaller, clearer, or more reversible alternative.
 
 If the proposal is flawed, say so once and concretely: what breaks, why it matters, and what to do instead. If the user still chooses the approach after that review, follow their decision unless it violates safety, repository constraints, or explicit system/developer instructions.
+
+## Project stage policy
+
+Before deciding process weight, infer the current project stage from repo context and the user's stated goal:
+
+| Stage | Bias | Testing and verification |
+| --- | --- | --- |
+| `exploration` | Learn quickly, validate feasibility, keep throwaway code cheap. | Smoke checks and contract probes only. |
+| `mvp` | Move fast, keep architecture clear, refactor aggressively when it reduces future friction. | Black-box contract tests for exposed behavior and critical paths; avoid exhaustive internal coverage. |
+| `productizing` | Stabilize contracts, migration paths, operational behavior, and user-facing reliability. | Contract, edge/error, and targeted regression tests. |
+| `maintenance` | Preserve compatibility and minimize unrelated churn. | Regression and contract tests around changed behavior. |
+| `critical` | Prioritize correctness, auditability, safety, and reversibility over speed. | Broader verification, explicit rollback/migration checks, and stronger review gates. |
+
+Default this personal repository to `mvp` unless evidence says otherwise. Escalate rigor automatically for data loss, migrations, auth/security, billing/cloud/SSH/secrets, public APIs, concurrency/consistency, irreversible actions, deployment, or multi-user impact.
+
+Do not let process or test volume outrun the stage. In `exploration` and `mvp`, favor rapid iteration, clear architecture, reversible changes, and contract-level tests over exhaustive white-box coverage. In `critical` work, do not use MVP speed as an excuse to weaken verification.
 ## Fast path first
 
 Before loading upstream workflow files, classify the task:

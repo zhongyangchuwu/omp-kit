@@ -99,6 +99,18 @@ def test_omp_superpowers_reviews_user_proposals_before_execution() -> None:
     assert "say so once and concretely" in text
     assert "smaller, clearer, or more reversible alternative" in text
 
+
+
+def test_omp_superpowers_defines_project_stage_policy() -> None:
+    skill_md = ROOT / "skills" / "omp-superpowers" / "SKILL.md"
+    text = skill_md.read_text(encoding="utf-8")
+
+    assert "Project stage policy" in text
+    for stage in ["exploration", "mvp", "productizing", "maintenance", "critical"]:
+        assert f"`{stage}`" in text
+    assert "Default this personal repository to `mvp`" in text
+    assert "Escalate rigor automatically" in text
+    assert "contract-level tests over exhaustive white-box coverage" in text
 def test_omp_superpowers_nested_skills_are_reference_only() -> None:
     data = load_registry()
     active_skill_names = set(data.get("skills", {}))
