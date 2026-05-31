@@ -4,11 +4,18 @@ status: draft
 path: drafts/doc-coauthoring
 
 source:
-  type: upstream-localized
+  type: upstream-derived
   origin: references/anthropic-skills/skills/doc-coauthoring
-  upstream: https://github.com/anthropics/skills
+  references:
+    - label: anthropic-skills
+      path: references/anthropic-skills
+      repository: https://github.com/anthropics/skills.git
+      branch: main
+      commit: 6f4e9f344d769602007277996c020a40259f984f
   imported: "2026-05-29"
   promoted: "2026-05-30"
+  notes:
+    - Preserved draft used to promote skills/doc-coauthoring.
 
 risk:
   level: low

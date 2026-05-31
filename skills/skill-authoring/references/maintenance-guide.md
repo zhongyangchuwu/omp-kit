@@ -41,7 +41,7 @@ Update `resource.yaml` maintenance notes when:
 - you change the activation policy or risk level;
 - you discover a false trigger, missed trigger, or unsafe instruction;
 - you add or remove scripts, references, or verification commands;
-- you promote a skill from incoming or localized.
+- you promote a skill from drafts.
 
 ## Update workflow
 
@@ -59,7 +59,7 @@ A skill should be archived when it is no longer correct, useful, or safe. Instea
 status: archived
 ```
 
-And remove it from `skills/`. The archived source can be kept under `incoming/` or `localized/` for history. Do not leave obsolete skills in active scan paths.
+And remove it from `skills/`. The archived source can be kept under `drafts/` or reconstructed from `source.references`. Do not leave obsolete skills in active scan paths.
 
 ## Quality checklist
 

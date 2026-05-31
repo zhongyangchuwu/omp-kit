@@ -51,17 +51,11 @@ def test_active_skill_frontmatter_name_matches_registry_key() -> None:
         assert frontmatter.get("description")
 
 
-def test_staged_incoming_entries_are_not_active_skills() -> None:
+def test_draft_entries_are_not_linked_from_active_skills() -> None:
     data = load_registry()
-    active_skill_names = {
-        path.name
-        for path in (ROOT / "skills").iterdir()
-        if path.is_dir() and (path / "SKILL.md").is_file()
-    }
-    for name, entry in data.get("incoming", {}).items():
-        assert entry.get("status") == "staged"
-        assert name not in active_skill_names
-        assert not str(entry["path"]).startswith("skills/")
+    for _name, entry in data.get("drafts", {}).items():
+        assert entry.get("status") == "draft"
+        assert str(entry["path"]).startswith("drafts/")
 
 
 def test_omp_superpowers_has_fast_path_activation() -> None:

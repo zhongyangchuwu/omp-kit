@@ -4,11 +4,20 @@ status: active
 path: skills/omp-superpowers
 
 source:
-  type: upstream-localized
-  origin: references/superpowers
-  upstream: /home/han/.omp/plugins/cache/plugins/superpowers-marketplace___superpowers___5.1.0
+  type: upstream-derived
+  origin: skills/omp-superpowers/references
+  references:
+    - label: superpowers
+      path: skills/omp-superpowers/references
+      repository: https://github.com/obra/superpowers.git
+      branch: null
+      commit: null
   imported: "2026-05-29"
-  localized: "2026-05-29"
+  promoted: null
+  notes:
+    - Derived from upstream Superpowers source material and adapted for Oh My Pi activation and tool policy.
+    - Reference commit is unknown because the retained copy is vendored under this skill rather than kept as a git checkout.
+    - The upstream repository is a reference source, not an obligation to preserve upstream activation behavior.
 
 risk:
   level: medium
@@ -26,14 +35,15 @@ verification:
     - Upstream nested skills must remain under references/skills and not become active skills.
 
 maintenance:
-  last_reviewed: "2026-05-29"
+  last_reviewed: "2026-05-31"
   notes:
     - Upstream bootstrap auto-activation is intentionally narrowed to non-trivial software work with a local fast path for simple tasks.
     - OMP localization notes must keep Oh My Pi tool mappings and fast-path policy current.
+    - Upstream Superpowers source content is vendored inside this skill under references/; the duplicate top-level references/superpowers copy is not required.
 
 relationships:
   extensions: []
   tools: []
   packages: []
   upstream:
-    - references/superpowers
+    - https://github.com/obra/superpowers

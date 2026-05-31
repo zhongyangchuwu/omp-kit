@@ -6,6 +6,10 @@ path: skills/autodl
 source:
   type: self
   origin: null
+  references: []
+  imported: null
+  promoted: null
+  notes: []
 
 risk:
   level: high

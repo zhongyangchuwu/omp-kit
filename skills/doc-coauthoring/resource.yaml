@@ -4,12 +4,23 @@ status: active
 path: skills/doc-coauthoring
 
 source:
-  type: upstream-localized
+  type: upstream-derived
   origin: references/anthropic-skills/skills/doc-coauthoring
-  draft: drafts/doc-coauthoring
-  upstream: https://github.com/anthropics/skills
+  references:
+    - label: anthropic-skills
+      path: references/anthropic-skills
+      repository: https://github.com/anthropics/skills.git
+      branch: main
+      commit: 6f4e9f344d769602007277996c020a40259f984f
+    - label: reviewed-draft
+      path: drafts/doc-coauthoring
+      repository: null
+      branch: null
+      commit: null
   imported: "2026-05-29"
   promoted: "2026-05-30"
+  notes:
+    - Derived from Anthropic doc-coauthoring source material and adapted to Oh My Pi tools.
 
 risk:
   level: low

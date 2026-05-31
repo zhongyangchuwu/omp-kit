@@ -18,6 +18,10 @@ skills:
     risk: low
     path: skills/skill-authoring
 drafts:
+  code-taste:
+    status: draft
+    risk: low
+    path: drafts/code-taste
   doc-coauthoring:
     status: draft
     risk: low

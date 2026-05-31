@@ -90,7 +90,7 @@ def promote_skill(*, source: Path, name: str | None, activation: str, risk: str,
         ],
         maintenance_last_reviewed=date.today().isoformat(),
         maintenance_notes=["Created by scripts/promote_skill.py.", f"Draft retained at {relative_source}."],
-        upstream=[],
+        related_upstream=[relative_source],
     )
     write_resource_metadata(destination, metadata)
     regenerate_registry(repo_root)

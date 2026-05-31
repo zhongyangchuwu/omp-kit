@@ -4,6 +4,22 @@ Every tracked repository resource owns a `resource.yaml` file. `registry.yaml` i
 
 Top-level `references/` is the exception: it is local, gitignored source material for upstream repositories, books, downloaded docs, and other external references. It is intentionally outside the resource model.
 
+## Schema
+
+Resource metadata is validated against `schemas/resource.schema.yaml` using JSON Schema 2020-12. Keep field-shape changes in that schema first, then update examples, resource files, and tests.
+
+For YAML language-server support, map `schemas/resource.schema.yaml` to:
+
+```text
+skills/*/resource.yaml
+drafts/*/resource.yaml
+extensions/*/resource.yaml
+tools/*/resource.yaml
+packages/*/resource.yaml
+```
+
+The schema handles required fields, types, enums, and nested source-reference shapes. Repository-specific invariants remain in `scripts/resource_metadata.py`: resource `name` must match the directory, `path` must match the actual path and exist, draft resources must live under `drafts/`, and generated registry keys must be unique.
+
 ## resource.yaml
 
 ### Where it lives
@@ -18,79 +34,102 @@ drafts/<name>/resource.yaml
 
 Draft skill metadata uses `kind: skill` and `status: draft`; active skill metadata uses `kind: skill` and `status: active`.
 
-### Schema
+### Example
 
 ```yaml
-name: autodl
+name: code-taste
 kind: skill
-status: active
-path: skills/autodl
+status: draft
+path: drafts/code-taste
 
 source:
-  type: self
-  origin: null
-  upstream: null
+  type: upstream-derived
+  origin: references/compound-engineering-plugin; references/agents; skills/omp-superpowers/references
+  references:
+    - label: compound-engineering-plugin
+      path: references/compound-engineering-plugin
+      repository: https://github.com/EveryInc/compound-engineering-plugin.git
+      branch: main
+      commit: 85987d496fdfdc8a18faf592fd53329e23266537
+    - label: agents
+      path: references/agents
+      repository: https://github.com/wshobson/agents.git
+      branch: main
+      commit: 0818067b4ecad18c234b2ae427cc44f2053792d4
   imported: null
   promoted: null
+  notes:
+    - Reference sources informed this draft but do not define its activation policy or local design.
 
 risk:
-  level: high
-  reason: Controls paid GPU resources and SSH access.
+  level: low
+  reason: Instruction-only code quality guidance.
 
 activation:
-  mode: automatic
-  notes: Use when managing AutoDL GPU instances, checking balance or stock, running SSH smoke tests.
+  mode: not-applicable
+  notes: Draft skill; not active.
 
 verification:
   commands:
-    - uv run --project skills/autodl pytest skills/autodl/tests
+    - just test
   notes:
-    - skills-ref validate skills/autodl when skills-ref is available.
+    - Validate metadata and generated registry.
 
 maintenance:
-  last_reviewed: "2026-05-28"
+  last_reviewed: "2026-05-31"
   notes:
-    - Keep secrets out of committed files.
+    - Keep this skill focused on code-level judgment.
 
 relationships:
   extensions: []
   tools: []
   packages: []
-  upstream: []
+  upstream:
+    - references/compound-engineering-plugin
 ```
 
 ### Field reference
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `name` | string | yes | Matches the resource directory name. |
-| `kind` | enum | yes | `skill`, `extension`, `tool`, `package` |
-| `status` | enum | yes | `active`, `draft`, `archived` |
-| `path` | string | yes | Repo-relative path to the resource directory. |
-| `source.type` | string | yes | `self`, `third-party`, `upstream-localized`, `promoted-local`, or another explicit source classifier. |
-| `source.origin` | string\|null | — | Where the material was copied from or derived from, if tracked. May point at a local `references/` path even though references are gitignored. |
-| `source.upstream` | string\|null | — | URL or human-readable upstream reference. |
-| `source.imported` | string\|null | — | ISO date when the material was first copied or recorded as a tracked draft/resource. |
-| `source.promoted` | string\|null | — | ISO date when the resource was promoted to active. |
-| `risk.level` | enum | yes | `low`, `medium`, `high` |
+| `name` | string | yes | Kebab-case name matching the resource directory. |
+| `kind` | enum | yes | `skill`, `extension`, `tool`, `package`. |
+| `status` | enum | yes | `active`, `draft`, `archived`. |
+| `path` | string | yes | Repo-relative path to the resource directory; must match actual location. |
+| `source.type` | string | yes | `self`, `upstream-derived`, `promoted-local`, or another explicit classifier. |
+| `source.origin` | string\|null | yes | Human-readable primary origin. May be a local path, multiple paths, or null for self-authored resources. |
+| `source.references` | list | yes | Reference inputs that informed this resource. These are provenance/reference records, not obligations to follow upstream design. |
+| `source.references[].label` | string | yes | Short source label. |
+| `source.references[].path` | string\|null | yes | Local source path when present. |
+| `source.references[].repository` | string\|null | yes | Upstream repository URL when known. |
+| `source.references[].branch` | string\|null | yes | Source branch when known from a git checkout. |
+| `source.references[].commit` | string\|null | yes | Source commit when known from a git checkout. Never fabricate; use null when the retained source is not tied to a verified commit. |
+| `source.imported` | string\|null | yes | ISO date when material was first copied or recorded. |
+| `source.promoted` | string\|null | yes | ISO date when a draft/resource was promoted to active. |
+| `source.notes` | list[string] | yes | Free-form provenance notes. |
+| `risk.level` | enum | yes | `low`, `medium`, `high`. |
 | `risk.reason` | string | yes | Human-readable risk rationale. |
-| `activation.mode` | enum | yes | `automatic`, `explicit-only`, `manual`, `not-applicable` |
+| `activation.mode` | enum | yes | `automatic`, `explicit-only`, `manual`, `not-applicable`. |
 | `activation.notes` | string | yes | When or whether the agent should activate this resource. Draft resources use `not-applicable`. |
-| `verification.commands` | list | yes | Commands runnable from the repository root. |
-| `verification.notes` | list | yes | Additional verification guidance. |
+| `verification.commands` | list[string] | yes | Commands runnable from the repository root. |
+| `verification.notes` | list[string] | yes | Additional verification guidance. |
 | `maintenance.last_reviewed` | string | yes | ISO date of last review. |
-| `maintenance.notes` | list | yes | Free-form maintenance notes. |
-| `relationships.*` | list | yes | Links to related tracked resources or upstream references. |
+| `maintenance.notes` | list[string] | yes | Free-form maintenance notes. |
+| `relationships.*` | list[string] | yes | Links to related tracked resources or reference paths. |
 
-### Kind to registry mapping
+## Reference provenance semantics
 
-| Resource path / `kind` | `registry.yaml` group |
-| --- | --- |
-| `skills/<name>` with `kind: skill` | `skills` |
-| `drafts/<name>` with `kind: skill` | `drafts` |
-| `extensions/<name>` with `kind: extension` | `extensions` |
-| `tools/<name>` with `kind: tool` | `tools` |
-| `packages/<name>` with `kind: package` | `packages` |
+`source.references` records where ideas, source text, or implementation patterns came from. It does not mean the local resource remains semantically aligned with that upstream. A local skill can deliberately diverge after review, especially during MVP-stage iteration.
+
+When a reference is a git checkout under `references/`, record:
+
+```bash
+git -C references/<name> remote --verbose
+git -C references/<name> branch --show-current
+git -C references/<name> rev-parse HEAD
+```
+
+Use `null` for `branch` or `commit` when the source is vendored, copied from a cache, or otherwise not tied to a verified git revision.
 
 ## registry.yaml
 

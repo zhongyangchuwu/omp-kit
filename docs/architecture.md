@@ -8,7 +8,7 @@ This repository is the canonical workbench for maintained personal agent capabil
 
 - `registry.yaml` is the index of record, not a policy database.
 - Active skills live only in `skills/`.
-- Unreviewed third-party material lives in `incoming/` or `vendor/`, never directly in active runtime directories.
+- External source material lives in `references/`; active capabilities live in tracked resource directories only after review.
 - Detailed constraints live with the resource they govern.
 - Python maintenance scripts provide repository automation.
 - Tests validate registry consistency, script behavior, and active skill safety invariants.
@@ -21,9 +21,8 @@ skills/          Active skills linked into agent runtimes.
 extensions/      Reserved for OMP-native runtime extensions.
 tools/           Reserved for deterministic local CLIs/libraries.
 packages/        Reserved for Pi/OMP installable capability bundles.
-incoming/        Quarantine and staging area for third-party or draft skills.
-vendor/          Reserved for upstream mirrors, submodules, or immutable snapshots.
-localized/       Reserved for reviewed/adapted candidates before promotion.
+references/      Gitignored upstream source/reference material.
+drafts/          Tracked in-progress resources before promotion.
 mcp/             Reserved for MCP servers and portable config templates.
 mcp/configs/     Reserved for example MCP config files without secrets.
 docs/            Project documentation.
@@ -59,15 +58,15 @@ Tools are deterministic implementations. They should be testable without the mod
 
 Packages are future installable bundles. A package may combine skills, extensions, prompts, themes, and metadata into one opt-in unit.
 
-### Incoming, vendor, and localized
+### References and drafts
 
-Third-party intake should flow through isolation stages:
+External material is kept under gitignored `references/` while it is being studied or mined for ideas. Durable in-progress work lives under tracked `drafts/` with resource metadata:
 
 ```text
-vendor/ or incoming/ -> review -> localized/ -> active resource directory -> registry.yaml
+references/ -> review/extract -> drafts/<name> -> active resource directory -> registry.yaml
 ```
 
-`incoming/` is for staged material under review. `vendor/` is for preserving upstream source snapshots. `localized/` is for reviewed and adapted candidates not yet promoted.
+Do not treat upstream references as design authority. `resource.yaml` records references for provenance; local skills may deliberately diverge after review, especially during MVP-stage iteration.
 
 ## Registry model
 
@@ -107,8 +106,7 @@ skills
 extensions
 tools
 packages
-incoming
-imports
+drafts
 ```
 
 Generated entries contain only:
@@ -125,7 +123,7 @@ Detailed policy belongs in `resource.yaml` and resource-local files:
 - extension behavior: extension-local metadata and `resource.yaml`;
 - tool behavior: tool-native config such as `pyproject.toml` or `package.json`, plus `resource.yaml`;
 - package behavior: package manifest plus `resource.yaml`;
-- staged review details: `incoming/<name>/resource.yaml` and `incoming/REVIEW.md` index notes.
+- draft review details: `drafts/<name>/resource.yaml` and resource-local notes.
 
 ## Maintenance scripts
 
@@ -136,11 +134,10 @@ scripts/build_registry.py     Generates or checks registry.yaml from resource.ya
 scripts/validate_registry.py  Validates generated registry shape and drift.
 scripts/build_index.py        Prints a compact index from registry.yaml.
 scripts/scan_risk.py          Scans a directory for review-worthy risk indicators.
-scripts/import_skill.py       Imports local directories into incoming/ with resource metadata.
-scripts/promote_skill.py      Safely copies reviewed incoming/localized skills into skills/.
+scripts/promote_skill.py      Safely copies reviewed draft skills into skills/.
 ```
 
-Import and promotion scripts are intentionally local-path only; they do not download network sources or overwrite existing resource directories.
+Promotion scripts are intentionally local-path only; they do not download network sources or overwrite existing resource directories.
 
 ## Testing strategy
 
@@ -153,7 +150,7 @@ Repository tests cover:
 - resource path and name consistency;
 - generated `registry.yaml` matching `resource.yaml` files;
 - active skill frontmatter name matching;
-- incoming entries staying out of active `skills/`;
+- draft entries staying out of active `skills/`;
 - `omp-superpowers` fast-path activation and nested-skill encapsulation invariants;
 - maintenance script behavior;
 - safe skill-linking behavior.
@@ -165,7 +162,7 @@ Repository tests cover:
 The next upgrade phases should be incremental:
 
 1. Promote `autodl` into the first full high-risk package.
-2. Classify and process `incoming/claude-plugins-official` staged imports.
+2. Continue mining `references/claude-plugins-official` and other source checkouts selectively into drafts.
 3. Add OMP extension linking only after real extensions exist.
 4. Add detailed operation guides after the framework stabilizes.
 

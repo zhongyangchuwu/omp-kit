@@ -6,6 +6,10 @@ path: skills/skill-authoring
 source:
   type: self
   origin: null
+  references: []
+  imported: null
+  promoted: null
+  notes: []
 
 risk:
   level: low

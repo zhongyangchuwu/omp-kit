@@ -1,0 +1,187 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://example.local/personal-skills/resource.schema.yaml
+title: Personal Skills Resource Metadata
+type: object
+additionalProperties: false
+required:
+  - name
+  - kind
+  - status
+  - path
+  - source
+  - risk
+  - activation
+  - verification
+  - maintenance
+  - relationships
+properties:
+  name:
+    type: string
+    minLength: 1
+    pattern: "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+  kind:
+    type: string
+    enum:
+      - skill
+      - extension
+      - tool
+      - package
+  status:
+    type: string
+    enum:
+      - active
+      - archived
+      - draft
+  path:
+    type: string
+    minLength: 1
+  source:
+    type: object
+    additionalProperties: false
+    required:
+      - type
+      - origin
+      - references
+      - imported
+      - promoted
+      - notes
+    properties:
+      type:
+        type: string
+        minLength: 1
+      origin:
+        type:
+          - string
+          - "null"
+      references:
+        type: array
+        items:
+          $ref: "#/$defs/source_reference"
+      imported:
+        type:
+          - string
+          - "null"
+      promoted:
+        type:
+          - string
+          - "null"
+      notes:
+        type: array
+        items:
+          type: string
+  risk:
+    type: object
+    additionalProperties: false
+    required:
+      - level
+      - reason
+    properties:
+      level:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+      reason:
+        type: string
+        minLength: 1
+  activation:
+    type: object
+    additionalProperties: false
+    required:
+      - mode
+      - notes
+    properties:
+      mode:
+        type: string
+        enum:
+          - automatic
+          - explicit-only
+          - manual
+          - not-applicable
+      notes:
+        type: string
+  verification:
+    type: object
+    additionalProperties: false
+    required:
+      - commands
+      - notes
+    properties:
+      commands:
+        type: array
+        items:
+          type: string
+      notes:
+        type: array
+        items:
+          type: string
+  maintenance:
+    type: object
+    additionalProperties: false
+    required:
+      - last_reviewed
+      - notes
+    properties:
+      last_reviewed:
+        type: string
+        minLength: 1
+      notes:
+        type: array
+        items:
+          type: string
+  relationships:
+    type: object
+    additionalProperties: false
+    required:
+      - extensions
+      - tools
+      - packages
+      - upstream
+    properties:
+      extensions:
+        type: array
+        items:
+          type: string
+      tools:
+        type: array
+        items:
+          type: string
+      packages:
+        type: array
+        items:
+          type: string
+      upstream:
+        type: array
+        items:
+          type: string
+$defs:
+  source_reference:
+    type: object
+    additionalProperties: false
+    required:
+      - label
+      - path
+      - repository
+      - branch
+      - commit
+    properties:
+      label:
+        type: string
+        minLength: 1
+      path:
+        type:
+          - string
+          - "null"
+      repository:
+        type:
+          - string
+          - "null"
+      branch:
+        type:
+          - string
+          - "null"
+      commit:
+        type:
+          - string
+          - "null"

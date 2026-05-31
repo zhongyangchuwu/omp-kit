@@ -4,6 +4,8 @@ from pathlib import Path
 
 import yaml
 
+from jsonschema import Draft202012Validator
+
 from scripts.resource_metadata import (
     ALLOWED_ACTIVATION_MODES,
     ALLOWED_KINDS,
@@ -13,6 +15,7 @@ from scripts.resource_metadata import (
     build_registry,
     discover_resources,
     format_registry,
+    load_resource_schema,
     validate_resources,
 )
 from scripts.validate_registry import parse_frontmatter
@@ -23,6 +26,17 @@ REGISTRY = ROOT / "registry.yaml"
 
 def resources():
     return discover_resources(ROOT)
+
+def test_resource_schema_is_valid_json_schema() -> None:
+    Draft202012Validator.check_schema(load_resource_schema(ROOT))
+
+
+def test_resource_schema_defines_reference_provenance() -> None:
+    schema = load_resource_schema(ROOT)
+    source = schema["properties"]["source"]
+    assert "references" in source["required"]
+    reference = schema["$defs"]["source_reference"]
+    assert reference["required"] == ["label", "path", "repository", "branch", "commit"]
 
 
 def test_resource_metadata_files_validate() -> None:
@@ -36,11 +50,10 @@ def test_every_registry_resource_has_resource_yaml() -> None:
     expected = set()
     for group, kind in {
         "skills": "skill",
+        "drafts": "skill",
         "extensions": "extension",
         "tools": "tool",
         "packages": "package",
-        "incoming": "incoming",
-        "imports": "import",
     }.items():
         for name in registry.get(group, {}):
             expected.add((kind, name))

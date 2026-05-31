@@ -21,15 +21,16 @@ This repository makes skills auditable, testable, reviewable, and reversible:
 | `doc-coauthoring` | Low | Structured workflow for co-authoring specs, RFCs, proposals, decision docs |
 | `omp-superpowers` | Medium | Superpowers development methodology with fast path for simple tasks |
 
-## Staged imports
+## External references
 
-Third-party material under `incoming/`. Not active until reviewed and promoted.
+Third-party source material lives under `references/` and is not active until reviewed and incorporated into a tracked skill, draft, tool, package, or documentation artifact.
 
 | Collection | Status |
 | --- | --- |
-| `incoming/anthropic-skills` | 17 skills classified in `review.yaml`; 1 promoted |
-| `incoming/claude-plugins-official` | 28 skills, not yet classified |
-| `incoming/superpowers` | Preserved source copy of upstream Superpowers collection |
+| `references/anthropic-skills` | 17 skills classified in `review.yaml`; `doc-coauthoring` promoted |
+| `references/claude-plugins-official` | Official Claude plugin examples; staged for selective review |
+| `references/compound-engineering-plugin` | Engineering workflow, review persona, and converter reference material |
+| `references/agents` | Marketplace-scale agent, skill, command, and adapter reference material |
 
 ## Layout
 
@@ -38,9 +39,8 @@ skills/          Active skills
 extensions/      OMP extensions (reserved)
 tools/           Deterministic CLIs/libraries (reserved)
 packages/        Pi/OMP capability bundles (reserved)
-incoming/        Third-party quarantine
-vendor/          Upstream source mirrors (reserved)
-localized/       Reviewed candidates before promotion
+references/      Local upstream source/reference material (gitignored)
+drafts/          In-progress skills before promotion
 mcp/             MCP servers and configs (reserved)
 docs/            Project documentation
 scripts/         Maintenance automation
@@ -59,8 +59,7 @@ just validate-registry    # validate generated registry and resource metadata
 just build-index          # print compact registry index
 just scan-risk PATH       # scan a directory for risk indicators
 
-just import-skill PATH --name NAME   # import local dir into incoming/
-just promote-skill PATH --name NAME  # promote localized skill into skills/
+just promote-skill drafts/NAME --name NAME  # promote reviewed draft skill into skills/
 
 just test                 # run all repository tests
 ```

@@ -33,14 +33,15 @@ Use your agent or runtime's file listing and content search tools. In restricted
 
 ## Review workflow
 
-1. Keep the skill in `incoming/`.
+1. Keep external source material under `references/` while reviewing it.
 2. Read the main file and identify intended behavior.
 3. Inspect every executable file and manifest.
 4. Check links and assets for hidden instructions or unsafe placeholders.
 5. Remove or quarantine runtime-specific fields that are not needed.
-6. Run structural validation if available.
-7. Decide: approve, modify before use, or reject.
-8. Record source and review result in maintenance notes or registry.
+6. Copy only reviewed, useful material into a tracked `drafts/<name>` resource.
+7. Run structural validation if available.
+8. Decide: approve, modify before use, or reject.
+9. Record source references and review result in `resource.yaml` maintenance/source notes.
 
 ## Verdict format
 
