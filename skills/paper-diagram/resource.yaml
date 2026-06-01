@@ -1,0 +1,69 @@
+name: paper-diagram
+kind: skill
+status: active
+path: skills/paper-diagram
+
+source:
+  type: self
+  origin: null
+  references:
+    - label: ppt-master
+      path: references/ppt-master
+      repository: null
+      branch: null
+      commit: null
+    - label: anthropic-pptx
+      path: references/anthropic-skills/skills/pptx
+      repository: https://github.com/anthropics/skills.git
+      branch: main
+      commit: null
+  imported: null
+  promoted: null
+  notes:
+    - "soffice.py sandbox logic localized from anthropic-pptx into scripts/convert.py."
+    - "Design conventions derived from ppt-master SVG pipeline and anthropic-pptx style guide."
+
+risk:
+  level: medium
+  reason: >
+    Bundled script runs LibreOffice (soffice) as a subprocess for PPTX→PDF
+    conversion and may compile C code as a sandbox fallback. No network access,
+    no API keys, no secrets. Python dependencies: python-pptx, Pillow.
+
+activation:
+  mode: automatic
+  notes: >
+    Activate when user provides an image and wants it redrawn for academic
+    papers (flowcharts, architecture diagrams, pipeline figures). Keywords:
+    "redraw", "remake for paper", "publication figure", "论文用图", "重画".
+
+verification:
+  commands:
+    - "python3 -c \"import pptx; print('python-pptx OK')\""
+    - "python3 -c \"from PIL import Image; print('Pillow OK')\""
+    - "which soffice || echo 'WARNING: soffice not found'"
+    - "which pdftoppm || echo 'WARNING: pdftoppm not found'"
+  notes:
+    - "The skill instructs the LLM to write and execute python-pptx scripts."
+    - "convert.py requires LibreOffice + Poppler for PPTX→PDF→image pipeline."
+
+maintenance:
+  last_reviewed: "2026-06-01"
+  notes:
+    - "Initial creation."
+    - "Color palettes and spacing derived from academic publishing conventions."
+    - "Sandbox shim code localized from anthropic-skills/pptx/scripts/office/soffice.py."
+
+relationships:
+  extensions: []
+  tools:
+    - LibreOffice (soffice)
+    - Poppler (pdftoppm)
+    - python-pptx
+    - Pillow
+  packages:
+    - python-pptx>=0.6.21
+    - Pillow>=9.0.0
+  upstream:
+    - references/ppt-master
+    - references/anthropic-skills/skills/pptx

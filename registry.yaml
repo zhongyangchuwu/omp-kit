@@ -13,6 +13,10 @@ skills:
     status: active
     risk: medium
     path: skills/omp-superpowers
+  paper-diagram:
+    status: active
+    risk: medium
+    path: skills/paper-diagram
   skill-authoring:
     status: active
     risk: low
