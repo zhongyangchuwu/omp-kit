@@ -25,6 +25,26 @@ Prefer double-column width unless the diagram is narrow and simple.
 | Caption numbers | Arial / Helvetica | 8 pt | Bold | (a), (b), ①, ② markers |
 | Monospace (code/paths) | Consolas / Courier New | 7.5-8 pt | Regular | For code snippets in diagrams |
 
+
+### CJK (Chinese / Japanese / Korean) Text
+
+When diagrams include Chinese, Japanese, or Korean labels:
+
+- **Font**: use `"Microsoft YaHei"` (Windows), `"PingFang SC"` (macOS),
+  or `"Noto Sans CJK SC"` (Linux).  Set `font_name` accordingly.
+- **Size compensation**: CJK characters appear visually smaller than Latin
+  at the same point size.  Use **0.5–1 pt larger** than the Latin equivalent
+  (e.g., 9.5 pt CJK labels where 9 pt Latin would be used).
+- **Fullwidth punctuation**: characters like `""` (U+201C/U+201D),
+  `（）` (U+FF08/U+FF09), `：` (U+FF1A) are multi-byte and must be
+  enclosed in Python string literals correctly.  Use raw strings
+  (`r"…"`) or escape only when necessary.
+- **Mixed Latin-CJK width**: a CJK character is roughly 2× the width of a
+  Latin character.  When estimating text width for box sizing, treat each
+  CJK char as 2 Latin chars.  Add 15–20 % width buffer beyond the estimate.
+- **python-pptx encoding**: if a string containing CJK characters causes a
+  `UnicodeEncodeError`, ensure the script file is saved as UTF-8 and the
+  Python source encoding is declared: `# -*- coding: utf-8 -*-`.
 - Font size must be ≥ 7 pt — smaller is illegible in print.
 - Declare `font-size: 8pt` via `Pt(8)`.
 - Do not use font names that are unlikely to be installed (e.g., "CustomFont").
