@@ -1,5 +1,13 @@
 set dotenv-load := false
 
+# Install active skills into ~/.agents/skills.
+install *args:
+    uv run python scripts/link_skills.py {{args}}
+
+# Replace stale ~/.agents/skills symlinks and prune old repository skill names.
+install-force:
+    uv run python scripts/link_skills.py --force --prune
+
 # Link every skill under ./skills into ~/.agents/skills.
 link-skills *args:
     uv run python scripts/link_skills.py {{args}}

@@ -5,6 +5,10 @@ skills:
     status: active
     risk: high
     path: skills/autodl
+  code-taste:
+    status: active
+    risk: low
+    path: skills/code-taste
   doc-coauthoring:
     status: active
     risk: low

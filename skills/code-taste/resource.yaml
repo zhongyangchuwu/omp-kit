@@ -1,0 +1,73 @@
+name: code-taste
+kind: skill
+status: active
+path: skills/code-taste
+
+source:
+  type: promoted-local
+  origin: drafts/code-taste
+  references:
+    - label: compound-engineering-plugin
+      path: references/compound-engineering-plugin
+      repository: https://github.com/EveryInc/compound-engineering-plugin.git
+      branch: main
+      commit: 85987d496fdfdc8a18faf592fd53329e23266537
+    - label: agents
+      path: references/agents
+      repository: https://github.com/wshobson/agents.git
+      branch: main
+      commit: 0818067b4ecad18c234b2ae427cc44f2053792d4
+    - label: omp-superpowers
+      path: skills/omp-superpowers/references
+      repository: https://github.com/obra/superpowers.git
+      branch: null
+      commit: null
+  imported: null
+  promoted: "2026-06-02"
+  notes:
+    - "Promoted from drafts/code-taste with explicit-only activation to avoid broad overlap with omp-superpowers."
+    - "Reference sources informed this skill but do not define its activation policy or local design."
+
+risk:
+  level: low
+  reason: "Instruction-only code quality guidance; no scripts, network access, secrets, or destructive operations."
+
+activation:
+  mode: explicit-only
+  notes: >
+    Use only when the user explicitly asks for code-taste guidance, code-level
+    judgment, maintainability review, simplification, API-shape critique,
+    error-handling critique, performance-discipline review, or test-quality
+    review. Keep omp-superpowers as the default workflow skill for broad
+    implementation tasks.
+
+verification:
+  commands:
+    - just test
+  notes:
+    - "Validate active metadata, registry consistency, and retained draft tests."
+    - "Draft retained at drafts/code-taste for review history."
+
+maintenance:
+  last_reviewed: "2026-06-02"
+  notes:
+    - "Promoted as explicit-only after trigger-boundary review."
+    - "Keep focused on code-level judgment; do not expand into architecture/RFC workflow."
+    - "Avoid becoming a generic design-pattern encyclopedia."
+
+relationships:
+  extensions: []
+  tools: []
+  packages: []
+  upstream:
+    - drafts/code-taste
+    - references/compound-engineering-plugin/plugins/compound-engineering/agents/ce-code-simplicity-reviewer.md
+    - references/compound-engineering-plugin/plugins/compound-engineering/agents/ce-maintainability-reviewer.md
+    - references/compound-engineering-plugin/plugins/compound-engineering/agents/ce-correctness-reviewer.md
+    - references/compound-engineering-plugin/plugins/compound-engineering/agents/ce-api-contract-reviewer.md
+    - references/compound-engineering-plugin/plugins/compound-engineering/agents/ce-performance-reviewer.md
+    - references/compound-engineering-plugin/plugins/compound-engineering/skills/ce-simplify-code/SKILL.md
+    - references/agents/plugins/code-refactoring
+    - references/agents/plugins/developer-essentials/skills/code-review-excellence
+    - references/agents/plugins/developer-essentials/skills/error-handling-patterns
+    - skills/omp-superpowers/references/skills/test-driven-development

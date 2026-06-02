@@ -1,15 +1,22 @@
 # Workflows
 
-## Setting up skill linking
+## Setting up active skill installation
 
-Active skills are symlinked into the agent configuration directory so the runtime discovers them.
+Active skills are symlinked into the agent configuration directory so the runtime discovers them. The current install command intentionally handles skills only; extension/tool/package install layouts are not defined yet.
 
 ```bash
-just link-skills          # symlink each active skills/* -> ~/.agents/skills/
-just link-skills-force    # replace stale symlinks and prune old names
+just install          # symlink each active skills/* -> ~/.agents/skills/
+just install-force    # replace stale symlinks and prune old repository skill names
 ```
 
-Run `link-skills-force` after adding, renaming, or removing active skills.
+Legacy aliases are retained:
+
+```bash
+just link-skills
+just link-skills-force
+```
+
+Run `install-force` after adding, renaming, or removing active skills.
 
 ## Adding or changing an active skill
 
@@ -91,7 +98,7 @@ After promotion, update the active `resource.yaml` source and maintenance notes 
 ```bash
 just build-registry
 just test
-just link-skills-force
+just install-force
 ```
 
 ## Before every commit
