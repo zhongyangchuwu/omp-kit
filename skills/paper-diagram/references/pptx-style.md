@@ -1,9 +1,29 @@
-# python-pptx Code Patterns by Diagram Type
+# PPTX Backend Style Guide
 
-Ready-to-adapt code fragments for common academic diagram types.
-All examples assume `references/academic-style.md` conventions.
+Use this backend only when the user explicitly needs PowerPoint editability.
+SVG is the default for publication PDF figures.  These python-pptx patterns
+are fallback examples for irregular layouts or manual PPTX reconstruction.
 
-## Imports (copy once at top of every script)
+Prefer `scripts/pptx_layout.py` (`Grid`, `add_box`, `add_arrow`) before using
+raw python-pptx coordinates.
+
+## Preferred Imports
+
+```python
+import sys
+sys.path.insert(0, "skills/paper-diagram/scripts")
+
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx_layout import Grid, add_arrow, add_box, add_group_box
+
+prs = Presentation()
+prs.slide_width  = Inches(7.0)   # double-column
+prs.slide_height = Inches(5.0)   # adjust from content
+slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank
+```
+
+## Raw python-pptx Imports (fallback only)
 
 ```python
 from pptx import Presentation
@@ -11,11 +31,6 @@ from pptx.util import Inches, Pt, Emu, Cm
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE, MSO_CONNECTOR
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
-
-prs = Presentation()
-prs.slide_width  = Inches(7.0)   # double-column
-prs.slide_height = Inches(5.0)   # adjust from original aspect
-slide = prs.slides.add_slide(prs.slide_layouts[6])  # blank
 ```
 
 ## Pattern 1: Flowchart (boxes + arrows)

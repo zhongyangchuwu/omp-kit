@@ -1,10 +1,9 @@
-"""Layout helpers for paper-diagram — declarative grid, semantic arrows, role colors.
+"""PPTX layout helpers for paper-diagram — Grid, semantic arrows, role colors.
 
-Import in LLM-generated reconstruction scripts to replace manual coordinate math.
+Import in LLM-generated PPTX reconstruction scripts to replace manual coordinate math.
 
 Usage:
-    from paper_diagram.layout import Grid, add_arrow, add_box, ROLE_COLORS, apply_role
-
+    from pptx_layout import Grid, add_arrow, add_box, ROLE_COLORS, apply_role
     grid = Grid(slide_w, slide_h, cols=3, col_widths=[1,2,1], gap=0.15)
 
     box_a = add_box(slide, *grid.cell(0, 0, height=0.6), text="Encoder", role="primary")

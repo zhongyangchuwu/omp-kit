@@ -2,9 +2,9 @@
 """Convert PPTX to PDF and preview image for paper-diagram QA.
 
 Usage:
-    python3 convert.py output.pptx              # → output.pdf + output.jpg
-    python3 convert.py output.pptx --dpi 150    # lower DPI for quick preview
-    python3 convert.py output.pptx --only pdf   # PDF only, no image
+    python3 pptx_export.py output.pptx              # → output.pdf + output.jpg
+    python3 pptx_export.py output.pptx --dpi 150    # lower DPI for quick preview
+    python3 pptx_export.py output.pptx --only pdf   # PDF only, no image
 
 Requires: LibreOffice (soffice) and Poppler (pdftoppm).
 """

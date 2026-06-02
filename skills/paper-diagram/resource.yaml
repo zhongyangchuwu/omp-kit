@@ -20,43 +20,48 @@ source:
   imported: null
   promoted: null
   notes:
-    - "soffice.py sandbox logic localized from anthropic-pptx into scripts/convert.py."
-    - "Design conventions derived from ppt-master SVG pipeline and anthropic-pptx style guide."
+    - "SVG backend rules derived from ppt-master SVG compatibility standards."
+    - "soffice.py sandbox logic localized from anthropic-pptx into scripts/pptx_export.py."
+    - "Default workflow is SVG-first; PPTX backend remains available for editable PowerPoint output."
 
 risk:
   level: medium
   reason: >
-    Bundled script runs LibreOffice (soffice) as a subprocess for PPTX→PDF
-    conversion and may compile C code as a sandbox fallback. No network access,
-    no API keys, no secrets. Python dependencies: python-pptx, Pillow.
+    Bundled scripts run external converters (rsvg-convert, soffice, pdftoppm)
+    as subprocesses for SVG/PPTX→PDF→JPG export. PPTX export may compile C
+    code as a sandbox fallback. No network access, no API keys, no secrets.
 
 activation:
   mode: automatic
   notes: >
-    Activate when user provides an image and wants it redrawn for academic
-    papers (flowcharts, architecture diagrams, pipeline figures). Keywords:
-    "redraw", "remake for paper", "publication figure", "论文用图", "重画".
+    Activate when user provides an image or text spec and wants a publication
+    diagram, paper figure, SVG/PDF asset, or editable PPTX fallback. Keywords:
+    "redraw", "remake for paper", "publication figure", "论文用图", "重画",
+    "SVG", "PDF figure", "LaTeX".
 
 verification:
   commands:
     - "python3 -c \"import pptx; print('python-pptx OK')\""
     - "python3 -c \"from PIL import Image; print('Pillow OK')\""
+    - "which rsvg-convert || echo 'WARNING: rsvg-convert not found'"
     - "which soffice || echo 'WARNING: soffice not found'"
     - "which pdftoppm || echo 'WARNING: pdftoppm not found'"
   notes:
-    - "The skill instructs the LLM to write and execute python-pptx scripts."
-    - "convert.py requires LibreOffice + Poppler for PPTX→PDF→image pipeline."
+    - "Default SVG backend uses scripts/svg_export.py."
+    - "PPTX fallback uses scripts/pptx_layout.py and scripts/pptx_export.py."
 
 maintenance:
   last_reviewed: "2026-06-01"
   notes:
-    - "Initial creation."
+    - "Initial creation as PPTX-first skill."
+    - "Refactored to SVG-first with unified Figure Spec and PPTX fallback."
     - "Color palettes and spacing derived from academic publishing conventions."
     - "Sandbox shim code localized from anthropic-skills/pptx/scripts/office/soffice.py."
 
 relationships:
   extensions: []
   tools:
+    - rsvg-convert
     - LibreOffice (soffice)
     - Poppler (pdftoppm)
     - python-pptx
