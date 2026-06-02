@@ -2,7 +2,7 @@
 
 ## Goal
 
-This repository is the canonical workbench for maintained personal agent capabilities. It should remain auditable, testable, installable, and reversible as it grows from skills into OMP extensions, deterministic tools, packages, and MCP integrations.
+Pi Kit is the canonical workbench for maintained Pi / Oh My Pi agent capabilities. It should remain auditable, testable, installable, and reversible as it grows from skills into OMP extensions, deterministic tools, packages, and MCP integrations.
 
 ## Operating principles
 
@@ -166,4 +166,4 @@ The next upgrade phases should be incremental:
 3. Add OMP extension linking only after real extensions exist.
 4. Add detailed operation guides after the framework stabilizes.
 
-The long-term target is a personal agent workbench: a tested local capability system rather than a loose collection of prompts and scripts.
+The long-term target is a tested local Pi capability system rather than a loose collection of prompts and scripts.

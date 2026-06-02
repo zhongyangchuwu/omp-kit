@@ -1,25 +1,27 @@
-# Personal Skills
+# Pi Kit
 
-Personal agent capability workbench. This repository manages the skills, extensions, tools, and packages loaded into Pi / Oh My Pi.
+Pi / Oh My Pi capability workbench. This repository manages the skills, extensions, MCP resources, tools, and packages loaded into Pi-oriented agent runtimes.
 
-Agent skills are small but accumulate fast. Without version control, review gates, metadata, and tests, a skills directory becomes a dumpster of prompts — hard to audit, easy to break, impossible to share.
+Agent capabilities accumulate fast. Without version control, review gates, metadata, and tests, a capability directory becomes a dumpster of prompts and scripts — hard to audit, easy to break, impossible to share.
 
-This repository makes skills auditable, testable, reviewable, and reversible:
+Pi Kit makes capabilities auditable, testable, reviewable, and reversible:
 
 - every active resource has a `resource.yaml` tracking source, risk, activation policy, and verification history;
 - `registry.yaml` is generated from resource metadata — never hand-maintained;
 - maintenance scripts enforce structural rules and risk scanning;
 - `just test` is the single fast gate before every commit;
-- third-party skills go through quarantine before activation.
+- third-party capabilities go through quarantine before activation.
 
 ## Active skills
 
 | Skill | Risk | What it does |
 | --- | --- | --- |
 | `autodl` | High | AutoDL Pro GPU instance management, balance checks, SSH smoke tests |
-| `skill-authoring` | Low | Create, review, localize, and maintain Agent Skills |
+| `code-taste` | Low | Code-level judgment for maintainability, API shape, tests, errors, performance |
 | `doc-coauthoring` | Low | Structured workflow for co-authoring specs, RFCs, proposals, decision docs |
 | `omp-superpowers` | Medium | Superpowers development methodology with fast path for simple tasks |
+| `paper-diagram` | Medium | Publication-ready paper diagrams from image/text specs, SVG-first with PPTX fallback |
+| `skill-authoring` | Low | Create, review, localize, and maintain Agent Skills |
 
 ## External references
 
@@ -27,10 +29,12 @@ Third-party source material lives under `references/` and is not active until re
 
 | Collection | Status |
 | --- | --- |
-| `references/anthropic-skills` | 17 skills classified in `review.yaml`; `doc-coauthoring` promoted |
-| `references/claude-plugins-official` | Official Claude plugin examples; staged for selective review |
+| `references/anthropic-skills` | Source material for third-party skills and PPTX tooling |
+| `references/ppt-master` | SVG/PPTX diagram-generation reference material |
 | `references/compound-engineering-plugin` | Engineering workflow, review persona, and converter reference material |
 | `references/agents` | Marketplace-scale agent, skill, command, and adapter reference material |
+| `references/harness` | Agent-team design reference; not active |
+| `references/impeccable` | Frontend design reference; not active |
 
 ## Layout
 
@@ -50,8 +54,11 @@ tests/           Repository-level tests
 ## Quick commands
 
 ```bash
-just link-skills          # symlink skills/* → ~/.agents/skills/
-just link-skills-force    # replace stale symlinks, prune old names
+just install              # symlink active skills/* → ~/.agents/skills/
+just install-force        # replace stale skill symlinks, prune old names
+
+just link-skills          # legacy alias for just install
+just link-skills-force    # legacy alias for just install-force
 
 just build-registry       # regenerate registry.yaml from resource.yaml files
 just check-registry       # fail if registry.yaml is stale

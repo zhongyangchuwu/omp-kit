@@ -25,7 +25,7 @@ source:
   imported: null
   promoted: "2026-06-02"
   notes:
-    - "Promoted from drafts/code-taste with explicit-only activation to avoid broad overlap with omp-superpowers."
+    - "Promoted from drafts/code-taste; activation changed to automatic so code-quality context is available for every code change."
     - "Reference sources informed this skill but do not define its activation policy or local design."
 
 risk:
@@ -33,13 +33,12 @@ risk:
   reason: "Instruction-only code quality guidance; no scripts, network access, secrets, or destructive operations."
 
 activation:
-  mode: explicit-only
+  mode: automatic
   notes: >
-    Use only when the user explicitly asks for code-taste guidance, code-level
-    judgment, maintainability review, simplification, API-shape critique,
-    error-handling critique, performance-discipline review, or test-quality
-    review. Keep omp-superpowers as the default workflow skill for broad
-    implementation tasks.
+    Activate for implementation, refactoring, simplification, exported API/type
+    changes, error-handling decisions, test design, performance-sensitive paths,
+    or code review. Use as a judgment layer alongside omp-superpowers; do not
+    turn it into extra ceremony for formatting-only or documentation-only edits.
 
 verification:
   commands:
@@ -51,7 +50,7 @@ verification:
 maintenance:
   last_reviewed: "2026-06-02"
   notes:
-    - "Promoted as explicit-only after trigger-boundary review."
+    - "Activation changed from explicit-only to automatic by user preference; apply to every code change while keeping scope code-level."
     - "Keep focused on code-level judgment; do not expand into architecture/RFC workflow."
     - "Avoid becoming a generic design-pattern encyclopedia."
 
