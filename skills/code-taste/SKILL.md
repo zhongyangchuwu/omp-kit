@@ -27,7 +27,7 @@ Do not use it for:
 
 ## Operating principle
 
-Make the code easier to reason about six months from now. Delete concepts before rearranging them. Add an abstraction only when it reduces the number of ideas a maintainer must hold today. In MVP-stage personal projects, do not fear behavior-preserving refactors that clarify architecture or reduce future friction; use git as rollback support, but still verify exposed contracts.
+Make the code easier to reason about six months from now. Delete concepts before rearranging them. Add an abstraction only when it reduces the number of ideas a maintainer must hold today. Prefer one canonical way to do one thing; avoid aliases, duplicate entry points, and wrapper-only alternatives unless compatibility or a hard external boundary requires them. In MVP-stage personal projects, do not fear behavior-preserving refactors that clarify architecture or reduce future friction; use git as rollback support, but still verify exposed contracts.
 
 ## Review sequence
 
@@ -49,6 +49,12 @@ Make the code easier to reason about six months from now. Delete concepts before
 - A new config option, plugin hook, strategy object, or factory needs a current consumer.
 - Prefer explicit branches over a generic dispatch system until the variation axis is stable.
 - If a refactor moves the same complexity across more files without deleting concepts, it failed.
+
+### Entry points
+
+- For a given purpose, keep one canonical command, function, or API path.
+- Do not add aliases, shims, or duplicate verbs just to smooth naming unless they protect a real compatibility boundary.
+- If two paths exist, the code should make their semantic difference obvious; otherwise collapse them into one.
 
 ### API shape
 
