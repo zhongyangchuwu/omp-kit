@@ -9,18 +9,10 @@ skills:
     status: active
     risk: low
     path: skills/code-taste
-  doc-coauthoring:
-    status: active
-    risk: low
-    path: skills/doc-coauthoring
   omp-superpowers:
     status: active
     risk: medium
     path: skills/omp-superpowers
-  paper-diagram:
-    status: active
-    risk: medium
-    path: skills/paper-diagram
   skill-authoring:
     status: active
     risk: low
@@ -34,6 +26,10 @@ drafts:
     status: draft
     risk: low
     path: drafts/doc-coauthoring
+  paper-diagram:
+    status: draft
+    risk: medium
+    path: drafts/paper-diagram
 extensions: {}
 tools: {}
 packages: {}
