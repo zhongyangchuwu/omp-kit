@@ -16,10 +16,12 @@ For server setup, lifecycle, storage, logging, disk, and smoke-gate guidance, re
 1. Locate the project `secrets.json`; never print its contents.
 2. Identify the target server name, defaulting to `gpu0` only when project context does not specify another server.
 3. Use read-only commands before resource changes: `servers`, `server-info`, `balance`, `status`, `gpu-stock`.
-4. Keep project-specific sync/train/eval commands outside this skill; run them through `autodl ssh -- <project-command>` only after the project workflow is known.
-5. For long-running jobs, confirm the project has a logging wrapper, `tmux`/`screen`, or equivalent durable execution path.
+4. Run `check` before a sync or long-running job to confirm local rsync, remote workdir, tmux, GPU, and disk readiness.
+5. Keep project-specific workflow outside this skill except for connection-safe wrappers: use `sync up`, `ssh -- <project-command>`, and `run submit/status/tail/kill` for the project's own remote loop.
+6. For long-running jobs, prefer `run submit` when the project has a logged run archive; use `ssh -- <project-smoke>` for interactive debug and one-off inspection.
 
 ## Safety Red Lines
+
 
 - Never expose `AUTODL_TOKEN`, real SSH host/port, private key path, Pro instance UUID, image UUID, password, Jupyter token, or full SSH command.
 - Never run `create-pro`, `power-pro start`, or `release-pro` with `--confirm` unless the user explicitly approved that paid/destructive action.

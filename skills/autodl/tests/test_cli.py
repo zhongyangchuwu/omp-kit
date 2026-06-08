@@ -179,3 +179,140 @@ def test_power_start_update_secrets_ssh_updates_only_ssh_fields(tmp_path: Path, 
     assert payload["servers"]["gpu0"]["AUTODL_PRO_INSTANCE_UUID"] == "uuid-gpu0"
     assert "new.example.com" not in result.output
     assert "20000" not in result.output
+
+
+def test_sync_up_print_command_uses_config_and_redacts_target(tmp_path: Path) -> None:
+    secrets = tmp_path / "secrets.json"
+    write_secrets(secrets)
+
+    result = runner.invoke(
+        app,
+        [
+            "--secrets-file",
+            str(secrets),
+            "--server",
+            "gpu0",
+            "sync",
+            "up",
+            "--local-path",
+            ".",
+            "--print-command",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "<rsync-command>" in result.output
+    assert "root@gpu0.example.com" not in result.output
+    assert "10000" not in result.output
+    assert "--exclude=outputs/" in result.output
+
+
+def test_sync_down_run_print_command_pulls_only_named_archive(tmp_path: Path) -> None:
+    secrets = tmp_path / "secrets.json"
+    write_secrets(secrets)
+
+    result = runner.invoke(
+        app,
+        [
+            "--secrets-file",
+            str(secrets),
+            "--server",
+            "gpu0",
+            "sync",
+            "down-run",
+            "exp-a",
+            "--print-command",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "<rsync-command>" in result.output
+    assert "outputs/runs/exp-a" in result.output
+    assert "root@gpu0.example.com" not in result.output
+    assert "10000" not in result.output
+
+
+def test_run_submit_print_command_builds_logged_tmux_command(tmp_path: Path) -> None:
+    secrets = tmp_path / "secrets.json"
+    write_secrets(secrets)
+
+    result = runner.invoke(
+        app,
+        [
+            "--secrets-file",
+            str(secrets),
+            "--server",
+            "gpu0",
+            "run",
+            "submit",
+            "exp-a",
+            "--print-command",
+            "--",
+            "uv",
+            "run",
+            "python",
+            "scripts/train.py",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "<ssh-command>" in result.output
+    assert "tmux" in result.output
+    assert "outputs/runs/exp-a/logs/remote.log" in result.output
+    assert "root@gpu0.example.com" not in result.output
+    assert "10000" not in result.output
+
+
+def test_run_status_print_command_queries_logs_and_gpu(tmp_path: Path) -> None:
+    secrets = tmp_path / "secrets.json"
+    write_secrets(secrets)
+
+    result = runner.invoke(
+        app,
+        [
+            "--secrets-file",
+            str(secrets),
+            "--server",
+            "gpu0",
+            "run",
+            "status",
+            "exp-a",
+            "--print-command",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "<ssh-command>" in result.output
+    assert "nvidia-smi" in result.output
+    assert "remote.log.status" in result.output
+    assert "root@gpu0.example.com" not in result.output
+    assert "10000" not in result.output
+
+
+def test_check_print_command_shows_local_and_remote_preflight(tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    secrets = tmp_path / "secrets.json"
+    write_secrets(secrets)
+
+    class FakeCheckResult:
+        returncode = 0
+        stdout = "remote_workdir=/root/project\nworkdir=ok\ntmux=ok\nnvidia_smi=ok\n"
+        stderr = ""
+
+    monkeypatch.setattr(cli, "local_rsync_available", lambda: True)
+    monkeypatch.setattr(cli, "run_check", lambda *args, **kwargs: FakeCheckResult())
+
+    result = runner.invoke(
+        app,
+        [
+            "--secrets-file",
+            str(secrets),
+            "--server",
+            "gpu0",
+            "check",
+            "--print-command",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "local_rsync=ok" in result.output
+    assert "remote_workdir=/root/project" in result.output

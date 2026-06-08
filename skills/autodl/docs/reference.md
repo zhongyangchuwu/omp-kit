@@ -49,12 +49,20 @@ autodl power-pro stop --confirm
 autodl release-pro --instance-uuid <pro-instance-uuid> --confirm --yes-i-have-user-confirmation
 ```
 
-## SSH
+## Check, SSH, and remote runs
 
 ```bash
+autodl check
 autodl ssh -- hostname
 autodl ssh -- nvidia-smi
 autodl ssh --print-command -- hostname
+autodl sync up --print-command
+autodl sync down-run <run-name> --print-command
+autodl run submit <run-name> -- uv run python scripts/train.py --run-name <run-name>
+autodl run status <run-name>
+autodl run tail <run-name> --lines 40
+autodl run kill <run-name>
 ```
 
-The remote command runs after setting a basic PATH and entering `REMOTE_WORKDIR`.
+`check` is read-only and reports local rsync availability plus remote workdir, tmux, GPU, and disk readiness. `sync up` uses rsync with default excludes for repo noise and large mutable artifacts; `sync down-run` pulls one named `outputs/runs/<run-name>/` archive. `run submit` starts a detached tmux session and stores logs under `outputs/runs/<run-name>/logs/`.
+

@@ -32,16 +32,18 @@ def build_ssh_args(config: SSHConfig, remote_command: str) -> list[str]:
     return args
 
 
-def redact_ssh_text(text: str, *, server: str, port: str | None) -> str:
+def redact_ssh_text(text: str, *, server: str, port: str | None, key: Path | None = None) -> str:
     redacted = text.replace(server, "<ssh-server>")
     if port:
         redacted = redacted.replace(port, "<ssh-port>")
+    if key is not None:
+        redacted = redacted.replace(str(key), "<ssh-key>")
     return redacted
 
 
-def redacted_ssh_command(args: list[str], *, server: str, port: str | None) -> str:
+def redacted_ssh_command(args: list[str], *, server: str, port: str | None, key: Path | None = None) -> str:
     command = shlex.join(args)
-    command = redact_ssh_text(command, server=server, port=port)
+    command = redact_ssh_text(command, server=server, port=port, key=key)
     return "<ssh-command> " + command
 
 
@@ -59,13 +61,13 @@ def run_ssh_command(
         return subprocess.CompletedProcess(
             args=args,
             returncode=0,
-            stdout=redacted_ssh_command(args, server=config.server, port=config.port),
+            stdout=redacted_ssh_command(args, server=config.server, port=config.port, key=config.key),
             stderr="",
         )
     completed = subprocess.run(args, check=False, capture_output=True, text=True, timeout=timeout_seconds)
     return subprocess.CompletedProcess(
         args=completed.args,
         returncode=completed.returncode,
-        stdout=redact_ssh_text(completed.stdout, server=config.server, port=config.port),
-        stderr=redact_ssh_text(completed.stderr, server=config.server, port=config.port),
+        stdout=redact_ssh_text(completed.stdout, server=config.server, port=config.port, key=config.key),
+        stderr=redact_ssh_text(completed.stderr, server=config.server, port=config.port, key=config.key),
     )

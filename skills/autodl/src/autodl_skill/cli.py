@@ -10,6 +10,7 @@ import typer
 from rich.console import Console
 
 from autodl_skill.api import AutoDLApiError, AutoDLClient, DEFAULT_API_HOST
+from autodl_skill.check import local_rsync_available, run_check
 from autodl_skill.config import (
     DEFAULT_SECRETS_FILE,
     DEFAULT_SERVER,
@@ -23,10 +24,23 @@ from autodl_skill.config import (
     resolve_value,
     update_server_ssh_fields,
 )
+from autodl_skill.remote_run import (
+    build_kill_script,
+    build_logged_run_script,
+    build_status_script,
+    build_tail_script,
+    run_log_path,
+    run_remote_script,
+)
 from autodl_skill.safety import ConfirmationError, dry_run_payload, require_confirmation
 from autodl_skill.ssh import SSHConfig, run_ssh_command
+from autodl_skill.sync import build_down_run_args, build_sync_up_args, run_rsync
 
 app = typer.Typer(help="Safe AutoDL Pro multi-instance helper.")
+sync_app = typer.Typer(help="Rsync local code and remote run artifacts.")
+run_app = typer.Typer(help="Submit and inspect logged remote experiment commands.")
+app.add_typer(sync_app, name="sync")
+app.add_typer(run_app, name="run")
 console = Console()
 
 
@@ -95,6 +109,72 @@ def get_context(ctx: typer.Context) -> Context:
 def print_payload(payload: Any) -> None:
     console.print(redacted_json(payload))
 
+
+def resolve_ssh_config(
+    state: Context,
+    *,
+    ssh_server: str | None = None,
+    ssh_port: str | None = None,
+    ssh_key: Path | None = None,
+    remote_workdir: str | None = None,
+) -> tuple[SSHConfig, str]:
+    server = resolve_value(
+        "SSH_SERVER", cli_value=ssh_server, server_config=state.server_config, environ=os.environ
+    )
+    if not server:
+        raise ConfigError("missing SSH_SERVER")
+    port = resolve_value("SSH_PORT", cli_value=ssh_port, server_config=state.server_config, environ=os.environ)
+    key_value = resolve_value(
+        "SSH_KEY",
+        cli_value=str(ssh_key) if ssh_key is not None else None,
+        server_config=state.server_config,
+        environ=os.environ,
+    )
+    workdir = resolve_value(
+        "REMOTE_WORKDIR",
+        cli_value=remote_workdir,
+        server_config=state.server_config,
+        environ=os.environ,
+        default="/root/autodl-tmp",
+    )
+    return SSHConfig(server=server, port=port, key=Path(key_value) if key_value else None), workdir or "/root/autodl-tmp"
+
+
+def print_result_or_exit(returncode: int, stdout: str, stderr: str) -> None:
+    if stdout:
+        console.print(stdout)
+    if stderr:
+        console.print(stderr, stderr=True)
+    if returncode != 0:
+        raise typer.Exit(returncode)
+
+
+
+@app.command("check")
+def check(
+    ctx: typer.Context,
+    ssh_server: Annotated[str | None, typer.Option("--ssh-server")] = None,
+    ssh_port: Annotated[str | None, typer.Option("--ssh-port")] = None,
+    ssh_key: Annotated[Path | None, typer.Option("--ssh-key")] = None,
+    remote_workdir: Annotated[str | None, typer.Option("--remote-workdir")] = None,
+    print_command: bool = False,
+) -> None:
+    state = get_context(ctx)
+    ssh_config, workdir = resolve_ssh_config(
+        state,
+        ssh_server=ssh_server,
+        ssh_port=ssh_port,
+        ssh_key=ssh_key,
+        remote_workdir=remote_workdir,
+    )
+    console.print(f"local_rsync={'ok' if local_rsync_available() else 'missing'}")
+    result = run_check(
+        ssh_config,
+        remote_workdir=workdir,
+        print_command=print_command,
+        timeout_seconds=state.timeout,
+    )
+    print_result_or_exit(result.returncode, result.stdout, result.stderr)
 
 @app.command("servers")
 def servers(ctx: typer.Context) -> None:
@@ -297,6 +377,223 @@ def release_pro(
     print_payload(get_context(ctx).client().release_pro(instance_uuid))
 
 
+
+
+DEFAULT_SYNC_EXCLUDES = (
+    ".git/",
+    ".venv/",
+    "__pycache__/",
+    ".pytest_cache/",
+    ".ruff_cache/",
+    "data/",
+    "outputs/",
+    "model/",
+    "secrets.json",
+    ".env",
+    ".env.*",
+)
+
+
+@sync_app.command("up")
+def sync_up(
+    ctx: typer.Context,
+    local_path: Annotated[Path, typer.Option("--local-path")] = Path("."),
+    remote_path: Annotated[str | None, typer.Option("--remote-path")] = None,
+    ssh_server: Annotated[str | None, typer.Option("--ssh-server")] = None,
+    ssh_port: Annotated[str | None, typer.Option("--ssh-port")] = None,
+    ssh_key: Annotated[Path | None, typer.Option("--ssh-key")] = None,
+    remote_workdir: Annotated[str | None, typer.Option("--remote-workdir")] = None,
+    exclude: Annotated[list[str] | None, typer.Option("--exclude")] = None,
+    exclude_from: Annotated[Path | None, typer.Option("--exclude-from")] = Path(".rsyncignore"),
+    delete: bool = False,
+    dry_run: bool = False,
+    print_command: bool = False,
+) -> None:
+    state = get_context(ctx)
+    ssh_config, workdir = resolve_ssh_config(
+        state,
+        ssh_server=ssh_server,
+        ssh_port=ssh_port,
+        ssh_key=ssh_key,
+        remote_workdir=remote_workdir,
+    )
+    args = build_sync_up_args(
+        ssh_config,
+        local_path=local_path,
+        remote_path=remote_path or workdir,
+        dry_run=dry_run,
+        delete=delete,
+        excludes=tuple(DEFAULT_SYNC_EXCLUDES) + tuple(exclude or ()),
+        exclude_from=exclude_from,
+    )
+    result = run_rsync(args, config=ssh_config, print_command=print_command)
+    print_result_or_exit(result.returncode, result.stdout, result.stderr)
+    if not print_command and not dry_run:
+        print_payload({"code": "Success", "action": "sync up"})
+
+
+@sync_app.command("down-run")
+def sync_down_run(
+    ctx: typer.Context,
+    run_name: Annotated[str, typer.Argument()],
+    local_outputs_root: Annotated[Path, typer.Option("--local-outputs-root")] = Path("outputs/runs"),
+    ssh_server: Annotated[str | None, typer.Option("--ssh-server")] = None,
+    ssh_port: Annotated[str | None, typer.Option("--ssh-port")] = None,
+    ssh_key: Annotated[Path | None, typer.Option("--ssh-key")] = None,
+    remote_workdir: Annotated[str | None, typer.Option("--remote-workdir")] = None,
+    dry_run: bool = False,
+    print_command: bool = False,
+) -> None:
+    state = get_context(ctx)
+    ssh_config, workdir = resolve_ssh_config(
+        state,
+        ssh_server=ssh_server,
+        ssh_port=ssh_port,
+        ssh_key=ssh_key,
+        remote_workdir=remote_workdir,
+    )
+    args = build_down_run_args(
+        ssh_config,
+        run_name=run_name,
+        remote_workdir=workdir,
+        local_outputs_root=local_outputs_root,
+        dry_run=dry_run,
+    )
+    result = run_rsync(args, config=ssh_config, print_command=print_command)
+    print_result_or_exit(result.returncode, result.stdout, result.stderr)
+    if not print_command and not dry_run:
+        print_payload({"code": "Success", "action": "sync down-run", "run_name": run_name})
+
+
+@run_app.command("submit", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
+def run_submit(
+    ctx: typer.Context,
+    run_name: Annotated[str, typer.Argument()],
+    ssh_server: Annotated[str | None, typer.Option("--ssh-server")] = None,
+    ssh_port: Annotated[str | None, typer.Option("--ssh-port")] = None,
+    ssh_key: Annotated[Path | None, typer.Option("--ssh-key")] = None,
+    remote_workdir: Annotated[str | None, typer.Option("--remote-workdir")] = None,
+    log_name: Annotated[str, typer.Option("--log-name")] = "remote.log",
+    session_name: Annotated[str | None, typer.Option("--session-name")] = None,
+    print_command: bool = False,
+) -> None:
+    state = get_context(ctx)
+    command_parts = list(ctx.args)
+    if command_parts and command_parts[0] == "--":
+        command_parts = command_parts[1:]
+    if not command_parts:
+        raise typer.BadParameter("run submit requires a command after --")
+    ssh_config, workdir = resolve_ssh_config(
+        state,
+        ssh_server=ssh_server,
+        ssh_port=ssh_port,
+        ssh_key=ssh_key,
+        remote_workdir=remote_workdir,
+    )
+    script = build_logged_run_script(
+        command_parts, run_name=run_name, log_name=log_name, session_name=session_name
+    )
+    result = run_remote_script(
+        ssh_config,
+        script,
+        remote_workdir=workdir,
+        print_command=print_command,
+        timeout_seconds=state.timeout,
+    )
+    print_result_or_exit(result.returncode, result.stdout, result.stderr)
+    if not print_command:
+        print_payload({"code": "Success", "action": "run submit", "run_name": run_name, "log_path": run_log_path(run_name, log_name)})
+
+
+@run_app.command("status")
+def run_status(
+    ctx: typer.Context,
+    run_name: Annotated[str, typer.Argument()],
+    ssh_server: Annotated[str | None, typer.Option("--ssh-server")] = None,
+    ssh_port: Annotated[str | None, typer.Option("--ssh-port")] = None,
+    ssh_key: Annotated[Path | None, typer.Option("--ssh-key")] = None,
+    remote_workdir: Annotated[str | None, typer.Option("--remote-workdir")] = None,
+    log_name: Annotated[str, typer.Option("--log-name")] = "remote.log",
+    log_lines: Annotated[int, typer.Option("--log-lines")] = 5,
+    print_command: bool = False,
+) -> None:
+    state = get_context(ctx)
+    ssh_config, workdir = resolve_ssh_config(
+        state,
+        ssh_server=ssh_server,
+        ssh_port=ssh_port,
+        ssh_key=ssh_key,
+        remote_workdir=remote_workdir,
+    )
+    result = run_remote_script(
+        ssh_config,
+        build_status_script(run_name, log_name=log_name, log_lines=log_lines),
+        remote_workdir=workdir,
+        print_command=print_command,
+        timeout_seconds=state.timeout,
+    )
+    print_result_or_exit(result.returncode, result.stdout, result.stderr)
+
+
+@run_app.command("tail")
+def run_tail(
+    ctx: typer.Context,
+    run_name: Annotated[str, typer.Argument()],
+    ssh_server: Annotated[str | None, typer.Option("--ssh-server")] = None,
+    ssh_port: Annotated[str | None, typer.Option("--ssh-port")] = None,
+    ssh_key: Annotated[Path | None, typer.Option("--ssh-key")] = None,
+    remote_workdir: Annotated[str | None, typer.Option("--remote-workdir")] = None,
+    log_name: Annotated[str, typer.Option("--log-name")] = "remote.log",
+    lines: Annotated[int, typer.Option("--lines")] = 50,
+    print_command: bool = False,
+) -> None:
+    state = get_context(ctx)
+    ssh_config, workdir = resolve_ssh_config(
+        state,
+        ssh_server=ssh_server,
+        ssh_port=ssh_port,
+        ssh_key=ssh_key,
+        remote_workdir=remote_workdir,
+    )
+    result = run_remote_script(
+        ssh_config,
+        build_tail_script(run_name, log_name=log_name, lines=lines),
+        remote_workdir=workdir,
+        print_command=print_command,
+        timeout_seconds=state.timeout,
+    )
+    print_result_or_exit(result.returncode, result.stdout, result.stderr)
+
+
+@run_app.command("kill")
+def run_kill(
+    ctx: typer.Context,
+    run_name: Annotated[str, typer.Argument()],
+    ssh_server: Annotated[str | None, typer.Option("--ssh-server")] = None,
+    ssh_port: Annotated[str | None, typer.Option("--ssh-port")] = None,
+    ssh_key: Annotated[Path | None, typer.Option("--ssh-key")] = None,
+    remote_workdir: Annotated[str | None, typer.Option("--remote-workdir")] = None,
+    print_command: bool = False,
+) -> None:
+    state = get_context(ctx)
+    ssh_config, workdir = resolve_ssh_config(
+        state,
+        ssh_server=ssh_server,
+        ssh_port=ssh_port,
+        ssh_key=ssh_key,
+        remote_workdir=remote_workdir,
+    )
+    result = run_remote_script(
+        ssh_config,
+        build_kill_script(run_name),
+        remote_workdir=workdir,
+        print_command=print_command,
+        timeout_seconds=state.timeout,
+    )
+    print_result_or_exit(result.returncode, result.stdout, result.stderr)
+    if not print_command:
+        print_payload({"code": "Success", "action": "run kill", "run_name": run_name})
+
 @app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
 def ssh(
     ctx: typer.Context,
@@ -312,37 +609,21 @@ def ssh(
         command_parts = command_parts[1:]
     if not command_parts:
         raise typer.BadParameter("ssh requires a command after --")
-    server = resolve_value(
-        "SSH_SERVER", cli_value=ssh_server, server_config=state.server_config, environ=os.environ
-    )
-    if not server:
-        raise ConfigError("missing SSH_SERVER")
-    port = resolve_value("SSH_PORT", cli_value=ssh_port, server_config=state.server_config, environ=os.environ)
-    key_value = resolve_value(
-        "SSH_KEY",
-        cli_value=str(ssh_key) if ssh_key is not None else None,
-        server_config=state.server_config,
-        environ=os.environ,
-    )
-    workdir = resolve_value(
-        "REMOTE_WORKDIR",
-        cli_value=remote_workdir,
-        server_config=state.server_config,
-        environ=os.environ,
-        default="/root/autodl-tmp",
+    ssh_config, workdir = resolve_ssh_config(
+        state,
+        ssh_server=ssh_server,
+        ssh_port=ssh_port,
+        ssh_key=ssh_key,
+        remote_workdir=remote_workdir,
     )
     result = run_ssh_command(
-        SSHConfig(server=server, port=port, key=Path(key_value) if key_value else None),
+        ssh_config,
         command_parts,
-        remote_workdir=workdir or "/root/autodl-tmp",
+        remote_workdir=workdir,
         print_command=print_command,
         timeout_seconds=state.timeout,
     )
-    if result.stdout:
-        console.print(result.stdout)
-    if result.stderr:
-        console.print(result.stderr, stderr=True)
-    raise typer.Exit(result.returncode)
+    print_result_or_exit(result.returncode, result.stdout, result.stderr)
 
 
 def run() -> None:
