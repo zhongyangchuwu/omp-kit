@@ -28,25 +28,34 @@ def skill_dirs(repo_root: Path) -> list[Path]:
 def link_skills(
     *, repo_root: Path, agent_root: Path, force: bool = False, prune: bool = False
 ) -> list[LinkAction]:
-    repo_root = repo_root.resolve()
+    repo_root = repo_root.expanduser().resolve()
     agent_root = agent_root.expanduser()
     target_root = agent_root / "skills"
-    target_root.mkdir(parents=True, exist_ok=True)
 
     sources = skill_dirs(repo_root)
     source_names = {source.name for source in sources}
-    repo_parent = repo_root.parent
+    skills_root = (repo_root / "skills").resolve()
 
     actions: list[LinkAction] = []
-    if prune:
+    if prune and not force:
+        raise LinkError("--prune requires --force")
+
+    if target_root.is_symlink():
         if not force:
-            raise LinkError("--prune requires --force")
+            raise LinkError(f"Target already exists and is a symlink: {target_root}")
+        resolved = target_root.resolve()
+        target_root.unlink()
+        actions.append(("removed", "skills", resolved, target_root))
+
+    target_root.mkdir(parents=True, exist_ok=True)
+
+    if prune:
         for target in sorted(target_root.iterdir()):
             if not target.is_symlink() or target.name in source_names:
                 continue
             resolved = target.resolve()
             try:
-                resolved.relative_to(repo_parent)
+                resolved.relative_to(skills_root)
             except ValueError:
                 continue
             target.unlink()
@@ -81,22 +90,22 @@ def link_skills(
 
 
 def default_repo_root() -> Path:
-    return Path(__file__).resolve().parents[1]
+    return Path.cwd()
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Link repository skills into ~/.agents/skills")
+    parser = argparse.ArgumentParser(description="Link skills from the current directory into ~/.agents/skills")
     parser.add_argument(
         "--agent-root",
         type=Path,
         default=Path(os.environ.get("AGENT_ROOT", "~/.agents")),
-        help="Agent config root to receive the skills directory; default: ~/.agents",
+        help="Agent config root to receive per-skill links; default: ~/.agents",
     )
     parser.add_argument(
         "--repo-root",
         type=Path,
         default=default_repo_root(),
-        help="Repository root containing skills/; default: this repository",
+        help="Directory containing skills/; default: current working directory",
     )
     parser.add_argument(
         "--force",
@@ -106,7 +115,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--prune",
         action="store_true",
-        help="With --force, remove stale symlinks that point to this repository's old skill names",
+        help="With --force, remove stale symlinks that point into the current skills directory",
     )
     return parser.parse_args()
 

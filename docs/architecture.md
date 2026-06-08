@@ -128,7 +128,7 @@ Detailed policy belongs in `resource.yaml` and resource-local files:
 ## Maintenance scripts
 
 ```text
-scripts/link_skills.py        Links active skills into ~/.agents/skills.
+scripts/link_skills.py        Links each ./skills/* directory into ~/.agents/skills/.
 scripts/resource_metadata.py  Loads, validates, and converts resource.yaml files.
 scripts/build_registry.py     Generates or checks registry.yaml from resource.yaml files.
 scripts/validate_registry.py  Validates generated registry shape and drift.

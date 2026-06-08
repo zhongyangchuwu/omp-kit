@@ -1,18 +1,18 @@
 set dotenv-load := false
 
-# Install active skills into ~/.agents/skills.
+# Install each ./skills/* directory into ~/.agents/skills.
 install *args:
     uv run python scripts/link_skills.py {{args}}
 
-# Replace stale ~/.agents/skills symlinks and prune old repository skill names.
+# Replace stale per-skill symlinks and old ~/.agents/skills parent symlink.
 install-force:
     uv run python scripts/link_skills.py --force --prune
 
-# Link every skill under ./skills into ~/.agents/skills.
+# Legacy alias for installing per-skill links.
 link-skills *args:
     uv run python scripts/link_skills.py {{args}}
 
-# Replace stale ~/.agents/skills symlinks and prune old repository skill names.
+# Legacy alias for replacing stale per-skill links.
 link-skills-force:
     uv run python scripts/link_skills.py --force --prune
 

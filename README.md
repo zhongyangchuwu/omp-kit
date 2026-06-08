@@ -54,8 +54,8 @@ tests/           Repository-level tests
 ## Quick commands
 
 ```bash
-just install              # symlink active skills/* → ~/.agents/skills/
-just install-force        # replace stale skill symlinks, prune old names
+just install              # symlink each ./skills/* → ~/.agents/skills/
+just install-force        # replace stale per-skill links or old ~/.agents/skills parent symlink
 
 just link-skills          # legacy alias for just install
 just link-skills-force    # legacy alias for just install-force

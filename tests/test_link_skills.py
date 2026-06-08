@@ -24,7 +24,7 @@ def test_links_each_skill_directory_under_agent_skills(tmp_path: Path) -> None:
     link = target_root / "skills" / "alpha"
     assert link.is_symlink()
     assert link.resolve() == source.resolve()
-    assert actions == [("linked", "alpha", source, link)]
+    assert actions == [("linked", "alpha", source.resolve(), link)]
 
 
 def test_existing_correct_link_is_left_unchanged(tmp_path: Path) -> None:
@@ -33,12 +33,13 @@ def test_existing_correct_link_is_left_unchanged(tmp_path: Path) -> None:
     target_root = tmp_path / "home" / ".agents"
     link_dir = target_root / "skills"
     link_dir.mkdir(parents=True)
-    (link_dir / "alpha").symlink_to(source, target_is_directory=True)
+    link = link_dir / "alpha"
+    link.symlink_to(source, target_is_directory=True)
 
     actions = link_skills(repo_root=repo, agent_root=target_root)
 
-    assert actions == [("exists", "alpha", source, link_dir / "alpha")]
-    assert (link_dir / "alpha").resolve() == source.resolve()
+    assert actions == [("exists", "alpha", source.resolve(), link)]
+    assert link.resolve() == source.resolve()
 
 
 def test_refuses_to_replace_unrelated_existing_target_without_force(tmp_path: Path) -> None:
@@ -71,7 +72,7 @@ def test_force_replaces_only_symlink_targets(tmp_path: Path) -> None:
 
     assert target.is_symlink()
     assert target.resolve() == source.resolve()
-    assert actions == [("relinked", "alpha", source, target)]
+    assert actions == [("relinked", "alpha", source.resolve(), target)]
 
 
 def test_force_still_refuses_to_replace_real_directory(tmp_path: Path) -> None:
@@ -98,21 +99,46 @@ def test_ignores_draft_skill_directories(tmp_path: Path) -> None:
 
     actions = link_skills(repo_root=repo, agent_root=target_root)
 
-    assert actions == [("linked", "alpha", active, target_root / "skills" / "alpha")]
+    assert actions == [("linked", "alpha", active.resolve(), target_root / "skills" / "alpha")]
     assert not (target_root / "skills" / "beta").exists()
 
 
-def test_force_removes_obsolete_repository_symlink(tmp_path: Path) -> None:
+def test_force_prunes_obsolete_current_skills_symlink(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     (repo / "skills").mkdir(parents=True)
-    old = make_skill(tmp_path / "old_repo", "old-name")
+    old = repo / "skills" / "old-name"
+    old.mkdir()
+    (old / "SKILL.md").write_text("---\nname: old-name\ndescription: old\n---\n", encoding="utf-8")
+    old.rename(repo / "skills" / "renamed")
     target_root = tmp_path / "home" / ".agents"
     link_dir = target_root / "skills"
     link_dir.mkdir(parents=True)
     target = link_dir / "old-name"
-    target.symlink_to(old, target_is_directory=True)
+    target.symlink_to(repo / "skills" / "renamed", target_is_directory=True)
 
     actions = link_skills(repo_root=repo, agent_root=target_root, force=True, prune=True)
 
-    assert actions == [("removed", "old-name", old.resolve(), target)]
+    assert actions == [
+        ("removed", "old-name", (repo / "skills" / "renamed").resolve(), target),
+        ("linked", "renamed", (repo / "skills" / "renamed").resolve(), link_dir / "renamed"),
+    ]
     assert not target.exists()
+    assert (link_dir / "renamed").resolve() == (repo / "skills" / "renamed").resolve()
+
+
+def test_force_replaces_parent_skills_symlink_with_per_skill_links(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    source = make_skill(repo, "alpha")
+    target_root = tmp_path / "home" / ".agents"
+    target_root.mkdir(parents=True)
+    target_root.joinpath("skills").symlink_to(repo / "skills", target_is_directory=True)
+
+    actions = link_skills(repo_root=repo, agent_root=target_root, force=True)
+
+    link = target_root / "skills" / "alpha"
+    assert actions == [
+        ("removed", "skills", (repo / "skills").resolve(), target_root / "skills"),
+        ("linked", "alpha", source.resolve(), link),
+    ]
+    assert link.is_symlink()
+    assert link.resolve() == source.resolve()

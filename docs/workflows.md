@@ -2,11 +2,11 @@
 
 ## Setting up active skill installation
 
-Active skills are symlinked into the agent configuration directory so the runtime discovers them. The current install command intentionally handles skills only; extension/tool/package install layouts are not defined yet.
+Active skills are symlinked into the agent configuration directory so the runtime discovers them. The current install command creates one symlink per skill under `~/.agents/skills/`; extension/tool/package install layouts are not defined yet.
 
 ```bash
-just install          # symlink each active skills/* -> ~/.agents/skills/
-just install-force    # replace stale symlinks and prune old repository skill names
+just install          # symlink each ./skills/* -> ~/.agents/skills/
+just install-force    # replace stale per-skill links or old ~/.agents/skills parent symlink
 ```
 
 Legacy aliases are retained:
