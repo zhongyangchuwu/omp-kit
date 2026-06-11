@@ -38,8 +38,5 @@ maintenance:
     - Demoted from active skills to drafts because it is not currently needed.
 
 relationships:
-  extensions: []
-  tools: []
-  packages: []
   upstream:
     - references/anthropic-skills

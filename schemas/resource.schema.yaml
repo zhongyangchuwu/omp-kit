@@ -23,9 +23,6 @@ properties:
     type: string
     enum:
       - skill
-      - extension
-      - tool
-      - package
   status:
     type: string
     enum:
@@ -134,23 +131,8 @@ properties:
     type: object
     additionalProperties: false
     required:
-      - extensions
-      - tools
-      - packages
       - upstream
     properties:
-      extensions:
-        type: array
-        items:
-          type: string
-      tools:
-        type: array
-        items:
-          type: string
-      packages:
-        type: array
-        items:
-          type: string
       upstream:
         type: array
         items:

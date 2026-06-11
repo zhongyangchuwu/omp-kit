@@ -29,11 +29,11 @@ def test_validate_registry_reports_missing_required_fields(tmp_path: Path) -> No
 
 
 def test_validate_registry_reports_missing_paths(tmp_path: Path) -> None:
-    data = {"tools": {"missing": {"status": "draft", "risk": "low", "path": "tools/missing"}}}
+    data = {"skills": {"missing": {"status": "draft", "risk": "low", "path": "skills/missing"}}}
 
     issues = validate_registry(data, repo_root=tmp_path)
 
-    assert any("path does not exist: tools/missing" in issue.message for issue in issues)
+    assert any("path does not exist: skills/missing" in issue.message for issue in issues)
 
 
 def test_build_index_prints_known_resource_groups() -> None:
@@ -42,8 +42,8 @@ def test_build_index_prints_known_resource_groups() -> None:
     assert "Skills\n" in text
     assert "- autodl [active/high] skills/autodl" in text
     assert "Drafts\n" in text
-    assert "Extensions\n- none" in text
-    assert "Packages\n- none" in text
+    assert "Extensions" not in text
+    assert "Packages" not in text
 
 
 def test_build_index_script_runs_directly() -> None:

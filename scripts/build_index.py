@@ -9,7 +9,7 @@ try:
 except ModuleNotFoundError:  # direct execution: python scripts/build_index.py
     from validate_registry import ALLOWED_GROUPS, load_registry
 
-GROUP_ORDER = ["skills", "drafts", "extensions", "tools", "packages"]
+GROUP_ORDER = ["skills", "drafts"]
 
 
 def default_repo_root() -> Path:

@@ -56,16 +56,6 @@ maintenance:
     - "Sandbox shim code localized from anthropic-skills/pptx/scripts/office/soffice.py."
 
 relationships:
-  extensions: []
-  tools:
-    - rsvg-convert
-    - LibreOffice (soffice)
-    - Poppler (pdftoppm)
-    - python-pptx
-    - Pillow
-  packages:
-    - python-pptx>=0.6.21
-    - Pillow>=9.0.0
   upstream:
     - references/ppt-master
     - references/anthropic-skills/skills/pptx

@@ -17,7 +17,7 @@ def make_skill(root: Path, name: str) -> Path:
 def test_links_each_skill_directory_under_agent_skills(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     source = make_skill(repo, "alpha")
-    target_root = tmp_path / "home" / ".agents"
+    target_root = tmp_path / "home" / ".omp" / "agent"
 
     actions = link_skills(repo_root=repo, agent_root=target_root)
 
@@ -30,7 +30,7 @@ def test_links_each_skill_directory_under_agent_skills(tmp_path: Path) -> None:
 def test_existing_correct_link_is_left_unchanged(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     source = make_skill(repo, "alpha")
-    target_root = tmp_path / "home" / ".agents"
+    target_root = tmp_path / "home" / ".omp" / "agent"
     link_dir = target_root / "skills"
     link_dir.mkdir(parents=True)
     link = link_dir / "alpha"
@@ -45,7 +45,7 @@ def test_existing_correct_link_is_left_unchanged(tmp_path: Path) -> None:
 def test_refuses_to_replace_unrelated_existing_target_without_force(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     make_skill(repo, "alpha")
-    target_root = tmp_path / "home" / ".agents"
+    target_root = tmp_path / "home" / ".omp" / "agent"
     existing = target_root / "skills" / "alpha"
     existing.mkdir(parents=True)
     (existing / "note.txt").write_text("keep", encoding="utf-8")
@@ -62,7 +62,7 @@ def test_force_replaces_only_symlink_targets(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     source = make_skill(repo, "alpha")
     old = make_skill(tmp_path / "old_repo", "alpha")
-    target_root = tmp_path / "home" / ".agents"
+    target_root = tmp_path / "home" / ".omp" / "agent"
     link_dir = target_root / "skills"
     link_dir.mkdir(parents=True)
     target = link_dir / "alpha"
@@ -78,7 +78,7 @@ def test_force_replaces_only_symlink_targets(tmp_path: Path) -> None:
 def test_force_still_refuses_to_replace_real_directory(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     make_skill(repo, "alpha")
-    target_root = tmp_path / "home" / ".agents"
+    target_root = tmp_path / "home" / ".omp" / "agent"
     existing = target_root / "skills" / "alpha"
     existing.mkdir(parents=True)
 
@@ -95,7 +95,7 @@ def test_ignores_draft_skill_directories(tmp_path: Path) -> None:
     draft = repo / "drafts" / "beta"
     draft.mkdir(parents=True)
     (draft / "SKILL.md").write_text("---\nname: beta\ndescription: draft\n---\n", encoding="utf-8")
-    target_root = tmp_path / "home" / ".agents"
+    target_root = tmp_path / "home" / ".omp" / "agent"
 
     actions = link_skills(repo_root=repo, agent_root=target_root)
 
@@ -110,7 +110,7 @@ def test_force_prunes_obsolete_current_skills_symlink(tmp_path: Path) -> None:
     old.mkdir()
     (old / "SKILL.md").write_text("---\nname: old-name\ndescription: old\n---\n", encoding="utf-8")
     old.rename(repo / "skills" / "renamed")
-    target_root = tmp_path / "home" / ".agents"
+    target_root = tmp_path / "home" / ".omp" / "agent"
     link_dir = target_root / "skills"
     link_dir.mkdir(parents=True)
     target = link_dir / "old-name"
@@ -129,7 +129,7 @@ def test_force_prunes_obsolete_current_skills_symlink(tmp_path: Path) -> None:
 def test_force_replaces_parent_skills_symlink_with_per_skill_links(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     source = make_skill(repo, "alpha")
-    target_root = tmp_path / "home" / ".agents"
+    target_root = tmp_path / "home" / ".omp" / "agent"
     target_root.mkdir(parents=True)
     target_root.joinpath("skills").symlink_to(repo / "skills", target_is_directory=True)
 

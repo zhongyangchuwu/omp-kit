@@ -42,8 +42,5 @@ maintenance:
     - Upstream Superpowers source content is vendored inside this skill under references/; the duplicate top-level references/superpowers copy is not required.
 
 relationships:
-  extensions: []
-  tools: []
-  packages: []
   upstream:
     - https://github.com/obra/superpowers

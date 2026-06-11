@@ -33,7 +33,4 @@ maintenance:
     - High-risk operations should remain explicit and auditable.
 
 relationships:
-  extensions: []
-  tools: []
-  packages: []
   upstream: []

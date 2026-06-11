@@ -1,10 +1,10 @@
 set dotenv-load := false
 
-# Install each ./skills/* directory into ~/.agents/skills.
+# Install each ./skills/* directory into ~/.omp/agent/skills.
 install *args:
     uv run python scripts/link_skills.py {{args}}
 
-# Replace stale per-skill symlinks and old ~/.agents/skills parent symlink.
+# Replace stale per-skill symlinks under ~/.omp/agent/skills.
 install-force:
     uv run python scripts/link_skills.py --force --prune
 
@@ -43,4 +43,4 @@ promote-skill path *args:
 
 # Run all repository tests (fast gate).
 test:
-    uv run pytest tests
+    uv run python -m pytest tests

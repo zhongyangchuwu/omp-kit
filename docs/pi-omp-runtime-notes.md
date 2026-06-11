@@ -29,11 +29,49 @@ Package is the installable unit.
 
 ## Pi and OMP
 
-Pi is the base coding/terminal agent runtime. Its documentation is the best source for stable concepts such as skills, packages, settings, providers, sessions, prompt templates, themes, and programmatic usage.
+Pi is the base coding/terminal agent runtime. Its documentation is the best source for stable concepts such as skills, packages, settings, providers, sessions, prompt templates, themes, release notes, and programmatic usage.
 
-OMP is a Pi-derived runtime focused on a stronger local agent surface. It adds or emphasizes built-in tools, LSP/debugger/browser/Python/Bun/subagent workflows, custom tools, native extension loading, MCP configuration, and internal URL schemes such as `skill://`, `pr://`, and `issue://`.
+OMP is an independently maintained Pi-derived runtime, not a thin repackaging of upstream Pi. Its packages use the `@oh-my-pi/*` scope, it is Bun-first, and it keeps a stronger local agent surface: built-in tools, LSP/debugger/browser/Python/Bun/subagent workflows, custom tools, native extension loading, MCP configuration, and internal URL schemes such as `skill://`, `pr://`, and `issue://`.
 
-Use Pi docs for stable packaging and resource concepts. Use OMP docs for custom tools, runtime extensions, native config paths, MCP configuration, and OMP-specific skill behavior.
+Use Pi docs for stable packaging and resource concepts. Use OMP docs for custom tools, runtime extensions, native config paths, MCP configuration, OMP-specific skill behavior, and fork-specific runtime semantics.
+
+OMP has compatibility paths for some Pi concepts, package scopes, and `pkg.pi` extension metadata, but compatibility is not identity. Some upstream APIs are renamed, stubbed, skipped, or reworked around OMP's Bun/native/tool/session architecture.
+
+## OMP fork model and upstream sync
+
+Treat OMP as a maintained fork with intentional divergences. Useful upstream Pi changes may be merged, backported, or semantically ported, but there is no fixed sync SLA. The observed pattern is opportunistic: important fixes and low-conflict features can land quickly, while changes touching OMP-specific architecture are manually adapted or skipped.
+
+When checking whether upstream behavior exists in OMP:
+
+1. Check current Pi docs and release notes.
+2. Check current OMP docs, release notes, and package changelogs.
+3. For extension/runtime APIs, prefer OMP documentation and source over Pi assumptions.
+4. Assume package scopes, runtime APIs, auth storage, tool factories, native modules, and extension loading may differ until verified.
+
+Known OMP divergences that affect design decisions:
+
+- package scope mapping from upstream `@mariozechner/*` or `@earendil-works/*` to `@oh-my-pi/*`;
+- Bun-first runtime, package manager, scripts, and CI;
+- native capabilities through `@oh-my-pi/pi-natives`;
+- OMP tool factories built around session-aware tool creation;
+- extension loading through Bun native `import()`;
+- `pkg.omp` preferred for extension metadata, with `pkg.pi` kept as fallback;
+- credential storage in `agent.db` with multi-credential/session-affinity behavior;
+- OMP-specific status line, subagent, IRC, internal URL, MCP, browser, debugger, and shell-tool behavior.
+
+Before porting or depending on upstream Pi behavior, read the OMP porting notes and preserve documented OMP-only features instead of overwriting them with upstream defaults.
+
+## Documentation and changelog lookup
+
+For current facts, check both documentation and changelogs:
+
+- Pi latest docs for canonical upstream concepts.
+- Pi release notes for recent upstream changes.
+- OMP `omp://` docs for the local/runtime documentation snapshot.
+- OMP GitHub docs for the current public documentation on `main`.
+- OMP package changelogs and GitHub releases for fork-specific changes.
+
+Do not infer parity from similar names. Verify the exact version and runtime when implementing integrations.
 
 ## Skill
 
@@ -150,7 +188,7 @@ Do not put unreviewed third-party skills, scripts, or packages into active runti
 Keep upstream repositories, books, documentation snapshots, and third-party skill collections in local gitignored `references/`. Extract only reviewed, useful material into tracked resources:
 
 ```text
-references/ -> drafts/ -> skills/extensions/tools/packages
+references/ -> drafts/ -> skills
 ```
 
 Review for:
@@ -183,11 +221,15 @@ High-risk capabilities should not be blindly auto-linked. Prefer package-level o
 ## Reference links
 
 - Pi docs: https://pi.dev/docs/latest
+- Pi release notes: https://pi.dev/news/releases
 - Pi skills: https://pi.dev/docs/latest/skills
 - Pi packages: https://pi.dev/docs/latest/packages
 - Pi extensions: https://pi.dev/docs/latest/extensions
 - Pi settings: https://pi.dev/docs/latest/settings
 - OMP repository: https://github.com/can1357/oh-my-pi
+- OMP releases: https://github.com/can1357/oh-my-pi/releases
+- OMP coding-agent changelog: https://github.com/can1357/oh-my-pi/blob/main/packages/coding-agent/CHANGELOG.md
+- OMP porting notes: https://github.com/can1357/oh-my-pi/blob/main/docs/porting-from-pi-mono.md
 - OMP skills: https://github.com/can1357/oh-my-pi/blob/main/docs/skills.md
 - OMP custom tools: https://github.com/can1357/oh-my-pi/blob/main/docs/custom-tools.md
 - OMP extensions: https://github.com/can1357/oh-my-pi/blob/main/docs/extensions.md

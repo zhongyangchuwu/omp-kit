@@ -2,37 +2,33 @@
 
 ## Goal
 
-Pi Kit is the canonical workbench for maintained Pi / Oh My Pi agent capabilities. It should remain auditable, testable, installable, and reversible as it grows from skills into OMP extensions, deterministic tools, packages, and MCP integrations.
+Pi Kit is the OMP-first workbench for maintained agent skills. It should stay auditable, testable, installable, and easy to simplify.
 
 ## Operating principles
 
 - `registry.yaml` is the index of record, not a policy database.
-- Active skills live only in `skills/`.
-- External source material lives in `references/`; active capabilities live in tracked resource directories only after review.
+- Active skills live only in `skills/`; drafts live only in `drafts/`.
+- External source material lives in gitignored `references/`; everything else stays out until it is real.
 - Detailed constraints live with the resource they govern.
 - Python maintenance scripts provide repository automation.
 - Tests validate registry consistency, script behavior, and active skill safety invariants.
-- Superpowers may activate automatically for non-trivial software work; upstream nested Superpowers skills remain reference material, not active skills.
+- `omp-superpowers` stays a workflow skill, not a repository fact dump.
 
 ## Directory layout
 
 ```text
-skills/          Active skills linked into agent runtimes.
-extensions/      Reserved for OMP-native runtime extensions.
-tools/           Reserved for deterministic local CLIs/libraries.
-packages/        Reserved for Pi/OMP installable capability bundles.
+skills/          Active skills linked into OMP.
+drafts/          In-progress skills before promotion.
 references/      Gitignored upstream source/reference material.
-drafts/          Tracked in-progress resources before promotion.
-mcp/             Reserved for MCP servers and portable config templates.
-mcp/configs/     Reserved for example MCP config files without secrets.
 docs/            Project documentation.
 scripts/         Repository maintenance automation.
 tests/           Repository-level tests.
-registry.yaml    Canonical resource index.
+schemas/         Resource metadata schema.
+registry.yaml    Canonical generated resource index.
 justfile         Common maintenance entry points.
 ```
 
-Empty framework directories are tracked with `.gitkeep` until real resources exist.
+Tracked empty framework directories are intentionally not kept. Create new roots only when a real maintained resource exists.
 
 ## Resource boundaries
 
@@ -44,29 +40,28 @@ Skills are model-readable workflow and reference packs:
 skills/<name>/SKILL.md
 ```
 
-Use skills for activation guidance, task workflows, decision rules, tool selection, safety notes, and references. Do not make a skill carry complex execution semantics on its own.
+Use skills for activation guidance, task workflows, decision rules, tool selection, safety notes, and references. Do not make a skill carry current-project facts that belong in `docs/`.
 
-### Extensions
+### Drafts
 
-Extensions are future OMP runtime integrations. They should expose custom tools, commands, hooks, or interceptors. Extension-local metadata should live in the extension directory, not in `registry.yaml`.
-
-### Tools
-
-Tools are deterministic implementations. They should be testable without the model and should return structured output when called by an extension.
-
-### Packages
-
-Packages are future installable bundles. A package may combine skills, extensions, prompts, themes, and metadata into one opt-in unit.
-
-### References and drafts
-
-External material is kept under gitignored `references/` while it is being studied or mined for ideas. Durable in-progress work lives under tracked `drafts/` with resource metadata:
+Drafts are reviewed but inactive skill work:
 
 ```text
-references/ -> review/extract -> drafts/<name> -> active resource directory -> registry.yaml
+drafts/<name>/SKILL.md
+drafts/<name>/resource.yaml
 ```
 
-Do not treat upstream references as design authority. `resource.yaml` records references for provenance; local skills may deliberately diverge after review, especially during MVP-stage iteration.
+Drafts appear in `registry.yaml` under `drafts:` and are never linked into OMP by the install script.
+
+### References
+
+External material is kept under gitignored `references/` while it is being studied or mined for ideas. Durable work moves through:
+
+```text
+references/ -> review/extract -> drafts/<name> -> skills/<name> -> registry.yaml
+```
+
+Do not treat upstream references as design authority. `resource.yaml` records provenance; local skills may deliberately diverge after review.
 
 ## Registry model
 
@@ -74,15 +69,15 @@ Resource-local `resource.yaml` files are the source of truth for detailed metada
 
 `resource.yaml` answers detailed questions:
 
-- Where did this resource come from?
+- Where did this skill or draft come from?
 - Why does it have this risk level?
 - How does it activate?
 - How is it verified?
-- What related extensions, tools, packages, or upstream sources does it have?
+- What upstream references informed it?
 
 `registry.yaml` answers only fast-index questions:
 
-- What resource exists?
+- What skill or draft exists?
 - Where is it?
 - What status is it in?
 - What risk class is it?
@@ -103,9 +98,6 @@ Allowed top-level resource groups:
 
 ```text
 skills
-extensions
-tools
-packages
 drafts
 ```
 
@@ -119,16 +111,13 @@ risk
 
 Detailed policy belongs in `resource.yaml` and resource-local files:
 
-- skill behavior: `SKILL.md`, references, and `resource.yaml`;
-- extension behavior: extension-local metadata and `resource.yaml`;
-- tool behavior: tool-native config such as `pyproject.toml` or `package.json`, plus `resource.yaml`;
-- package behavior: package manifest plus `resource.yaml`;
+- active skill behavior: `SKILL.md`, references, and `resource.yaml`;
 - draft review details: `drafts/<name>/resource.yaml` and resource-local notes.
 
 ## Maintenance scripts
 
 ```text
-scripts/link_skills.py        Links each ./skills/* directory into ~/.agents/skills/.
+scripts/link_skills.py        Links each ./skills/* directory into ~/.omp/agent/skills/.
 scripts/resource_metadata.py  Loads, validates, and converts resource.yaml files.
 scripts/build_registry.py     Generates or checks registry.yaml from resource.yaml files.
 scripts/validate_registry.py  Validates generated registry shape and drift.
@@ -159,11 +148,6 @@ Repository tests cover:
 
 ## Future upgrade path
 
-The next upgrade phases should be incremental:
+Future OMP extensions, deterministic tools, MCP servers, and packages are roadmap items, not tracked roots. Add a root only when there is a real maintained artifact and a testable install workflow for it.
 
-1. Promote `autodl` into the first full high-risk package.
-2. Continue mining `references/claude-plugins-official` and other source checkouts selectively into drafts.
-3. Add OMP extension linking only after real extensions exist.
-4. Add detailed operation guides after the framework stabilizes.
-
-The long-term target is a tested local Pi capability system rather than a loose collection of prompts and scripts.
+The long-term target is a tested local OMP skill kit rather than a loose collection of prompts and scripts.

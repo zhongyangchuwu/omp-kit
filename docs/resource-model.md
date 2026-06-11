@@ -1,6 +1,6 @@
 # Resource Model
 
-Every tracked repository resource owns a `resource.yaml` file. `registry.yaml` is generated from these files and is never edited by hand.
+Every tracked skill or draft owns a `resource.yaml` file. `registry.yaml` is generated from these files and is never edited by hand.
 
 Top-level `references/` is the exception: it is local, gitignored source material for upstream repositories, books, downloaded docs, and other external references. It is intentionally outside the resource model.
 
@@ -13,9 +13,6 @@ For YAML language-server support, map `schemas/resource.schema.yaml` to:
 ```text
 skills/*/resource.yaml
 drafts/*/resource.yaml
-extensions/*/resource.yaml
-tools/*/resource.yaml
-packages/*/resource.yaml
 ```
 
 The schema handles required fields, types, enums, and nested source-reference shapes. Repository-specific invariants remain in `scripts/resource_metadata.py`: resource `name` must match the directory, `path` must match the actual path and exist, draft resources must live under `drafts/`, and generated registry keys must be unique.
@@ -26,9 +23,6 @@ The schema handles required fields, types, enums, and nested source-reference sh
 
 ```text
 skills/<name>/resource.yaml
-extensions/<name>/resource.yaml
-tools/<name>/resource.yaml
-packages/<name>/resource.yaml
 drafts/<name>/resource.yaml
 ```
 
@@ -44,18 +38,13 @@ path: drafts/code-taste
 
 source:
   type: upstream-derived
-  origin: references/compound-engineering-plugin; references/agents; skills/omp-superpowers/references
+  origin: references/compound-engineering-plugin
   references:
     - label: compound-engineering-plugin
       path: references/compound-engineering-plugin
       repository: https://github.com/EveryInc/compound-engineering-plugin.git
       branch: main
       commit: 85987d496fdfdc8a18faf592fd53329e23266537
-    - label: agents
-      path: references/agents
-      repository: https://github.com/wshobson/agents.git
-      branch: main
-      commit: 0818067b4ecad18c234b2ae427cc44f2053792d4
   imported: null
   promoted: null
   notes:
@@ -81,9 +70,6 @@ maintenance:
     - Keep this skill focused on code-level judgment.
 
 relationships:
-  extensions: []
-  tools: []
-  packages: []
   upstream:
     - references/compound-engineering-plugin
 ```
@@ -93,8 +79,8 @@ relationships:
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `name` | string | yes | Kebab-case name matching the resource directory. |
-| `kind` | enum | yes | `skill`, `extension`, `tool`, `package`. |
-| `status` | enum | yes | `active`, `draft`, `archived`. |
+| `kind` | enum | yes | Currently only `skill`. |
+| `status` | enum | yes | `active`, `draft`, or `archived`. |
 | `path` | string | yes | Repo-relative path to the resource directory; must match actual location. |
 | `source.type` | string | yes | `self`, `upstream-derived`, `promoted-local`, or another explicit classifier. |
 | `source.origin` | string\|null | yes | Human-readable primary origin. May be a local path, multiple paths, or null for self-authored resources. |
@@ -115,11 +101,11 @@ relationships:
 | `verification.notes` | list[string] | yes | Additional verification guidance. |
 | `maintenance.last_reviewed` | string | yes | ISO date of last review. |
 | `maintenance.notes` | list[string] | yes | Free-form maintenance notes. |
-| `relationships.*` | list[string] | yes | Links to related tracked resources or reference paths. |
+| `relationships.upstream` | list[string] | yes | Links to related upstream or local reference paths. |
 
 ## Reference provenance semantics
 
-`source.references` records where ideas, source text, or implementation patterns came from. It does not mean the local resource remains semantically aligned with that upstream. A local skill can deliberately diverge after review, especially during MVP-stage iteration.
+`source.references` records where ideas, source text, or implementation patterns came from. It does not mean the local resource remains semantically aligned with that upstream. A local skill can deliberately diverge after review.
 
 When a reference is a git checkout under `references/`, record:
 
@@ -164,4 +150,4 @@ Use `explicit-only` for skills whose descriptions are too broad and would auto-t
 | Medium | May contain local scripts or tooling. No secrets, billing, SSH, or external writes. |
 | High | Secrets, network services, SSH, paid/cloud resources, billing, deletion, stopping, or external writes. |
 
-High-risk resources should not be auto-linked without review. Prefer package-level opt-in, dry-run support, and clear audit output.
+High-risk resources should not be auto-linked without review. Prefer explicit confirmation for destructive actions, dry-run support, and clear audit output.

@@ -55,9 +55,6 @@ maintenance:
     - "Avoid becoming a generic design-pattern encyclopedia."
 
 relationships:
-  extensions: []
-  tools: []
-  packages: []
   upstream:
     - drafts/code-taste
     - references/compound-engineering-plugin/plugins/compound-engineering/agents/ce-code-simplicity-reviewer.md

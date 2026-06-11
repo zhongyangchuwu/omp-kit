@@ -2,18 +2,11 @@
 
 ## Setting up active skill installation
 
-Active skills are symlinked into the agent configuration directory so the runtime discovers them. The current install command creates one symlink per skill under `~/.agents/skills/`; extension/tool/package install layouts are not defined yet.
+Active skills are symlinked into OMP's native user config directory so the runtime discovers them. The install command creates one symlink per skill under `~/.omp/agent/skills/`.
 
 ```bash
-just install          # symlink each ./skills/* -> ~/.agents/skills/
-just install-force    # replace stale per-skill links or old ~/.agents/skills parent symlink
-```
-
-Legacy aliases are retained:
-
-```bash
-just link-skills
-just link-skills-force
+just install          # symlink each ./skills/* -> ~/.omp/agent/skills/
+just install-force    # replace stale per-skill links under ~/.omp/agent/skills/
 ```
 
 Run `install-force` after adding, renaming, or removing active skills.
@@ -43,7 +36,7 @@ just test
 
 Top-level `references/` is local source material: upstream repositories, downloaded books, third-party skill collections, documentation snapshots, and other material used for research or extraction. It is intentionally gitignored and is not part of `registry.yaml`.
 
-Use `references/` when material is useful to consult but should not become a maintained repository resource as-is. Do not add `resource.yaml`, `review.yaml`, or review index files there by default. Track durable conclusions in `docs/` or in the `resource.yaml` of the skill/tool/package that actually incorporates the idea.
+Use `references/` when material is useful to consult but should not become a maintained repository resource as-is. Do not add `resource.yaml`, `review.yaml`, or review index files there by default. Track durable conclusions in `docs/` or in the `resource.yaml` of the skill or draft that actually incorporates the idea.
 
 Before copying anything out of `references/`, review the source material for:
 

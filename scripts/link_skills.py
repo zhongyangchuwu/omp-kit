@@ -94,12 +94,12 @@ def default_repo_root() -> Path:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Link skills from the current directory into ~/.agents/skills")
+    parser = argparse.ArgumentParser(description="Link skills from the current directory into ~/.omp/agent/skills")
     parser.add_argument(
         "--agent-root",
         type=Path,
-        default=Path(os.environ.get("AGENT_ROOT", "~/.agents")),
-        help="Agent config root to receive per-skill links; default: ~/.agents",
+        default=Path(os.environ.get("AGENT_ROOT", "~/.omp/agent")),
+        help="Agent config root to receive per-skill links; default: ~/.omp/agent",
     )
     parser.add_argument(
         "--repo-root",

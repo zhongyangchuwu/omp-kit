@@ -51,9 +51,6 @@ def test_every_registry_resource_has_resource_yaml() -> None:
     for group, kind in {
         "skills": "skill",
         "drafts": "skill",
-        "extensions": "extension",
-        "tools": "tool",
-        "packages": "package",
     }.items():
         for name in registry.get(group, {}):
             expected.add((kind, name))

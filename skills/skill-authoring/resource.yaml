@@ -32,7 +32,4 @@ maintenance:
     - Use this skill as the maintenance hub for resource metadata conventions.
 
 relationships:
-  extensions: []
-  tools: []
-  packages: []
   upstream: []
