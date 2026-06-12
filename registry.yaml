@@ -9,6 +9,10 @@ skills:
     status: active
     risk: low
     path: skills/code-taste
+  document-parser:
+    status: active
+    risk: medium
+    path: skills/document-parser
   omp-superpowers:
     status: active
     risk: medium

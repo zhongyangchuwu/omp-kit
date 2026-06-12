@@ -1,0 +1,43 @@
+name: document-parser
+kind: skill
+status: active
+path: skills/document-parser
+
+source:
+  type: upstream-derived
+  origin: MinerU-Ecosystem official skill
+  references:
+    - label: MinerU-Ecosystem skills
+      path: null
+      repository: https://github.com/opendatalab/MinerU-Ecosystem.git
+      branch: main
+      commit: null
+  imported: "2026-06-12"
+  promoted: "2026-06-12"
+  notes:
+    - "Progressive disclosure: core workflow in SKILL.md, tool reference in mineru.md."
+    - Language and format tables deferred to web search for rare cases.
+    - SOCKS proxy issue was MCP/Python-only; CLI (Go binary) is unaffected.
+
+risk:
+  level: medium
+  reason: Network API calls to mineru.net for document parsing. Token stored in shell environment.
+
+activation:
+  mode: explicit-only
+  notes: Activate when user asks to read, extract, convert, or parse documents.
+
+verification:
+  commands:
+    - just test
+  notes:
+    - Verify SKILL.md frontmatter and resource.yaml schema.
+
+maintenance:
+  last_reviewed: "2026-06-12"
+  notes:
+    - MinerU CLI is the only backend. Add LiteParse or other tools as fallback when integrated.
+
+relationships:
+  upstream:
+    - https://github.com/opendatalab/MinerU-Ecosystem/tree/main/skills
