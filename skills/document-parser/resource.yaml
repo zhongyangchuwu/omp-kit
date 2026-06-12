@@ -15,10 +15,10 @@ source:
   imported: "2026-06-12"
   promoted: "2026-06-12"
   notes:
-    - "Progressive disclosure: core workflow in SKILL.md, tool reference in mineru.md."
+    - "Progressive disclosure: core workflow in SKILL.md, tool references in mineru.md and liteparse.md."
     - Language and format tables deferred to web search for rare cases.
     - SOCKS proxy issue was MCP/Python-only; CLI (Go binary) unaffected.
-    - Added MarkItDown as secondary backend for audio, YouTube, EPUB, offline docs.
+    - Added liteparse as local offline backend (Rust + PDFium). Removed MarkItDown (OMP read already uses it).
 
 risk:
   level: medium
@@ -37,8 +37,9 @@ verification:
 maintenance:
   last_reviewed: "2026-06-12"
   notes:
-    - MinerU CLI is the only backend. Add LiteParse or other tools as fallback when integrated.
+    - "Dual backend: MinerU (cloud VLM) + liteparse (local PDFium). Triage by document complexity."
 
 relationships:
   upstream:
     - https://github.com/opendatalab/MinerU-Ecosystem/tree/main/skills
+    - https://github.com/run-llama/liteparse

@@ -1,6 +1,6 @@
 # MinerU CLI Reference
 
-MinerU is the primary backend for document parsing. It converts documents to Markdown via the MinerU cloud API (mineru.net).
+MinerU is the cloud backend for high-quality document parsing. It converts documents to Markdown via the MinerU cloud API (mineru.net), using a Vision Language Model for layout understanding.
 
 ## Installation
 
