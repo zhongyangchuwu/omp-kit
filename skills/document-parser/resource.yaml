@@ -17,7 +17,8 @@ source:
   notes:
     - "Progressive disclosure: core workflow in SKILL.md, tool reference in mineru.md."
     - Language and format tables deferred to web search for rare cases.
-    - SOCKS proxy issue was MCP/Python-only; CLI (Go binary) is unaffected.
+    - SOCKS proxy issue was MCP/Python-only; CLI (Go binary) unaffected.
+    - Added MarkItDown as secondary backend for audio, YouTube, EPUB, offline docs.
 
 risk:
   level: medium
