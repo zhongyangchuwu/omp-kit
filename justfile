@@ -8,14 +8,6 @@ install *args:
 install-force:
     uv run python scripts/link_skills.py --force --prune
 
-# Legacy alias for installing per-skill links.
-link-skills *args:
-    uv run python scripts/link_skills.py {{args}}
-
-# Legacy alias for replacing stale per-skill links.
-link-skills-force:
-    uv run python scripts/link_skills.py --force --prune
-
 # Generate registry.yaml from resource.yaml files.
 build-registry:
     uv run python scripts/build_registry.py
