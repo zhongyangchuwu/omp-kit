@@ -44,3 +44,7 @@ promote-skill path *args:
 # Run all repository tests (fast gate).
 test:
     uv run python -m pytest tests
+
+# Pull all standalone git repos under references/ and print a summary.
+pull-references:
+    uv run python scripts/git_pull_references.py
