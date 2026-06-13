@@ -17,6 +17,10 @@ skills:
     status: active
     risk: medium
     path: skills/omp-superpowers
+  program-language:
+    status: active
+    risk: low
+    path: skills/program-language
   skill-authoring:
     status: active
     risk: low
