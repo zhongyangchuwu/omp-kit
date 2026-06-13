@@ -48,3 +48,7 @@ test:
 # Pull all standalone git repos under references/ and print a summary.
 pull-references:
     uv run python scripts/git_pull_references.py
+
+# Generate skeleton docs for reference repos that lack them.
+init-reference-docs:
+    uv run python scripts/init_reference_docs.py
