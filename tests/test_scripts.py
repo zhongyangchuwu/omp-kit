@@ -37,11 +37,14 @@ def test_validate_registry_reports_missing_paths(tmp_path: Path) -> None:
 
 
 def test_build_index_prints_known_resource_groups() -> None:
-    text = build_index(load_registry(REGISTRY))
+    registry = load_registry(REGISTRY)
+    text = build_index(registry)
 
-    assert "Skills\n" in text
-    assert "- autodl [active/high] skills/autodl" in text
-    assert "Drafts\n" in text
+    for group, entries in registry.items():
+        assert f"{group.title()}\n" in text
+        for name, entry in entries.items():
+            assert f"- {name} [{entry['status']}/{entry['risk']}] {entry['path']}" in text
+
     assert "Extensions" not in text
     assert "Packages" not in text
 

@@ -16,16 +16,14 @@ The repository stays small on purpose:
 | --- | --- | --- |
 | `autodl` | High | AutoDL Pro GPU instance management, balance checks, SSH smoke tests |
 | `code-taste` | Low | Code-level judgment for maintainability, API shape, tests, errors, performance |
+| `document-parser` | Medium | Document-to-Markdown parsing for PDFs, Office files, images, and web pages |
 | `omp-superpowers` | Medium | Superpowers workflow and decision method for non-trivial software work |
+| `program-language` | Low | Programming-language ecosystem references for project development |
 | `skill-authoring` | Low | Create, review, localize, and maintain Agent Skills |
 
 ## Draft skills
 
-| Draft | Risk | What it is for |
-| --- | --- | --- |
-| `code-taste` | Low | Draft code-quality skill under refinement |
-| `doc-coauthoring` | Low | Draft structured documentation workflow |
-| `paper-diagram` | Medium | Draft paper-diagram workflow and SVG/PPTX pipeline |
+No draft skills are currently tracked. Keep new work under `drafts/` only while it is being reviewed before promotion.
 
 ## External references
 

@@ -25,16 +25,4 @@ skills:
     status: active
     risk: low
     path: skills/skill-authoring
-drafts:
-  code-taste:
-    status: draft
-    risk: low
-    path: drafts/code-taste
-  doc-coauthoring:
-    status: draft
-    risk: low
-    path: drafts/doc-coauthoring
-  paper-diagram:
-    status: draft
-    risk: medium
-    path: drafts/paper-diagram
+drafts: {}

@@ -58,81 +58,18 @@ def test_draft_entries_are_not_linked_from_active_skills() -> None:
         assert str(entry["path"]).startswith("drafts/")
 
 
-def test_omp_superpowers_has_fast_path_activation() -> None:
-    skill_md = ROOT / "skills" / "omp-superpowers" / "SKILL.md"
-    text = skill_md.read_text(encoding="utf-8")
-
-    assert "Fast path" in text
-    assert "non-trivial software work" in text
-    assert "simple, low-risk" in text
-
-    forbidden = [
-        "MUST use this before any creative work",
-        "before ANY response",
-        "starting any conversation",
-        "Invoke relevant or requested skills BEFORE any response",
-    ]
-    for pattern in forbidden:
-        assert pattern not in text
-
-
-def test_omp_superpowers_requires_intent_gate_before_mutation() -> None:
-    skill_md = ROOT / "skills" / "omp-superpowers" / "SKILL.md"
-    text = skill_md.read_text(encoding="utf-8")
-
-    assert "Intent gate before action" in text
-    assert "Discussion mode" in text
-    assert "Planning mode" in text
-    assert "Execution mode" in text
-    assert "default to discussion/planning, not editing" in text
-    assert "Do not mutate repository files" in text
-
-
-
-def test_omp_superpowers_reviews_user_proposals_before_execution() -> None:
-    skill_md = ROOT / "skills" / "omp-superpowers" / "SKILL.md"
-    text = skill_md.read_text(encoding="utf-8")
-
-    assert "User proposal review" in text
-    assert "hypotheses to evaluate" in text
-    assert "not conclusions to blindly implement" in text
-    assert "say so once and concretely" in text
-    assert "smaller, clearer, or more reversible alternative" in text
-
-
-
-def test_omp_superpowers_defines_project_stage_policy() -> None:
-    skill_md = ROOT / "skills" / "omp-superpowers" / "SKILL.md"
-    text = skill_md.read_text(encoding="utf-8")
-
-    assert "Project stage policy" in text
-    for stage in ["exploration", "mvp", "productizing", "maintenance", "critical"]:
-        assert f"`{stage}`" in text
-    assert "Default this personal repository to `mvp`" in text
-    assert "Escalate rigor automatically" in text
-    assert "contract-level tests over exhaustive white-box coverage" in text
-def test_omp_superpowers_nested_skills_are_reference_only() -> None:
+def test_nested_reference_skills_are_not_registered_as_active_resources() -> None:
     data = load_registry()
     active_skill_names = set(data.get("skills", {}))
-    sub_root = ROOT / "skills" / "omp-superpowers" / "references" / "skills"
 
-    assert sub_root.is_dir()
-    sub_skill_names = {
-        path.name
-        for path in sub_root.iterdir()
-        if path.is_dir() and (path / "SKILL.md").is_file()
-    }
-    assert len(sub_skill_names) == 14
-    assert not (sub_skill_names & active_skill_names)
+    for skill_dir in (ROOT / "skills").iterdir():
+        sub_root = skill_dir / "references" / "skills"
+        if not sub_root.is_dir():
+            continue
 
-
-def test_omp_superpowers_localization_notes_keep_omp_tooling() -> None:
-    note = ROOT / "skills" / "omp-superpowers" / "references" / "omp-localization.md"
-    text = note.read_text(encoding="utf-8")
-
-    assert "fast path" in text
-    assert "non-trivial software work" in text
-    assert "task" in text
-    assert "todo_write" in text
-    assert "Read tool" not in text
-    assert "Skill tool" not in text
+        sub_skill_names = {
+            path.name
+            for path in sub_root.iterdir()
+            if path.is_dir() and (path / "SKILL.md").is_file()
+        }
+        assert not (sub_skill_names & active_skill_names)

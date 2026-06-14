@@ -31,20 +31,20 @@ Draft skill metadata uses `kind: skill` and `status: draft`; active skill metada
 ### Example
 
 ```yaml
-name: code-taste
+name: example-skill
 kind: skill
 status: draft
-path: drafts/code-taste
+path: drafts/example-skill
 
 source:
   type: upstream-derived
-  origin: references/compound-engineering-plugin
+  origin: references/example-source
   references:
-    - label: compound-engineering-plugin
-      path: references/compound-engineering-plugin
-      repository: https://github.com/EveryInc/compound-engineering-plugin.git
+    - label: example-source
+      path: references/example-source
+      repository: https://example.com/upstream/example-source.git
       branch: main
-      commit: 85987d496fdfdc8a18faf592fd53329e23266537
+      commit: null
   imported: null
   promoted: null
   notes:
@@ -67,13 +67,13 @@ verification:
 maintenance:
   last_reviewed: "2026-05-31"
   notes:
-    - Keep this skill focused on code-level judgment.
+    - Keep this skill focused on one clear workflow.
 
 relationships:
   upstream:
-    - references/compound-engineering-plugin
-```
+    - references/example-source
 
+```
 ### Field reference
 
 | Field | Type | Required | Notes |

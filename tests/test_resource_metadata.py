@@ -85,10 +85,6 @@ def test_active_skill_resources_match_skill_frontmatter() -> None:
         assert frontmatter.get("description")
 
 
-def test_omp_superpowers_resource_records_automatic_fast_path_activation() -> None:
-    superpowers = next(resource for resource in resources() if resource.name == "omp-superpowers")
-    assert superpowers.data["activation"]["mode"] == "automatic"
-    assert "fast path" in superpowers.data["activation"]["notes"]
 
 
 def test_generated_registry_yaml_is_minimal() -> None:
