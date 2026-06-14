@@ -42,6 +42,27 @@ If `.superpowers/`, `.worktrees/`, or `worktrees/` are used in a project, ensure
 - User instructions and repository-specific instructions still override Superpowers.
 - For implementation work, use the repository's existing tool/test conventions and Oh My Pi dedicated tools.
 
+## Upstream workflow assets to preserve
+
+Keep workflow UX principles from upstream; do not import release or plugin machinery:
+
+- Brainstorming UX: inspect context, one question at a time, concrete options with tradeoffs, recommend, get approval.
+- Visual companion: only for visual comparison work (UI, layout, diagrams). Ask first. Do not route text-only decisions through it.
+- Verification: fresh evidence, not stale memory. For config/provider/env/auth/model changes, verify the observable difference, not just "command succeeded."
+- Subagent execution: lean context per task; self-review before handoff; reviewers read files independently; controller verifies.
+- Process hygiene: when a workflow starts long-lived processes, define lifecycle and cleanup before trusting E2E results.
+- Mock safety: derive mocks from interfaces/contracts, not from the current implementation call shape.
+
+## Upstream assets not to import
+
+Do not copy these into this skill unless building an OMP extension/plugin project:
+
+- Harness plugin/extension configs (`.claude-plugin`, `.cursor-plugin`, `.codex-plugin`, `.opencode`, `gemini-extension.json`)
+- Release/maintenance scripts, version-bump, sync, package metadata
+- GitHub issue/PR templates, funding, code-of-conduct files
+- Harness-specific integration tests (not OMP user workflows)
+Use these as design references only when building an OMP-native workflow feature.
+
 ## Subagent adaptation
 
 When upstream templates say `Task tool (general-purpose)`, convert them to Oh My Pi `task` calls:

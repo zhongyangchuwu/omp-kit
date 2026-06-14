@@ -5,7 +5,7 @@ description: Use for non-trivial software work that benefits from structured met
 
 # Superpowers for Oh My Pi
 
-This is the local Oh My Pi entrypoint for the Superpowers skill collection. Use it as lightweight process guidance by default for non-trivial software work, but do not force the full methodology onto simple tasks.
+This is the local OMP entrypoint for the Superpowers collection. Use it for non-trivial software work; do not force the full methodology onto simple tasks.
 
 
 ## Intent gate before action
@@ -47,6 +47,7 @@ Before deciding process weight, infer the current project stage from repo contex
 Default this personal repository to `mvp` unless evidence says otherwise. Escalate rigor automatically for data loss, migrations, auth/security, billing/cloud/SSH/secrets, public APIs, concurrency/consistency, irreversible actions, deployment, or multi-user impact.
 
 Do not let process or test volume outrun the stage. In `exploration` and `mvp`, favor rapid iteration, clear architecture, reversible changes, and contract-level tests over exhaustive white-box coverage. In `critical` work, do not use MVP speed as an excuse to weaken verification.
+
 ## Fast path first
 
 Before loading upstream workflow files, classify the task:
@@ -55,6 +56,15 @@ Before loading upstream workflow files, classify the task:
 - Full workflow: ambiguous requirements, multi-file implementation, debugging without known cause, behavior changes, tests or safety implications, refactors, skill authoring, code review, or tasks likely to benefit from planning/subagents/TDD. Load `references/omp-localization.md`, then read only the specific workflow files needed.
 
 If the task starts simple but evidence shows broader risk or uncertainty, switch from fast path to the relevant full workflow.
+
+## Key workflow principles
+
+- Complex needs → light design pass (context, one question at a time, 2-3 options with tradeoffs, recommend one, get approval) before coding.
+- Visual questions (UI, layout, diagrams) → offer mockup/diagram/visual companion; ask first, use text/Mermaid/ASCII when enough.
+- Debugging → root cause first; reproduce, read errors fully, trace data/config flow, form one hypothesis, test smallest change.
+- Verification → prove intended effect, not just command success; for config/provider/env/auth/model changes, check the actual observable difference.
+- Subagents → lean context (exact task + files + constraints + acceptance); self-review before handoff; reviewers inspect files independently; controller verifies final state.
+- E2E/server → process hygiene: know what runs, ensure tests hit the right process, clean up, avoid stale ports.
 
 ## What is included
 
