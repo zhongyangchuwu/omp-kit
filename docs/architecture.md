@@ -13,6 +13,7 @@ OMP Kit is the OMP-first workbench for maintained agent skills. It should stay a
 - Python maintenance scripts provide repository automation.
 - Tests validate registry consistency, script behavior, and active skill safety invariants.
 - `omp-superpowers` stays a workflow skill, not a repository fact dump.
+- Skill design follows `docs/skill-design.md`: one owner domain per skill, concise descriptions for automatic selection, and no duplicated guidance across skills.
 
 ## Directory layout
 
@@ -40,7 +41,7 @@ Skills are model-readable workflow and reference packs:
 skills/<name>/SKILL.md
 ```
 
-Use skills for activation guidance, task workflows, decision rules, tool selection, safety notes, and references. Do not make a skill carry current-project facts that belong in `docs/`.
+Use skills for activation guidance, task workflows, decision rules, tool selection, safety notes, and references. Current-project facts belong in `docs/`; reusable skill instructions belong in the owning skill.
 
 ### Drafts
 

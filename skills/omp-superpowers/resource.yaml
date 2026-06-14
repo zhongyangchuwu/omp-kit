@@ -25,7 +25,7 @@ risk:
 
 activation:
   mode: automatic
-  notes: Use for non-trivial software work that benefits from structured methodology; take the fast path for simple, low-risk tasks.
+  notes: Use for non-trivial software work that needs structured methodology; take the fast path for simple, low-risk tasks.
 
 verification:
   commands:
@@ -38,9 +38,9 @@ maintenance:
   last_reviewed: "2026-06-14"
   notes:
     - Upstream bootstrap auto-activation is intentionally narrowed to non-trivial software work with a local fast path for simple tasks.
-    - OMP localization notes must keep Oh My Pi tool mappings, workflow UX principles, and fast-path policy current.
-    - Absorb upstream workflow principles and user-facing tools; do not import upstream release, plugin, hook, or maintenance machinery into this skill.
-    - Upstream Superpowers source content is vendored inside this skill under references/; the duplicate top-level references/superpowers copy is not required.
+    - SKILL.md is kept as a concise workflow control panel; detailed upstream procedures stay in support files.
+    - OMP localization notes keep tool mappings, workflow UX principles, and fast-path policy current.
+    - Upstream Superpowers source content is vendored inside this skill under references/.
 
 relationships:
   upstream:

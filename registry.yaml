@@ -13,6 +13,10 @@ skills:
     status: active
     risk: medium
     path: skills/document-parser
+  git-workflow:
+    status: active
+    risk: low
+    path: skills/git-workflow
   omp-superpowers:
     status: active
     risk: medium

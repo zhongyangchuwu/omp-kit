@@ -7,13 +7,13 @@ source:
   type: promoted-local
   origin: drafts/code-taste
   references:
-    - label: compound-engineering-plugin
-      path: references/compound-engineering-plugin
+    - label: EveryInc@compound-engineering-plugin
+      path: references/EveryInc@compound-engineering-plugin
       repository: https://github.com/EveryInc/compound-engineering-plugin.git
       branch: main
       commit: 85987d496fdfdc8a18faf592fd53329e23266537
-    - label: agents
-      path: references/agents
+    - label: wshobson@agents
+      path: references/wshobson@agents
       repository: https://github.com/wshobson/agents.git
       branch: main
       commit: 0818067b4ecad18c234b2ae427cc44f2053792d4
@@ -36,9 +36,8 @@ activation:
   mode: automatic
   notes: >
     Activate for implementation, refactoring, simplification, exported API/type
-    changes, error-handling decisions, test design, performance-sensitive paths,
-    or code review. Use as a judgment layer alongside omp-superpowers; do not
-    turn it into extra ceremony for formatting-only or documentation-only edits.
+    changes, error-handling decisions, state transitions, test design, mock
+    boundaries, performance-sensitive paths, or code review findings.
 
 verification:
   commands:
@@ -48,22 +47,21 @@ verification:
     - "Draft retained at drafts/code-taste for review history."
 
 maintenance:
-  last_reviewed: "2026-06-02"
+  last_reviewed: "2026-06-14"
   notes:
-    - "Activation changed from explicit-only to automatic by user preference; apply to every code change while keeping scope code-level."
-    - "Keep focused on code-level judgment; do not expand into architecture/RFC workflow."
-    - "Avoid becoming a generic design-pattern encyclopedia."
+    - "Activation remains automatic by user preference; apply to code-level quality judgment while keeping scope concise."
+    - "Keep focused on practical implementation and review judgment."
+    - "Detailed rubrics stay in skill-local support files."
 
 relationships:
   upstream:
     - drafts/code-taste
-    - references/compound-engineering-plugin/plugins/compound-engineering/agents/ce-code-simplicity-reviewer.md
-    - references/compound-engineering-plugin/plugins/compound-engineering/agents/ce-maintainability-reviewer.md
-    - references/compound-engineering-plugin/plugins/compound-engineering/agents/ce-correctness-reviewer.md
-    - references/compound-engineering-plugin/plugins/compound-engineering/agents/ce-api-contract-reviewer.md
-    - references/compound-engineering-plugin/plugins/compound-engineering/agents/ce-performance-reviewer.md
-    - references/compound-engineering-plugin/plugins/compound-engineering/skills/ce-simplify-code/SKILL.md
-    - references/agents/plugins/code-refactoring
-    - references/agents/plugins/developer-essentials/skills/code-review-excellence
-    - references/agents/plugins/developer-essentials/skills/error-handling-patterns
-    - skills/omp-superpowers/references/skills/test-driven-development
+    - references/EveryInc@compound-engineering-plugin/plugins/compound-engineering/agents/ce-code-simplicity-reviewer.md
+    - references/EveryInc@compound-engineering-plugin/plugins/compound-engineering/agents/ce-maintainability-reviewer.md
+    - references/EveryInc@compound-engineering-plugin/plugins/compound-engineering/agents/ce-correctness-reviewer.md
+    - references/EveryInc@compound-engineering-plugin/plugins/compound-engineering/agents/ce-api-contract-reviewer.md
+    - references/EveryInc@compound-engineering-plugin/plugins/compound-engineering/agents/ce-performance-reviewer.md
+    - references/EveryInc@compound-engineering-plugin/plugins/compound-engineering/skills/ce-simplify-code/SKILL.md
+    - references/wshobson@agents/plugins/code-refactoring
+    - references/wshobson@agents/plugins/developer-essentials/skills/code-review-excellence
+    - references/wshobson@agents/plugins/developer-essentials/skills/error-handling-patterns
