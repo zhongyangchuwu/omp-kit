@@ -10,33 +10,6 @@ The repository stays small on purpose:
 - project facts live in `docs/`, not in workflow skills;
 - empty capability roots are removed instead of kept as placeholders.
 
-## Active skills
-
-| Skill | Risk | What it does |
-| --- | --- | --- |
-| `autodl` | High | AutoDL Pro GPU instance management, balance checks, SSH smoke tests |
-| `code-taste` | Low | Code-level judgment for maintainability, API shape, tests, errors, performance |
-| `document-parser` | Medium | Document-to-Markdown parsing for PDFs, Office files, images, and web pages |
-| `omp-superpowers` | Medium | Superpowers workflow and decision method for non-trivial software work |
-| `program-language` | Low | Programming-language ecosystem references for project development |
-| `skill-authoring` | Low | Create, review, localize, and maintain Agent Skills |
-
-## Draft skills
-
-No draft skills are currently tracked. Keep new work under `drafts/` only while it is being reviewed before promotion.
-
-## External references
-
-Third-party source material lives under `references/` and is not active until reviewed and incorporated into a tracked skill, draft, or documentation artifact.
-
-| Collection | Status |
-| --- | --- |
-| `references/anthropic-skills` | Source material for third-party skills and PPTX tooling |
-| `references/ppt-master` | SVG/PPTX diagram-generation reference material |
-| `references/compound-engineering-plugin` | Engineering workflow, review persona, and converter reference material |
-| `references/agents` | Marketplace-scale agent, skill, command, and adapter reference material |
-| `references/harness` | Agent-team design reference; not active |
-
 ## Layout
 
 ```text
@@ -54,21 +27,16 @@ justfile         Common maintenance entry points
 ## Quick commands
 
 ```bash
-just install              # symlink each ./skills/* → ~/.omp/agent/skills/
-just install-force        # replace stale per-skill links under ~/.omp/agent/skills/
-
-just link-skills          # legacy alias for just install
-just link-skills-force    # legacy alias for just install-force
+just install              # symlink active skills into ~/.omp/agent/skills/
+just install-force        # replace stale installed skill links
 
 just build-registry       # regenerate registry.yaml from resource.yaml files
 just check-registry       # fail if registry.yaml is stale
-just validate-registry    # validate generated registry and resource metadata
+just validate-registry    # validate registry and resource metadata
 just build-index          # print compact registry index
-just scan-risk PATH       # scan a directory for risk indicators
 
-just promote-skill drafts/NAME --name NAME  # promote reviewed draft skill into skills/
-
-just test                 # run all repository tests
+just promote-skill drafts/NAME --name NAME  # promote a reviewed draft skill
+just test                 # run repository tests
 ```
 
 ## Documentation
@@ -76,6 +44,7 @@ just test                 # run all repository tests
 | Doc | Content |
 | --- | --- |
 | `docs/architecture.md` | Repository design and operating principles |
+| `docs/skill-design.md` | Skill scope, owner domains, description standards, and duplicate-guidance rules |
 | `docs/resource-model.md` | `resource.yaml` schema, registry model, activation modes, risk levels |
 | `docs/workflows.md` | Daily operations, import/promote lifecycle, installation |
 | `docs/omp-runtime-notes.md` | Pi / OMP capability model reference |
@@ -85,7 +54,7 @@ just test                 # run all repository tests
 
 ## Rules
 
-- `resource.yaml` is canonical; `registry.yaml` is generated. Do not edit `registry.yaml` by hand.
-- Do not place unreviewed third-party skills in `skills/`.
-- Do not commit caches, virtual environments, compiled files, secrets, tokens, SSH hosts, or private keys.
+- `resource.yaml` is canonical; `registry.yaml` is generated.
+- Unreviewed third-party material stays under gitignored `references/` until extracted into a maintained resource or document.
+- Project facts live in `docs/`; skill behavior lives with the owning skill.
 - After changing structure, scripts, metadata, or skills, run `just test`.
