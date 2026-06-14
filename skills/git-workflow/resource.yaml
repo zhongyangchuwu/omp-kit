@@ -42,6 +42,7 @@ maintenance:
   last_reviewed: "2026-06-14"
   notes:
     - "Keep focused on currently used GitHub Flow practices."
+    - "Keep OMP GitHub tool mappings current with available runtime operations."
     - "Add tooling guidance only after the project actually configures that tooling."
     - "Keep SKILL.md as the control panel and task details in focused support files."
 relationships:

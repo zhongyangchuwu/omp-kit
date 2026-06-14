@@ -41,4 +41,5 @@ Small, low-risk maintenance may use the current workspace with direct verificati
 | Branch, worktree, default branch, and branch naming rules | `references/branch-and-worktree.md` |
 | Conventional-style commit message rules | `references/commit-messages.md` |
 | Pull request, CI, Copilot review, squash merge, and cleanup rules | `references/pull-requests.md` |
+| OMP GitHub tool mapping for PRs, CI, searches, and PR checkout | `references/omp-github-tools.md` |
 | Repository state checks before Git operations | `references/state-checks.md` |
