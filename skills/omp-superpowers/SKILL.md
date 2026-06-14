@@ -1,113 +1,74 @@
 ---
 name: omp-superpowers
-description: Use for non-trivial software work that benefits from structured methodology: feature design, implementation planning, debugging, TDD, verification, code review, or skill/workflow authoring. Includes a fast path for simple, low-risk tasks so routine edits are not forced through the full Superpowers lifecycle.
+description: Use for non-trivial software work that needs structured methodology: discussion/planning/execution intent, feature design, implementation planning, debugging, TDD cadence, verification, review orchestration, or subagent coordination. Includes a fast path for simple, low-risk tasks.
 ---
 
 # Superpowers for Oh My Pi
 
-This is the local OMP entrypoint for the Superpowers collection. Use it for non-trivial software work; do not force the full methodology onto simple tasks.
+## Focus
 
+Structured software-work cadence for Oh My Pi. This skill decides the working mode, process weight, planning depth, subagent shape, and verification standard for non-trivial engineering tasks.
 
-## Intent gate before action
+## Activation
 
-Before editing, running mutating commands, creating files, deleting files, or dispatching implementation work, classify the user's intent:
+Use this skill for work with meaningful uncertainty, risk, coordination, behavior change, debugging, TDD cadence, review, verification, or workflow design. Simple bounded edits take the fast path with proportional verification.
 
-- Discussion mode: the user is exploring an idea, asking whether something is reasonable, asking for critique, asking "what do you think", or explicitly says not to act yet. Do not mutate repository files. Respond with analysis, risks, alternatives, and recommended next steps.
-- Planning mode: the user asks for a plan, design, checklist, migration path, or phased approach. Do not mutate repository files unless they explicitly ask to create or update a plan artifact. Produce the plan and wait for execution approval.
-- Execution mode: the user explicitly asks to implement, edit, create, delete, refactor, migrate, update files, or execute an approved plan. Proceed with normal Oh My Pi tools after scoping and safety checks.
+## Intent gate
 
-If intent is ambiguous, default to discussion/planning, not editing. Phrases like "先不动手", "规划一下", "讨论一下", "你怎么看", "是否合理", "what do you think", "plan", or "evaluate" are not execution approval. Phrases like "直接改", "开始做", "实现", "删除", "更新文件", "create", "implement", "apply", or "execute the plan" indicate execution mode.
+Classify intent before mutating files, running mutating commands, creating resources, deleting resources, or dispatching implementation work:
 
-## User proposal review
+- **Discussion**: explore an idea, critique a proposal, compare options, or answer planning questions. Produce analysis, risks, alternatives, and recommended next steps.
+- **Planning**: design a solution, write a checklist, produce a migration path, or break work into phases. Produce the plan artifact or response requested by the user.
+- **Execution**: implement, edit, create, delete, refactor, migrate, or execute an approved plan. Scope the change, follow repository conventions, and verify the result.
 
-Treat user proposals as hypotheses to evaluate, not conclusions to blindly implement, unless the user has explicitly approved execution after tradeoffs are clear.
+Ambiguous intent stays in discussion or planning. Explicit implementation verbs move to execution.
 
-Before endorsing or executing a proposed approach, check whether it:
+## Project stage
 
-- solves the stated problem directly or substitutes a different problem;
-- introduces unnecessary process, abstractions, tooling, tests, or long-term maintenance burden;
-- weakens public contracts, safety, verification, reversibility, or source provenance;
-- conflicts with current project stage, existing architecture, or repository conventions;
-- has a smaller, clearer, or more reversible alternative.
+Match process weight to the project stage and blast radius:
 
-If the proposal is flawed, say so once and concretely: what breaks, why it matters, and what to do instead. If the user still chooses the approach after that review, follow their decision unless it violates safety, repository constraints, or explicit system/developer instructions.
-
-## Project stage policy
-
-Before deciding process weight, infer the current project stage from repo context and the user's stated goal:
-
-| Stage | Bias | Testing and verification |
+| Stage | Bias | Verification |
 | --- | --- | --- |
-| `exploration` | Learn quickly, validate feasibility, keep throwaway code cheap. | Smoke checks and contract probes only. |
-| `mvp` | Move fast, keep architecture clear, refactor aggressively when it reduces future friction. | Black-box contract tests for exposed behavior and critical paths; avoid exhaustive internal coverage. |
-| `productizing` | Stabilize contracts, migration paths, operational behavior, and user-facing reliability. | Contract, edge/error, and targeted regression tests. |
-| `maintenance` | Preserve compatibility and minimize unrelated churn. | Regression and contract tests around changed behavior. |
-| `critical` | Prioritize correctness, auditability, safety, and reversibility over speed. | Broader verification, explicit rollback/migration checks, and stronger review gates. |
+| `exploration` | Learn quickly and keep throwaway work cheap. | Smoke checks and contract probes. |
+| `mvp` | Move fast with clear architecture and reversible changes. | Contract-level tests for exposed behavior and critical paths. |
+| `productizing` | Stabilize public behavior, migration paths, and operations. | Contract, edge/error, and targeted regression tests. |
+| `maintenance` | Preserve compatibility and minimize unrelated churn. | Regression and contract checks around changed behavior. |
+| `critical` | Prioritize correctness, auditability, safety, and reversibility. | Broader verification, rollback/migration checks, and stronger review gates. |
 
-Default this personal repository to `mvp` unless evidence says otherwise. Escalate rigor automatically for data loss, migrations, auth/security, billing/cloud/SSH/secrets, public APIs, concurrency/consistency, irreversible actions, deployment, or multi-user impact.
+Escalate rigor for data loss, migrations, auth/security, billing/cloud/SSH/secrets, public APIs, concurrency/consistency, irreversible actions, deployment, and multi-user impact.
 
-Do not let process or test volume outrun the stage. In `exploration` and `mvp`, favor rapid iteration, clear architecture, reversible changes, and contract-level tests over exhaustive white-box coverage. In `critical` work, do not use MVP speed as an excuse to weaken verification.
+## Workflow
 
-## Fast path first
+1. Choose fast path or full workflow from risk, scope, ambiguity, and user intent.
+2. Inspect existing context and conventions before proposing structure.
+3. For design work, ask one decision at a time with concrete options and a recommended default.
+4. For planning work, define dependencies, acceptance criteria, verification, and safe parallelization points.
+5. For execution work, keep tasks small, coordinate subagents with lean context, and let the controller verify the final integrated state.
+6. For debugging, reproduce or observe the failure, trace data/config flow, test one hypothesis, and fix the root cause.
+7. For completion, provide fresh evidence that the intended behavior works.
 
-Before loading upstream workflow files, classify the task:
+## Rules
 
-- Fast path: simple, low-risk, well-bounded tasks where the correct action is obvious and no durable plan/spec/review loop is needed. Examples: answer a narrow question, make a small text/metadata edit, run a requested validation command, fix an obvious typo, or inspect one known file. Proceed directly using normal Oh My Pi tools; keep verification proportional.
-- Full workflow: ambiguous requirements, multi-file implementation, debugging without known cause, behavior changes, tests or safety implications, refactors, skill authoring, code review, or tasks likely to benefit from planning/subagents/TDD. Load `references/omp-localization.md`, then read only the specific workflow files needed.
+- User proposals are hypotheses to evaluate against the stated problem, current stage, existing architecture, safety, reversibility, and simpler alternatives.
+- Full workflow loads `references/omp-localization.md` first, then the specific support file needed for the task.
+- TDD cadence means: state expected behavior, observe a failing focused check, implement the smallest working change, refactor while the check remains passing, and keep durable regression coverage.
+- Verification proves the intended effect. For config, provider, environment, auth, or model changes, verify the observable difference.
+- Subagent assignments carry exact scope, files, constraints, and acceptance criteria. The controller runs integration verification.
+- Long-lived process work defines process ownership, readiness checks, target process identity, and cleanup before trusting E2E results.
 
-If the task starts simple but evidence shows broader risk or uncertainty, switch from fast path to the relevant full workflow.
+## Support files
 
-## Key workflow principles
-
-- Complex needs → light design pass (context, one question at a time, 2-3 options with tradeoffs, recommend one, get approval) before coding.
-- Visual questions (UI, layout, diagrams) → offer mockup/diagram/visual companion; ask first, use text/Mermaid/ASCII when enough.
-- Debugging → root cause first; reproduce, read errors fully, trace data/config flow, form one hypothesis, test smallest change.
-- Verification → prove intended effect, not just command success; for config/provider/env/auth/model changes, check the actual observable difference.
-- Subagents → lean context (exact task + files + constraints + acceptance); self-review before handoff; reviewers inspect files independently; controller verifies final state.
-- E2E/server → process hygiene: know what runs, ensure tests hit the right process, clean up, avoid stale ports.
-
-## What is included
-
-The original Superpowers skills are stored as reviewed reference material under `references/skills/`:
-
-- `brainstorming` — collaborative design/spec workflow before implementation.
-- `using-git-worktrees` — isolated workspace setup and baseline verification.
-- `writing-plans` — detailed task-by-task implementation plans.
-- `subagent-driven-development` — same-session implementation via subagents and review gates.
-- `executing-plans` — inline plan execution fallback.
-- `test-driven-development` — RED-GREEN-REFACTOR discipline.
-- `systematic-debugging` — root-cause-first debugging.
-- `verification-before-completion` — fresh evidence before completion claims.
-- `requesting-code-review` and `receiving-code-review` — review dispatch and feedback handling.
-- `dispatching-parallel-agents` — parallel investigation for independent work.
-- `finishing-a-development-branch` — merge/PR/keep/discard completion menu.
-- `writing-skills` — skill authoring with process-documentation TDD.
-- `using-superpowers` — upstream bootstrap rules, kept as reference only.
-
-## Oh My Pi activation policy
-
-- Default behavior: use this skill for non-trivial software work, then choose fast path or full workflow.
-- Use the fast path when the task is simple enough that full Superpowers process would add ceremony without reducing risk.
-- Use the full workflow when the user explicitly asks for Superpowers, asks to localize/modify this collection, names a Superpowers workflow, or the task has meaningful uncertainty, risk, or scope.
-- When using full workflow, read `references/omp-localization.md` first, then read only the specific upstream skill files needed.
-- Upstream instructions that say to activate before every conversation, before any response, or before any creative work are not active policy here.
-
-## Workflow routing
-
-Use these reference files when full workflow is warranted:
-
-| Request | Read |
+| Need | Load |
 | --- | --- |
-| Use the full Superpowers development lifecycle | `references/skills/using-superpowers/SKILL.md`, then `references/omp-localization.md` |
-| Design/spec a feature using Superpowers | `references/skills/brainstorming/SKILL.md` |
-| Create a Superpowers implementation plan | `references/skills/writing-plans/SKILL.md` |
-| Execute a Superpowers plan with subagents | `references/skills/subagent-driven-development/SKILL.md` |
-| Execute a plan inline | `references/skills/executing-plans/SKILL.md` |
-| Apply Superpowers TDD | `references/skills/test-driven-development/SKILL.md` |
-| Debug with Superpowers | `references/skills/systematic-debugging/SKILL.md` |
-| Verify completion under Superpowers | `references/skills/verification-before-completion/SKILL.md` |
-| Work on skills using Superpowers methodology | `references/skills/writing-skills/SKILL.md` |
+| OMP adaptation for upstream Superpowers material | `references/omp-localization.md` |
+| Full Superpowers lifecycle reference | `references/skills/using-superpowers/SKILL.md` |
+| Brainstorming and design/spec workflow | `references/skills/brainstorming/SKILL.md` |
+| Implementation plan writing | `references/skills/writing-plans/SKILL.md` |
+| Subagent-driven execution | `references/skills/subagent-driven-development/SKILL.md` |
+| Inline plan execution | `references/skills/executing-plans/SKILL.md` |
+| TDD cadence | `references/skills/test-driven-development/SKILL.md` |
+| Systematic debugging | `references/skills/systematic-debugging/SKILL.md` |
+| Completion verification | `references/skills/verification-before-completion/SKILL.md` |
+| Skill workflow authoring | `references/skills/writing-skills/SKILL.md` |
 
-## Local constraints
-
-Follow Oh My Pi tool rules over upstream Claude/Codex/Gemini examples. In particular, prefer `read`, `find`, `search`, `edit`, `write`, `task`, `todo_write`, `github`, and `recipe` over shell equivalents. Do not copy upstream shell snippets blindly.
+Upstream support files are reviewed reference material. OMP tool policy and local repository instructions govern execution.

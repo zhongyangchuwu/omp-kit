@@ -20,10 +20,10 @@ risk:
 activation:
   mode: automatic
   notes: >
-    Activate when the agent detects a Go project (go.mod) or Python project
-    (pyproject.toml), or when the user asks about Go/Python tooling, libraries,
-    scaffolding, or stack decisions. When additional languages are added,
-    detection expands to their respective project markers.
+    Activate when the agent detects a covered language project marker, or when
+    the user asks about language-specific tooling, package managers,
+    formatters, linters, test runners, type checkers, libraries, ecosystem
+    docs, scaffolding, or stack conventions.
 
 verification:
   commands:
@@ -32,10 +32,10 @@ verification:
     - Validate metadata and generated registry.
 
 maintenance:
-  last_reviewed: "2026-06-13"
+  last_reviewed: "2026-06-14"
   notes:
     - Review language ecosystem recommendations quarterly, especially Python tooling.
-    - When adding a language, follow the section template used by references/go.md and references/python.md.
+    - Keep SKILL.md as the routing control panel; put language details in focused support files.
 
 relationships:
   upstream: []
