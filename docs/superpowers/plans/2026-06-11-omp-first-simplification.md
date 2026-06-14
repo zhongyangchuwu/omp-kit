@@ -67,7 +67,7 @@ Expected: the registry, schema, and metadata tests pass with the reduced resourc
 - Modify: `README.md`
 - Modify: `docs/workflows.md`
 - Modify: `docs/architecture.md`
-- Modify: `docs/pi-omp-runtime-notes.md`
+- Modify: `docs/omp-runtime-notes.md`
 
 - [ ] **Step 1: Change the install target and messaging**
 
@@ -116,7 +116,7 @@ Expected: the install tests and script checks pass with the new OMP path.
 - Modify: `docs/architecture.md`
 - Modify: `docs/resource-model.md`
 - Modify: `docs/workflows.md`
-- Modify: `docs/pi-omp-runtime-notes.md`
+- Modify: `docs/omp-runtime-notes.md`
 - Modify: `docs/superpowers/specs/2026-06-11-omp-first-simplification-design.md` if details shift while implementing
 
 - [ ] **Step 1: Remove the empty directories**

@@ -23,7 +23,7 @@ changed: {changed}
 
 ## Why
 
-<!-- TODO: relevance to pi-kit -->
+<!-- TODO: relevance to omp-kit -->
 
 ## Notes
 

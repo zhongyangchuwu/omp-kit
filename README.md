@@ -1,4 +1,4 @@
-# Pi Kit
+# OMP Kit
 
 OMP-first skill kit. This repository keeps the active skills and drafts loaded into Oh My Pi agent runtimes.
 
@@ -80,7 +80,7 @@ just test                 # run all repository tests
 | `docs/architecture.md` | Repository design and operating principles |
 | `docs/resource-model.md` | `resource.yaml` schema, registry model, activation modes, risk levels |
 | `docs/workflows.md` | Daily operations, import/promote lifecycle, installation |
-| `docs/pi-omp-runtime-notes.md` | Pi / OMP capability model reference |
+| `docs/omp-runtime-notes.md` | Pi / OMP capability model reference |
 | `docs/omp-installation.md` | OMP-native installation paths and checks |
 | `docs/omp-configuration.md` | OMP user/project config locations relevant to this kit |
 | `docs/omp-roadmap.md` | Future extension/tool/MCP/package upgrade notes |

@@ -2,7 +2,7 @@
 
 ## Goal
 
-Pi Kit is the OMP-first workbench for maintained agent skills. It should stay auditable, testable, installable, and easy to simplify.
+OMP Kit is the OMP-first workbench for maintained agent skills. It should stay auditable, testable, installable, and easy to simplify.
 
 ## Operating principles
 

@@ -1,5 +1,5 @@
 [project]
-name = "pi-kit"
+name = "omp-kit"
 version = "0.1.0"
 description = "OMP-first skill kit"
 requires-python = ">=3.12"

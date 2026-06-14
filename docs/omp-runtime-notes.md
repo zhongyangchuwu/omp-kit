@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document records Pi Kit's working model for Pi and Oh My Pi (OMP) capabilities. It is a stable mental model for designing skills, absorbing third-party skills, writing OMP extensions, adding custom tools, and deciding when MCP is warranted.
+This document records OMP Kit's working model for Pi and Oh My Pi (OMP) capabilities. It is a stable mental model for designing skills, absorbing third-party skills, writing OMP extensions, adding custom tools, and deciding when MCP is warranted.
 
 It is not an exhaustive API reference. Current behavior, field names, and configuration details must be checked against the official Pi and OMP documentation before implementing runtime integrations.
 

@@ -1,6 +1,6 @@
 # OMP Installation
 
-Pi Kit installs active skills into OMP's native user-level skill directory:
+OMP Kit installs active skills into OMP's native user-level skill directory:
 
 ```text
 ~/.omp/agent/skills/<skill-name>
