@@ -17,6 +17,10 @@ skills:
     status: active
     risk: low
     path: skills/git-workflow
+  omp-debug:
+    status: active
+    risk: low
+    path: skills/omp-debug
   omp-planning-artifacts:
     status: active
     risk: low
@@ -46,6 +50,10 @@ skills:
     risk: low
     path: skills/skill-authoring
 drafts:
+  omp-debug:
+    status: draft
+    risk: low
+    path: drafts/omp-debug
   omp-planning-artifacts:
     status: draft
     risk: low
