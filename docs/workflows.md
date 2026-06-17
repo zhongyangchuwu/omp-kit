@@ -24,6 +24,7 @@ skills/<name>/
 ```
 
 When you add a new active skill, create `resource.yaml` at the same time. When you change `SKILL.md`, update `resource.yaml` if the activation policy, risk, source, or verification commands changed.
+Do not edit `registry.yaml` when adding or changing a skill. Update the resource-local `resource.yaml`, then regenerate the registry with `just build-registry`.
 
 After changes:
 
@@ -60,6 +61,7 @@ drafts/<name>/
   references/      optional — long guidance loaded on demand
   assets/          optional — templates, examples
 ```
+Do not add draft entries to `registry.yaml` by hand. Create or update the draft's `resource.yaml`, then regenerate the registry with `just build-registry`.
 
 Drafting checklist:
 

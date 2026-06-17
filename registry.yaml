@@ -17,10 +17,26 @@ skills:
     status: active
     risk: low
     path: skills/git-workflow
-  omp-superpowers:
+  omp-planning-artifacts:
     status: active
-    risk: medium
-    path: skills/omp-superpowers
+    risk: low
+    path: skills/omp-planning-artifacts
+  omp-research:
+    status: active
+    risk: low
+    path: skills/omp-research
+  omp-review:
+    status: active
+    risk: low
+    path: skills/omp-review
+  omp-verification:
+    status: active
+    risk: low
+    path: skills/omp-verification
+  omp-workflow:
+    status: active
+    risk: low
+    path: skills/omp-workflow
   program-language:
     status: active
     risk: low
@@ -29,4 +45,24 @@ skills:
     status: active
     risk: low
     path: skills/skill-authoring
-drafts: {}
+drafts:
+  omp-planning-artifacts:
+    status: draft
+    risk: low
+    path: drafts/omp-planning-artifacts
+  omp-research:
+    status: draft
+    risk: low
+    path: drafts/omp-research
+  omp-review:
+    status: draft
+    risk: low
+    path: drafts/omp-review
+  omp-verification:
+    status: draft
+    risk: low
+    path: drafts/omp-verification
+  omp-workflow:
+    status: draft
+    risk: low
+    path: drafts/omp-workflow

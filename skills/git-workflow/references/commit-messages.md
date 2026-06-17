@@ -60,7 +60,7 @@ Examples:
 
 ```text
 docs: define skill design principles
-refactor: simplify superpowers control panel
+refactor: simplify workflow control panel
 fix: validate draft resource metadata
 test: cover stale registry detection
 ```

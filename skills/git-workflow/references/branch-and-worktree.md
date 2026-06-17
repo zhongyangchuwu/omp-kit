@@ -67,7 +67,7 @@ Examples:
 ```text
 docs/skill-design
 feat/git-workflow
-refactor/superpowers-scope
+refactor/workflow-scope
 fix/registry-validation
 test/resource-metadata
 ```

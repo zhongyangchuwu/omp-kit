@@ -21,7 +21,7 @@ activation:
 
 verification:
   commands:
-    - uv run --with pytest pytest skills/skill-authoring/tests/test_docs.py
+    - uv run pytest skills/skill-authoring/tests/test_docs.py
   notes:
     - skills-ref validate skills/skill-authoring when skills-ref is available.
 

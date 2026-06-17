@@ -1,0 +1,31 @@
+name: omp-workflow
+kind: skill
+status: active
+path: skills/omp-workflow
+source:
+  type: self
+  origin: drafts/omp-workflow
+  references: []
+  imported: "2026-06-17"
+  promoted: "2026-06-17"
+  notes:
+  - Self-authored workflow orchestration skill promoted from reviewed draft.
+risk:
+  level: low
+  reason: Instruction-only active skill with no executable code or external side effects.
+activation:
+  mode: automatic
+  notes: Use for non-trivial workflow coordination; fast mode remains available for clear, low-risk edits.
+verification:
+  commands:
+  - uv run pytest tests
+  notes:
+  - Verify active metadata, registry consistency, linking behavior, and repository tests after workflow skill changes.
+maintenance:
+  last_reviewed: '2026-06-17'
+  notes:
+  - Promoted from reviewed draft.
+  - Draft retained at drafts/omp-workflow for review history.
+relationships:
+  upstream:
+  - drafts/omp-workflow

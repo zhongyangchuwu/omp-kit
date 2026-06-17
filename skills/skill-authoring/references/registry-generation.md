@@ -35,15 +35,14 @@ just promote-skill drafts/example --name example
 ```text
 kind: skill under skills/ -> registry.skills
 kind: skill under drafts/ -> registry.drafts
-kind: extension          -> registry.extensions
-kind: tool               -> registry.tools
-kind: package            -> registry.packages
 ```
+
+Only `skills` and `drafts` are generated registry groups.
 
 ## Rules
 
-- Do not edit `registry.yaml` manually.
-- Add or update a resource's `resource.yaml`, then run `just build-registry`.
+- Do not edit `registry.yaml` manually or add entries by hand.
+- Add or update a resource's `resource.yaml`, then run `just build-registry` to regenerate `registry.yaml`.
 - If `just check-registry` fails, regenerate and inspect the diff.
 - Keep detailed policy in `resource.yaml` or resource-local references, not in `registry.yaml`.
 - Keep external source material under `references/`; network imports are intentionally unsupported.

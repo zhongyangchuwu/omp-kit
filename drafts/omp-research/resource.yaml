@@ -1,0 +1,35 @@
+name: omp-research
+kind: skill
+status: draft
+path: drafts/omp-research
+
+source:
+  type: self
+  origin: null
+  references: []
+  imported: "2026-06-17"
+  promoted: null
+  notes:
+    - Self-authored research workflow draft.
+
+risk:
+  level: low
+  reason: Instruction-only draft with no executable code or external side effects.
+
+activation:
+  mode: not-applicable
+  notes: Draft resource; activation is disabled until promotion.
+
+verification:
+  commands:
+    - uv run pytest tests/test_resource_metadata.py tests/test_registry_integrity.py
+  notes:
+    - Verify frontmatter, resource metadata, support file links, and registry generation before promotion.
+
+maintenance:
+  last_reviewed: "2026-06-17"
+  notes:
+    - Keep research scoped to evidence gathering and confidence reporting.
+
+relationships:
+  upstream: []

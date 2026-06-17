@@ -7,8 +7,7 @@ __pycache__/
 # Local environments
 .venv/
 
-# Superpowers local workflow state
-.superpowers/
+# Local workflow state
 .worktrees/
 worktrees/
 

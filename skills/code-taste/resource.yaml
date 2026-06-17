@@ -17,11 +17,6 @@ source:
       repository: https://github.com/wshobson/agents.git
       branch: main
       commit: 0818067b4ecad18c234b2ae427cc44f2053792d4
-    - label: omp-superpowers
-      path: skills/omp-superpowers/references
-      repository: https://github.com/obra/superpowers.git
-      branch: null
-      commit: null
   imported: null
   promoted: "2026-06-02"
   notes:
