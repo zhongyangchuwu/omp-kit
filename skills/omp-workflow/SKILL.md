@@ -1,19 +1,20 @@
 ---
 name: omp-workflow
-description: Use when coordinating non-trivial software work that needs workflow selection, discussion, planning, execution cadence, gates, subagent coordination, capture, or completion criteria across one or more implementation steps.
+description: Use when coordinating non-trivial software work that needs project initialization, codebase exploration, phase lifecycle definition, workflow selection, discussion, planning, execution cadence, gates, subagent coordination, capture, or completion criteria across one or more implementation steps.
 ---
 
 # OMP Workflow
 
 ## Focus
 
-OMP Workflow owns the cadence for non-trivial software work. It selects the smallest useful workflow, preserves decisions before implementation, keeps execution bounded, and routes completed work through review, verification, capture, and ship readiness.
+OMP Workflow owns the cadence for non-trivial software work. It defines the phase lifecycle, selects the smallest useful workflow, detects whether project initialization or codebase exploration is needed, preserves decisions before implementation, keeps execution bounded, and routes completed work through review, verification, capture, and ship readiness.
 
 ## Activation
 
 Use this skill when the task involves:
 
 - a feature, bug fix, refactor, migration, or integration that spans more than one obvious edit;
+- detecting that project planning state is missing and initialization or codebase exploration is needed;
 - unclear requirements, tradeoffs, or implementation choices;
 - planning before implementation;
 - executing an approved plan;
@@ -23,7 +24,7 @@ Use this skill when the task involves:
 
 ## Workflow
 
-1. Classify the request as research, discussion, planning, execution, review, verification, capture, or shipping support.
+1. Detect project state: missing `.planning/` with existing code → codebase exploration; missing `.planning/` in empty repo → project initialization; `.planning/` present → classify the request as discussion, planning, execution, review, verification, capture, or shipping support.
 2. Choose the lightest sufficient mode: fast, focused, or full.
 3. Establish the current inputs: user goal, relevant files, constraints, existing artifacts, and required evidence.
 4. Run the active phase with explicit outputs and stop conditions.
@@ -45,6 +46,9 @@ Use this skill when the task involves:
 
 | Need | Load |
 | --- | --- |
+| Project initialization | `references/initialization.md` |
+| Codebase exploration | `references/codebase-exploration.md` |
+| Phase lifecycle | `references/phase-lifecycle.md` |
 | Mode selection | `references/modes.md` |
 | Phase gates | `references/gates.md` |
 | Discussion and planning outputs | `references/context-and-plan.md` |
