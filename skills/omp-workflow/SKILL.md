@@ -19,8 +19,9 @@ Use this skill when the task involves:
 - planning before implementation;
 - executing an approved plan;
 - coordinating subagents or independent work units;
-- moving completed work through review, verification, documentation capture, or ship readiness;
-- resuming a workflow where prior planning artifacts exist.
+- moving completed work through review, verification, documentation capture, release archiving, or ship readiness;
+- resuming a workflow where prior planning artifacts exist;
+- completing finished phases as a published release and archiving their planning history.
 
 ## Workflow
 
@@ -54,3 +55,4 @@ Use this skill when the task involves:
 | Discussion and planning outputs | `references/context-and-plan.md` |
 | Execution cadence | `references/execution.md` |
 | Capture before ship readiness | `references/capture.md` |
+| Release and archive workflow | `references/release.md` |

@@ -74,3 +74,12 @@ Required sections:
 
 Use `None` for an intentionally empty required section. Do not omit required sections in full workflows.
 HANDOFF.md is a pause artifact, not a phase artifact. It belongs in the phase directory so resume context stays with the work it pauses, but it records an interruption, not a phase completion.
+
+## Archived phase lookup
+
+Phase artifacts may exist in two locations:
+
+1. `.planning/phases/<phase>/` — active or unreleased completed phases.
+2. `.planning/archive/releases/<version>/phases/<phase>/` — completed phases included in a published release.
+
+Lookup order is active first, then release archive. When a phase is found in archive, report the release version and full path. Archived phase artifact contracts are identical to active phase contracts; only the parent path changes.

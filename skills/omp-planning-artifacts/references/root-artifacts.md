@@ -57,7 +57,7 @@ Required sections:
   - `Plans:` checkbox list using `<phase>-<plan>` IDs.
 - `## Progress` — phase progress table with plan counts, status, and completion date or `-`.
 
-Completed phases may be marked with `[x]` and collapsed in `<details>` blocks when the phase list grows long, but current and upcoming phases must stay readable without expanding archived history.
+`ROADMAP.md` describes active and future phases. Before release, completed phases may remain marked `[x]` for continuity. During release, completed phase details move to `.planning/archive/releases/<version>/SUMMARY.md`; root roadmap detail stays current-only afterward.
 
 ### `STATE.md`
 
@@ -100,6 +100,16 @@ phase complete (transition)
   -> update REQUIREMENTS traceability statuses
   -> evolve PROJECT.md validated/active/out-of-scope requirements + key decisions
   -> advance STATE.md to next phase (or mark project complete)
+
+release completed phases
+  -> extract completed roadmap scope to release SUMMARY.md
+  -> extract completed requirements to release SUMMARY.md
+  -> extract superseded decisions and facts from PROJECT.md to release SUMMARY.md
+  -> write release VERIFICATION.md
+  -> move phase dirs to archive/releases/<version>/phases/
+  -> update archive/INDEX.md
+  -> clean root docs to current-only state
+  -> update STATE.md to current active position or ready
 ```
 
 ## Stage read/write rules
@@ -112,6 +122,7 @@ phase complete (transition)
 | Execute phase | selected `PLAN.md`, `STATE.md`, relevant code/docs | `SUMMARY.md`, changed implementation files, `STATE.md` |
 | Verify phase | roadmap success criteria, requirements, plans, summaries, implementation | `VERIFICATION.md`, roadmap progress/status, requirement statuses, `STATE.md` |
 | Capture/ship | verification evidence, summaries, project docs | docs updates, `CAPTURE.md`, `PROJECT.md` decisions/current state, `STATE.md` |
+| Release | completed phase artifacts, root docs, project `CHANGELOG.md` if it already exists | release `SUMMARY.md`, release `VERIFICATION.md`, `archive/INDEX.md`, cleaned root docs, `STATE.md` |
 | Pause/resume | `STATE.md`, active phase artifacts | `HANDOFF.md` or continue-here file, `STATE.md` |
 
 ## Sync invariants
@@ -122,3 +133,5 @@ phase complete (transition)
 - A phase cannot be marked complete in the roadmap until verification evidence exists for its success criteria.
 - Requirement status becomes `Complete` only after the implementation is present, verified, and recorded in the phase evidence.
 - Scope changes update both `REQUIREMENTS.md` and roadmap mappings; project-level rationale belongs in `PROJECT.md` constraints, out-of-scope, or key decisions.
+- Root planning documents describe current and future work only after release. Completed or obsolete content moves to `.planning/archive/releases/<version>/`.
+- `STATE.md` must point to an active phase or `ready`; it must not point to an archived phase path.

@@ -20,6 +20,15 @@ Use this tree for full workflows:
       VERIFICATION.md
       CAPTURE.md
       HANDOFF.md
+  archive/
+    INDEX.md
+    releases/
+      <version>/
+        SUMMARY.md
+        VERIFICATION.md
+        phases/
+          001-short-name/
+            ... phase-local artifacts
 ```
 
 Create only the files the workflow needs.
@@ -30,6 +39,8 @@ Create only the files the workflow needs.
 - `ROADMAP.md` records phase order, phase goals, requirement IDs, success criteria, plan references, and progress.
 - `REQUIREMENTS.md` records numbered, checkable acceptance criteria, scope boundaries, and phase traceability.
 - `STATE.md` records current workflow position and next action.
+- `archive/INDEX.md` catalogs published release archives.
+- `archive/releases/<version>/` stores release summaries, release verification, and completed phase artifacts moved out of active planning.
 
 ## Phase file ownership
 
@@ -41,6 +52,13 @@ Create only the files the workflow needs.
 - `VERIFICATION.md` records observed evidence and coverage.
 - `CAPTURE.md` records documentation updates and ship inputs.
 - `HANDOFF.md` records resume instructions when work pauses.
+
+## Release archive ownership
+
+- `archive/INDEX.md` records published release versions and links to their summaries.
+- `archive/releases/<version>/SUMMARY.md` records what shipped, completed scope, notable decisions, and follow-ups.
+- `archive/releases/<version>/VERIFICATION.md` records release-level evidence, coverage, and known gaps.
+- `archive/releases/<version>/phases/` stores completed phase directories exactly as they existed before release.
 
 ## Root artifact contracts
 

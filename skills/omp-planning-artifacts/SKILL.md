@@ -19,6 +19,7 @@ Use this skill when the task involves:
 - creating or validating project-level planning files (`PROJECT.md`, `ROADMAP.md`, `REQUIREMENTS.md`);
 - updating `STATE.md`, roadmap progress, or requirement traceability;
 - deciding where a workflow record belongs;
+- creating or updating release archive artifacts (`archive/INDEX.md`, `SUMMARY.md`, `VERIFICATION.md`);
 - checking whether an artifact has a consumer;
 - preparing handoff context for a later session.
 
@@ -51,3 +52,4 @@ Use this skill when the task involves:
 | Phase artifact contracts | `references/phase-artifacts.md` |
 | State updates | `references/state.md` |
 | Handoff records | `references/handoff.md` |
+| Release archive artifacts | `references/release-artifacts.md` |

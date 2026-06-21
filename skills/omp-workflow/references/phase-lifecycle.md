@@ -1,6 +1,6 @@
 # Phase Lifecycle
 
-A phase is the central unit of work. Each phase delivers a coherent outcome, tracked in ROADMAP.md, containing one or more plans. There is no milestone layer — phases are sequential from 1 to N.
+A phase is the central unit of work. Each phase delivers a coherent outcome, tracked in ROADMAP.md, containing one or more plans.
 
 ## Phase model
 
@@ -65,6 +65,8 @@ When a phase completes:
 6. Write CAPTURE.md: documentation updates and durable project knowledge from this phase.
 
 If this was the last phase in ROADMAP.md, the project is complete. Update STATE.md to reflect completion; do not create new phases without user direction.
+
+Completed phases remain in `.planning/phases/` until the project cuts a published release. During release, selected completed phase directories move to `.planning/archive/releases/<version>/phases/`, and completed scope moves out of root planning docs into the release archive. Release is a post-completion cleanup and evidence step, not a planning container.
 
 ## Phase insertion
 

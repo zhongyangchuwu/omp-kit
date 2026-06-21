@@ -31,6 +31,7 @@ Keep `STATE.md` compact and current:
 
 Use clear status words:
 
+- `ready`
 - `not-started`
 - `researching`
 - `discussing`
@@ -46,3 +47,5 @@ Use clear status words:
 ## Update rule
 
 Update `STATE.md` after a phase boundary, blocker, verification result, capture step, or pause.
+- After release, `STATE.md` must point to an active non-archived phase or mark the project `ready` for the next development phase.
+- Do not persist release-specific states. Release is a maintenance action, not a long-running workflow position.
