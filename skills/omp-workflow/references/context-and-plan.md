@@ -18,8 +18,20 @@ Keep the context record factual. Record chosen decisions and unresolved question
 
 ## Discussion output
 
-For ambiguous design or planning work, inspect context first, ask one decision at a time, present concrete options with tradeoffs, recommend a default, and record the accepted decision.
+For ambiguous design or planning work, use a lightweight decision interview instead of a large up-front checklist.
 
+Decision interview rules:
+
+- Ask one decision question at a time.
+- Include a recommended answer and the tradeoff behind it.
+- Confirm new features, breaking changes, scope expansion, user-visible behavior changes, and capability promises before treating them as scope.
+- Do not ask the user to confirm facts the codebase can answer with targeted lookup.
+- Explore only enough code to answer the current decision or locate the relevant implementation.
+- If targeted discovery is difficult, record that as a maintainability concern rather than continuing broad exploration.
+- Bug fixes and local refactors may proceed from observed code facts when they preserve intended behavior and scope.
+- Record accepted decisions separately from open questions and rejected options.
+
+A plan must not turn unconfirmed ideas into tasks, acceptance criteria, integrations, compatibility promises, or user-visible capabilities.
 
 ## Plan output
 

@@ -41,6 +41,10 @@ Use this skill when the task involves:
 - Keep decisions in writing before implementation when a later executor or reviewer must rely on them.
 - Treat review and verification as separate gates: review judges quality and risk; verification proves behavior.
 - Capture project documentation updates before ship readiness when the change creates durable project knowledge.
+- Require user confirmation before adding new features, breaking changes, scope expansion, user-visible behavior changes, or capability promises.
+- Bug fixes and local refactors may proceed from observed code facts without user confirmation when they preserve intended behavior and scope.
+- Use a lightweight decision interview for ambiguous scope: ask one decision question at a time, include a recommended answer, and do not replace dialogue with a large approval checklist.
+- Explore only enough code to answer the current decision or locate the relevant implementation; if targeted discovery fails, surface the maintainability issue instead of expanding scope silently.
 - Keep workflow artifacts concise and consumable by the next phase.
 
 ## Support files
