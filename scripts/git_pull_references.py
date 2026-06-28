@@ -56,13 +56,16 @@ def main() -> int:
         return 0
 
     repos = [p for p in refs if p.is_dir()]
-    results = [pull_one(r) for r in repos]
+    total = len(repos)
 
-    # Inline progress
-    for r in results:
-        tag = {"pulled": "PULL", "up-to-date": " OK ", "skipped": "SKIP", "failed": "FAIL"}[r.status]
-        detail = f" — {r.detail}" if r.detail else ""
-        print(f"{tag}  {r.name}{detail}")
+    # Pull with real-time progress
+    results: list[Result] = []
+    for i, r in enumerate(repos, 1):
+        result = pull_one(r)
+        results.append(result)
+        tag = {"pulled": "PULL", "up-to-date": " OK ", "skipped": "SKIP", "failed": "FAIL"}[result.status]
+        detail = f" — {result.detail}" if result.detail else ""
+        print(f"[{i}/{total}] {tag}  {result.name}{detail}")
 
     # Summary
     counts = {s: sum(1 for r in results if r.status == s) for s in ["pulled", "up-to-date", "skipped", "failed"]}
