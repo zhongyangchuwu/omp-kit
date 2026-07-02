@@ -33,6 +33,10 @@ skills:
     status: active
     risk: low
     path: skills/omp-review
+  omp-test:
+    status: active
+    risk: low
+    path: skills/omp-test
   omp-verification:
     status: active
     risk: low
@@ -49,28 +53,4 @@ skills:
     status: active
     risk: low
     path: skills/skill-authoring
-drafts:
-  omp-debug:
-    status: draft
-    risk: low
-    path: drafts/omp-debug
-  omp-planning-artifacts:
-    status: draft
-    risk: low
-    path: drafts/omp-planning-artifacts
-  omp-research:
-    status: draft
-    risk: low
-    path: drafts/omp-research
-  omp-review:
-    status: draft
-    risk: low
-    path: drafts/omp-review
-  omp-verification:
-    status: draft
-    risk: low
-    path: drafts/omp-verification
-  omp-workflow:
-    status: draft
-    risk: low
-    path: drafts/omp-workflow
+drafts: {}

@@ -74,7 +74,7 @@ Drafting checklist:
 
 ## Promoting
 
-Copy a completed draft skill into `skills/`:
+Move a completed draft skill into `skills/`:
 
 ```bash
 just promote-skill drafts/<name> --name <name> --activation automatic --risk low
@@ -83,7 +83,8 @@ just promote-skill drafts/<name> --name <name> --activation automatic --risk low
 Promotion:
 
 - Requires `SKILL.md` with a valid frontmatter `name` matching the target.
-- Copies into `skills/<name>/` without deleting the original in `drafts/`.
+- Moves into `skills/<name>/` and removes the original `drafts/<name>/` by default.
+- Use `--keep-draft` only when the draft must remain as an inactive comparison copy.
 - Refuses to overwrite an existing active skill.
 - Rejects sources outside `drafts/`.
 - Writes a new active `resource.yaml` and regenerates `registry.yaml`.

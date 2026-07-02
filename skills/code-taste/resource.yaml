@@ -31,15 +31,15 @@ activation:
   mode: automatic
   notes: >
     Activate for implementation, refactoring, simplification, exported API/type
-    changes, error-handling decisions, state transitions, test design, mock
-    boundaries, performance-sensitive paths, or code review findings.
+    changes, error-handling decisions, state transitions, performance-sensitive
+    paths, or code review findings.
 
 verification:
   commands:
     - just test
   notes:
-    - "Validate active metadata, registry consistency, and retained draft tests."
-    - "Draft retained at drafts/code-taste for review history."
+    - "Validate active metadata, registry consistency, and repository tests."
+    - "Testing-specific authoring guidance moved to omp-test."
 
 maintenance:
   last_reviewed: "2026-06-14"
@@ -50,7 +50,6 @@ maintenance:
 
 relationships:
   upstream:
-    - drafts/code-taste
     - references/EveryInc@compound-engineering-plugin/plugins/compound-engineering/agents/ce-code-simplicity-reviewer.md
     - references/EveryInc@compound-engineering-plugin/plugins/compound-engineering/agents/ce-maintainability-reviewer.md
     - references/EveryInc@compound-engineering-plugin/plugins/compound-engineering/agents/ce-correctness-reviewer.md

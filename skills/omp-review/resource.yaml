@@ -4,7 +4,7 @@ status: active
 path: skills/omp-review
 source:
   type: self
-  origin: drafts/omp-review
+  origin: null
   references: []
   imported: "2026-06-17"
   promoted: "2026-06-17"
@@ -24,8 +24,6 @@ verification:
 maintenance:
   last_reviewed: '2026-06-17'
   notes:
-  - Promoted from reviewed draft.
-  - Draft retained at drafts/omp-review for review history.
+  - Promoted from reviewed draft; draft removed after active promotion cleanup.
 relationships:
-  upstream:
-  - drafts/omp-review
+  upstream: []

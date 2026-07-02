@@ -70,23 +70,14 @@ Ask these in order:
 
 Prefer obvious code over clever code. Prefer fewer concepts over fewer lines.
 
-## Test checks
+## Test-related production checks
 
-Good tests:
+Flag production-code risks exposed by tests:
 
-- exercise real behavior at the public boundary;
-- protect exposed contracts, critical paths, and real bug regressions;
-- cover edge values and error paths that can occur;
-- assert invariants, not incidental strings or implementation calls;
-- use mocks only at slow, external, or nondeterministic boundaries.
-
-Bad tests:
-
-- assert that a mock rendered or was called when that call is not the behavior;
-- add production methods only for test cleanup;
-- mock the method whose side effects are required by the behavior under test;
-- use partial fake objects that do not match real consumed shapes;
-- snapshot broad output instead of asserting semantic behavior.
+- production APIs, exports, flags, or reset hooks added only for tests;
+- widened input types or swallowed errors added only to make checks pass;
+- mocks that hide required side effects of the code under review;
+- fake objects whose shape cannot represent consumed production data.
 
 ## Efficiency checks
 

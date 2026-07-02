@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 from datetime import date
 from pathlib import Path
 try:
@@ -33,6 +34,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--name", help="Active skill name; defaults to SKILL.md frontmatter name")
     parser.add_argument("--activation", choices=sorted(ALLOWED_ACTIVATION_MODES - {"not-applicable"}), default="automatic")
     parser.add_argument("--risk", choices=sorted(ALLOWED_RISKS), default="medium")
+    parser.add_argument("--keep-draft", action="store_true", help="Copy the draft instead of moving it out of drafts/")
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     return parser.parse_args()
 
@@ -44,7 +46,15 @@ def _repo_relative(path: Path, repo_root: Path) -> str:
         raise ResourceWorkflowError(f"source must be inside repository: {path}") from exc
 
 
-def promote_skill(*, source: Path, name: str | None, activation: str, risk: str, repo_root: Path) -> Path:
+def promote_skill(
+    *,
+    source: Path,
+    name: str | None,
+    activation: str,
+    risk: str,
+    repo_root: Path,
+    keep_draft: bool = False,
+) -> Path:
     source = source.expanduser().resolve()
     if not source.exists():
         raise ResourceWorkflowError(f"source does not exist: {source}")
@@ -89,10 +99,15 @@ def promote_skill(*, source: Path, name: str | None, activation: str, risk: str,
             "Run repository tests after promotion.",
         ],
         maintenance_last_reviewed=date.today().isoformat(),
-        maintenance_notes=["Created by scripts/promote_skill.py.", f"Draft retained at {relative_source}."],
+        maintenance_notes=[
+            "Created by scripts/promote_skill.py.",
+            f"Draft retained at {relative_source}." if keep_draft else f"Promoted from {relative_source}; draft removed.",
+        ],
         related_upstream=[relative_source],
     )
     write_resource_metadata(destination, metadata)
+    if not keep_draft:
+        shutil.rmtree(source)
     regenerate_registry(repo_root)
     return destination
 
@@ -107,6 +122,7 @@ def main() -> int:
             activation=args.activation,
             risk=args.risk,
             repo_root=repo_root,
+            keep_draft=args.keep_draft,
         )
     except ResourceWorkflowError as exc:
         print(f"error: {exc}")

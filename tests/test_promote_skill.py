@@ -56,11 +56,46 @@ def load_yaml(path: Path) -> dict:
     return data
 
 
-def test_promote_skill_copies_draft_to_active_skill(tmp_path: Path) -> None:
+def test_promote_skill_moves_draft_to_active_skill(tmp_path: Path) -> None:
     repo = make_repo(tmp_path)
     source = make_draft(repo, "alpha")
 
     destination = promote_skill(source=source, name="alpha", activation="manual", risk="low", repo_root=repo)
+
+    assert destination == repo / "skills" / "alpha"
+    assert not (repo / "drafts" / "alpha").exists()
+    assert (destination / "SKILL.md").is_file()
+
+    metadata = load_yaml(destination / "resource.yaml")
+    assert metadata["name"] == "alpha"
+    assert metadata["kind"] == "skill"
+    assert metadata["status"] == "active"
+    assert metadata["path"] == "skills/alpha"
+    assert metadata["risk"]["level"] == "low"
+    assert metadata["activation"]["mode"] == "manual"
+    assert metadata["source"]["origin"] == "drafts/alpha"
+
+    registry = load_yaml(repo / "registry.yaml")
+    assert registry["skills"]["alpha"] == {
+        "status": "active",
+        "risk": "low",
+        "path": "skills/alpha",
+    }
+    assert "alpha" not in registry.get("drafts", {})
+
+
+def test_promote_skill_keep_draft_preserves_source(tmp_path: Path) -> None:
+    repo = make_repo(tmp_path)
+    source = make_draft(repo, "alpha")
+
+    destination = promote_skill(
+        source=source,
+        name="alpha",
+        activation="manual",
+        risk="low",
+        repo_root=repo,
+        keep_draft=True,
+    )
 
     assert destination == repo / "skills" / "alpha"
     assert (repo / "drafts" / "alpha" / "SKILL.md").is_file()
