@@ -18,20 +18,20 @@ Keep the context record factual. Record chosen decisions and unresolved question
 
 ## Discussion output
 
-For ambiguous design or planning work, use a lightweight decision interview instead of a large up-front checklist.
+For ambiguous workflow planning work, use a lightweight decision interview instead of a large up-front checklist.
 
 Decision interview rules:
 
 - Ask one decision question at a time.
 - Include a recommended answer and the tradeoff behind it.
-- Confirm new features, breaking changes, scope expansion, user-visible behavior changes, and capability promises before treating them as scope.
+- Confirm new features, breaking changes, scope expansion, user-visible behavior changes, and capability promises before workflow planning treats them as accepted scope.
 - Do not ask the user to confirm facts the codebase can answer with targeted lookup.
 - Explore only enough code to answer the current decision or locate the relevant implementation.
 - If targeted discovery is difficult, record that as a maintainability concern rather than continuing broad exploration.
 - Bug fixes and local refactors may proceed from observed code facts when they preserve intended behavior and scope.
 - Record accepted decisions separately from open questions and rejected options.
 
-A plan must not turn unconfirmed ideas into tasks, acceptance criteria, integrations, compatibility promises, or user-visible capabilities.
+A plan must not turn unconfirmed ideas into tasks, acceptance criteria, integrations, compatibility promises, or user-visible capabilities. If the unresolved ambiguity is about product behavior, product scope, user flow, or acceptance criteria, resolve the feature/design decision before writing the workflow plan.
 
 ## Plan output
 

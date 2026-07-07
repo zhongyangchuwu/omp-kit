@@ -15,15 +15,15 @@ risk:
   reason: Instruction-only active skill with no executable code or external side effects.
 activation:
   mode: automatic
-  notes: Use for non-trivial workflow coordination; fast mode remains available for clear, low-risk edits.
+  notes: Use for explicit development workflow orchestration, including phase lifecycle, planning and execution cadence, gates, coordination, verification routing, capture, and ship readiness.
 verification:
   commands:
   - uv run pytest tests
   notes:
-  - Verify active metadata, registry consistency, linking behavior, and repository tests after workflow skill changes.
+  - Verify active metadata, registry consistency, linking behavior, and repository tests after workflow orchestration skill changes.
 maintenance:
-  last_reviewed: '2026-06-17'
+  last_reviewed: '2026-07-07'
   notes:
-  - Promoted from reviewed draft; draft removed after active promotion cleanup.
+  - Refocused as development workflow orchestration layer; product and feature design decisions are separated into the omp-design draft.
 relationships:
   upstream: []

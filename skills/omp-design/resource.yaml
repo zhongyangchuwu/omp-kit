@@ -1,0 +1,66 @@
+name: omp-design
+kind: skill
+status: active
+path: skills/omp-design
+source:
+  type: promoted-local
+  origin: drafts/omp-design
+  references:
+  - label: docs/skill-design.md
+    path: docs/skill-design.md
+    repository: null
+    branch: null
+    commit: null
+  - label: skills/omp-workflow/references/context-and-plan.md
+    path: skills/omp-workflow/references/context-and-plan.md
+    repository: null
+    branch: null
+    commit: null
+  - label: skills/omp-workflow/references/initialization.md
+    path: skills/omp-workflow/references/initialization.md
+    repository: null
+    branch: null
+    commit: null
+  - label: mblode product-design
+    path: skills/product-design/SKILL.md
+    repository: https://github.com/mblode/agent-skills
+    branch: main
+    commit: null
+  - label: addyosmani idea-refine
+    path: skills/idea-refine/SKILL.md
+    repository: https://github.com/addyosmani/agent-skills
+    branch: main
+    commit: null
+  - label: ysskrishna design-thinking
+    path: skills/design-thinking/SKILL.md
+    repository: https://github.com/ysskrishna/ai-agent-skills
+    branch: main
+    commit: null
+  imported: "2026-07-07"
+  promoted: "2026-07-07"
+  notes:
+  - Self-authored OMP feature and product design skill promoted from reviewed draft.
+  - Incorporates local workflow decision-interview patterns and external product-design inspiration without vendoring upstream text wholesale.
+risk:
+  level: low
+  reason: Instruction-only active skill with no executable code or external side effects.
+activation:
+  mode: automatic
+  notes: Use for unclear feature behavior, user flow, MVP scope, reachable states, and acceptance criteria during implementation.
+verification:
+  commands:
+  - just validate-registry
+  - just check-registry
+  notes:
+  - Verify active metadata, registry consistency, and portable skill frontmatter before skill changes.
+maintenance:
+  last_reviewed: "2026-07-07"
+  notes:
+  - Promoted from drafts/omp-design; draft removed after active promotion cleanup.
+  - Keep product-design ownership separate from workflow orchestration, implementation quality, verification, and research execution.
+relationships:
+  upstream:
+  - skills/omp-workflow
+  - skills/omp-research
+  - skills/omp-verification
+  - skills/code-taste

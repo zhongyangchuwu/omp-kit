@@ -21,6 +21,10 @@ skills:
     status: active
     risk: low
     path: skills/omp-debug
+  omp-design:
+    status: active
+    risk: low
+    path: skills/omp-design
   omp-planning-artifacts:
     status: active
     risk: low
