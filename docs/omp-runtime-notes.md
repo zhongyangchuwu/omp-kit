@@ -61,6 +61,19 @@ Known OMP divergences that affect design decisions:
 
 Before porting or depending on upstream Pi behavior, read the OMP porting notes and preserve documented OMP-only features instead of overwriting them with upstream defaults.
 
+## OMP 16.4 compatibility notes
+
+OMP 16.4 changed several runtime contracts that affect local skills and model configuration:
+
+- the bundled `explore` agent was renamed to `scout`; update agent names in task invocations, allowlists, and configuration, but do not rename ordinary prose about codebase exploration;
+- OMP 16.3.15 removed the bundled Tester agent after moving testing guidance into the main system prompt; delegate specialized test work through the generic `task` subagent with an explicit test-authoring role and acceptance criteria;
+- `max` is a first-class thinking effort above `xhigh`, and model effort ladders are wire-exact; unsupported levels are clamped to the model's declared surface;
+- custom `models.yml` entries declare controllable thinking with `thinking.mode` and `thinking.efforts`; `thinkingLevelMap` is not the current schema, while wire remaps belong under `compat.reasoningEffortMap` when a proxy requires them;
+- custom model `cost` accepts the four base rates (`input`, `output`, `cacheRead`, `cacheWrite`) but not request-size pricing tiers;
+- GPT-5.6 bundled catalog entries may use Responses Lite, but `useResponsesLite` is not exposed by the custom `models.yml` schema; custom proxy entries must select a documented API transport that the proxy actually implements.
+
+These facts are version-specific. Recheck the OMP model schema and changelog before relying on them for later releases.
+
 ## Documentation and changelog lookup
 
 For current facts, check both documentation and changelogs:

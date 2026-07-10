@@ -1,10 +1,10 @@
-# Tester Subagent Handoff
+# Task Subagent Test Handoff
 
-Load this reference when delegating test authoring to the Tester subagent.
+Load this reference when delegating test authoring to a generic `task` subagent.
 
 ## When to delegate
 
-Use the Tester subagent for non-trivial test authoring:
+Use a task subagent with a test-authoring role for non-trivial test work:
 
 - new behavior needs durable tests;
 - a bug fix needs a regression test;
@@ -16,7 +16,7 @@ For trivial changes, direct verification may be enough when no meaningful test c
 
 ## Handoff content
 
-A good Tester assignment includes:
+A good task assignment includes:
 
 - target files and test files to inspect or edit;
 - behavior contract to protect;
@@ -27,7 +27,7 @@ A good Tester assignment includes:
 - command for the narrow test run, if known;
 - acceptance criteria in observable terms.
 
-Do not ask Tester to run formatters, project-wide linters, or full test suites. Run broad verification once after integration.
+Do not ask the subagent to run formatters, project-wide linters, or full test suites. Run broad verification once after integration.
 
 ## Assignment shape
 
@@ -46,7 +46,7 @@ The test fails for the old bug when practical, passes after the implementation, 
 
 ## Review returned tests
 
-After Tester returns, check:
+After the subagent returns, check:
 
 - tests assert behavior rather than implementation plumbing;
 - fake data matches consumed real shapes;
@@ -54,4 +54,4 @@ After Tester returns, check:
 - production code was not reshaped solely for tests;
 - the narrow command actually exercised the new or modified tests.
 
-Tester output is evidence, not a substitute for inspecting the final diff and running the relevant command in the parent session.
+Subagent output is evidence, not a substitute for inspecting the final diff and running the relevant command in the parent session.

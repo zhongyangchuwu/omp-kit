@@ -1,6 +1,6 @@
 ---
 name: omp-test
-description: Use when designing, writing, modifying, or reviewing tests; defines behavior-focused coverage, regression checks, mock boundaries, edge cases, and Tester subagent handoffs.
+description: Use when designing, writing, modifying, or reviewing tests; defines behavior-focused coverage, regression checks, mock boundaries, edge cases, and task-subagent test handoffs.
 ---
 
 # OMP Test
@@ -18,7 +18,7 @@ Use this skill when the task involves:
 - deciding what behavior a test should cover;
 - choosing mock, fake, fixture, or harness boundaries;
 - reviewing test code for value, brittleness, or missing coverage;
-- using the Tester subagent to author tests;
+- delegating non-trivial test authoring to a task subagent;
 - deciding whether existing tests are sufficient for a refactor.
 
 ## Workflow
@@ -27,7 +27,7 @@ Use this skill when the task involves:
 2. Choose the narrowest meaningful execution boundary: CLI, API, component, function, persisted data, or integration path.
 3. Cover representative cases, edge values, and failure behavior that would catch real regressions.
 4. Use real code by default; mock only slow, external, nondeterministic, paid, or OS-level boundaries.
-5. For non-trivial test authoring, delegate test writing to the Tester subagent with the behavior contract, files, non-goals, and acceptance criteria.
+5. For non-trivial test authoring, delegate test writing to a task subagent with a test-authoring role, behavior contract, files, non-goals, and acceptance criteria.
 6. Run the smallest command that exercises the new or changed tests and record the observed result.
 
 ## Rules
@@ -46,4 +46,4 @@ Use this skill when the task involves:
 | Test selection and coverage shape | `references/test-design.md` |
 | Mock and fake boundaries | `references/mock-boundaries.md` |
 | Regression test discipline | `references/regression-tests.md` |
-| Tester subagent handoff format | `references/tester-subagent.md` |
+| Task-subagent test handoff format | `references/task-subagent.md` |
