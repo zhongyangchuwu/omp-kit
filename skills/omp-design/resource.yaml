@@ -41,12 +41,13 @@ source:
   notes:
   - Self-authored OMP feature and product design skill promoted from reviewed draft.
   - Incorporates local workflow decision-interview patterns and external product-design inspiration without vendoring upstream text wholesale.
+  - Adds a bounded grill-me protocol for explicit pressure-testing of feature directions before planning.
 risk:
   level: low
   reason: Instruction-only active skill with no executable code or external side effects.
 activation:
   mode: automatic
-  notes: Use for unclear feature behavior, user flow, MVP scope, reachable states, and acceptance criteria during implementation.
+  notes: Use for unclear feature behavior, user flow, MVP scope, reachable states, acceptance criteria, and explicit pre-planning pressure tests of a proposed feature direction.
 verification:
   commands:
   - just validate-registry
@@ -54,10 +55,11 @@ verification:
   notes:
   - Verify active metadata, registry consistency, and portable skill frontmatter before skill changes.
 maintenance:
-  last_reviewed: "2026-07-07"
+  last_reviewed: "2026-07-11"
   notes:
   - Promoted from drafts/omp-design; draft removed after active promotion cleanup.
   - Keep product-design ownership separate from workflow orchestration, implementation quality, verification, and research execution.
+  - Keep grill-me work limited to user-approved product direction; it does not create plans, workflow state, or execution tasks.
 relationships:
   upstream:
   - skills/omp-workflow

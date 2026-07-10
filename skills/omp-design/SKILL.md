@@ -1,6 +1,6 @@
 ---
 name: omp-design
-description: Use when implementing or modifying a feature but the product behavior, user flow, interaction details, MVP scope, edge cases, states, acceptance criteria, or user-fit tradeoffs are unclear. Clarifies what the feature should do, for whom, why it matters, how it should fit user habits, what is out of scope, and how completion will be verified before or during implementation.
+description: Use when implementing or modifying a feature but the product behavior, user flow, interaction details, MVP scope, edge cases, states, acceptance criteria, or user-fit tradeoffs are unclear, or when a user explicitly asks to challenge a feature direction before planning. Clarifies a useful, approved product direction and its tradeoffs before implementation.
 ---
 
 # OMP Design
@@ -19,14 +19,15 @@ Use this skill when:
 - an MVP risks becoming too small to be useful;
 - a feature needs a brief, lightweight PRD, acceptance criteria, or product review;
 - implementation discovers a product decision that cannot be answered from code.
+- a user explicitly asks to be grilled, pressure-test a direction, defend tradeoffs, or challenge assumptions before planning.
 
 Do not use this skill for pure implementation quality, development workflow orchestration, code review, testing mechanics, external research execution, or visual styling.
 
 ## Workflow
 
-1. Classify the design need: clarify, brainstorm, shape, spec, states, action, harden, review, or validate.
+1. Classify the design need: clarify, brainstorm, grill-me, shape, spec, states, action, harden, review, or validate.
 2. Ground in available context: user goal, existing product behavior, repo conventions, and facts tools can answer.
-3. Run a lightweight decision interview when needed: one decision question at a time, with a recommended answer and tradeoff.
+3. Run the smallest fitting interview: a lightweight decision interview for ordinary ambiguity or the grill-me protocol for an explicit pressure test.
 4. Define the smallest useful product slice: user/job, core path, scope, non-goals, and success signal.
 5. Design product behavior and reachable states, including failure and recovery paths.
 6. Emit the smallest durable artifact needed: feature brief, PRD section, state matrix, acceptance criteria, or review findings.
@@ -38,6 +39,7 @@ Do not use this skill for pure implementation quality, development workflow orch
 - Complexity is not a veto; preserve core value by narrowing scope or staging delivery.
 - Do not turn unconfirmed ideas into tasks, acceptance criteria, integrations, or capability promises.
 - Ask one decision question at a time; include the recommended answer and tradeoff.
+- Use the grill-me protocol only for an explicit pressure-test request; challenge load-bearing assumptions one at a time and stop at a user-approved direction or a named blocker.
 - Do not ask the user to confirm facts the codebase or tools can answer.
 - A happy path alone is incomplete; cover empty, loading, error, permission, destructive, and recovery states when relevant.
 - Record accepted decisions separately from open questions and rejected options.
@@ -49,6 +51,7 @@ Do not use this skill for pure implementation quality, development workflow orch
 | --- | --- |
 | Feature ambiguity or user-visible scope decisions | `references/decision-interview.md` |
 | Open-ended feature direction or multiple possible approaches | `references/brainstorm.md` |
+| Explicit, rigorous pressure test of a proposed direction | `references/grill-me.md` |
 | Turning intent into a compact feature definition | `references/feature-brief.md` |
 | Writing a PRD or requirements section | `references/prd.md` |
 | Designing flows, actions, consequences, and states | `references/interaction-states.md` |
