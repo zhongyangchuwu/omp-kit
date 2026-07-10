@@ -1,6 +1,6 @@
 ---
 name: program-language
-description: Use when choosing or configuring language-specific project tooling, package managers, formatters, linters, test runners, type checkers, common libraries, ecosystem docs, or stack conventions. Currently covers Go and Python.
+description: Use when choosing or configuring language-specific project tooling, package managers, formatters, linters, test runners, type checkers, common libraries, ecosystem docs, or stack conventions. Currently covers Go, Python, and Rust.
 ---
 
 # Program Language
@@ -36,6 +36,7 @@ Use this skill when starting a language project, evaluating tools or libraries, 
 | --- | --- |
 | Go project guidance | `references/go.md` |
 | Python project guidance | `references/python.md` |
+| Rust project guidance | `references/rust.md` |
 | Cross-language API, observability, and deployment references | `references/shared.md` |
 
 Additional languages follow the same focused support-file shape.

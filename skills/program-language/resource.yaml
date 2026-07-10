@@ -10,7 +10,7 @@ source:
   imported: null
   promoted: "2026-06-13"
   notes:
-    - Self-authored skill. Go and Python reference content derived from official documentation and community ecosystem consensus.
+    - Self-authored skill. Go, Python, and Rust reference content derive from official documentation and community ecosystem consensus.
     - Designed to be extended with additional language references under references/; cross-language infrastructure references live in references/shared.md.
 
 risk:
@@ -32,9 +32,9 @@ verification:
     - Validate metadata and generated registry.
 
 maintenance:
-  last_reviewed: "2026-06-14"
+  last_reviewed: "2026-07-11"
   notes:
-    - Review language ecosystem recommendations quarterly, especially Python tooling.
+    - Review language ecosystem recommendations quarterly, especially Python and Rust tooling.
     - Keep SKILL.md as the routing control panel; put language details in focused support files.
 
 relationships:
