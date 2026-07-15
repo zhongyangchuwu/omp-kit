@@ -57,7 +57,7 @@ Known OMP divergences that affect design decisions:
 - extension loading through Bun native `import()`;
 - `pkg.omp` preferred for extension metadata, with `pkg.pi` kept as fallback;
 - credential storage in `agent.db` with multi-credential/session-affinity behavior;
-- OMP-specific status line, subagent, IRC, internal URL, MCP, browser, debugger, and shell-tool behavior.
+- OMP-specific hub coordination, internal URL, MCP, browser, debugger, and shell-tool behavior.
 
 Before porting or depending on upstream Pi behavior, read the OMP porting notes and preserve documented OMP-only features instead of overwriting them with upstream defaults.
 
@@ -73,6 +73,22 @@ OMP 16.4 changed several runtime contracts that affect local skills and model co
 - GPT-5.6 bundled catalog entries may use Responses Lite, but `useResponsesLite` is not exposed by the custom `models.yml` schema; custom proxy entries must select a documented API transport that the proxy actually implements.
 
 These facts are version-specific. Recheck the OMP model schema and changelog before relying on them for later releases.
+
+## OMP 16.5–17 compatibility notes
+
+OMP v17.0.0 is a tool-transport migration, not a routine patch. Treat existing extensions, custom prompts, and automation as candidates for a targeted compatibility review.
+
+- `--reasoning-slide-*` was replaced in 16.5 by `--prewalk`, `--prewalk-into <model>`, and `--no-prewalk`; do not retain the removed flags or `--prewalk-boomerang`;
+- v17 merges the former `irc`, `job`, and `launch` tools into `hub`, which owns peer messaging, background-job control, and supervised long-running processes;
+- virtual tools are mounted by default through `xd://` when `tools.xdev` is enabled (the default): load their documentation with `read xd://<tool>` and dispatch them with `write xd://<tool>` using the documented JSON payload;
+- the BM25 tool-discovery system and its `tools.discoveryMode`, `tools.essentialOverride`, `mcp.discoveryMode`, and `mcp.discoveryDefaultServers` settings are removed; connected MCP tools mount through `xd://` instead;
+- the hidden `resolve` tool is removed. Resolve staged actions through plain-text writes to `xd://resolve`, `xd://reject`, or `xd://propose` as appropriate;
+- `read` and `grep` no longer accept a separate `selector` parameter. Append ranges and modes to the `path` instead;
+- rename `dev.autoqa.consent` to `dev.autoqaConsent` and `todo.reminders.max` to `todo.remindersMax`. Dead discovery keys are cleaned during config load;
+- `report_finding` and the agent `ssh` tool are removed. Reviewers use incremental `yield` sections; `ssh://` URIs and `omp ssh` host management remain;
+- `edit.enforceSeenLines` now defaults to `false`; enable it explicitly when edits must be limited to lines fully displayed by a preceding read or search. `astGrep.enabled` also defaults to `false`.
+
+Use the v17 release notes as the migration authority. The current runtime can expose additional host-provided tools, but their live schema is authoritative over remembered v16 contracts.
 
 ## Documentation and changelog lookup
 
