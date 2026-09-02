@@ -90,6 +90,34 @@ OMP v17.0.0 is a tool-transport migration, not a routine patch. Treat existing e
 
 Use the v17 release notes as the migration authority. The current runtime can expose additional host-provided tools, but their live schema is authoritative over remembered v16 contracts.
 
+## OMP 17.2–17.3 compatibility notes
+
+These releases refine the v17 transport and tool contracts. Match the installed runtime's live tool schemas rather than copying historical examples.
+
+- v17.2.0 removed the hashline `DEL`, `DEL.BLK`, `COPY`, and `COPY.BLK` operations. Use `CUT` / `CUT.BLK` to delete or capture source and the current `PASTE` grammar to reinsert it; inspect the live `edit` schema before constructing patches;
+- `tab.screenshot()` no longer accepts a caller-selected output path. It saves below `browser.screenshotDir` or the OS temporary directory and returns the actual path;
+- v17.2.4 changes MCP JSON-RPC request identifiers to connection-local sequential numbers by default. Set an OMP-owned server's `requestIdFormat: "string"` only when its peer requires string IDs;
+- v17.2.10 replaced the re-exported Zod package with an `@oh-my-pi/omptype/zod` compatibility facade. Extension code may use its Zod-style builders but must not depend on real Zod-specific APIs;
+- `externalThinking` (17.2.14) enables the private `think` scratchpad; `--external-thinking` (17.2.15) forces its activation. The tool is restricted to GPT, Claude, and Gemini transports that implement native reasoning replacement;
+- v17.2.15 adds `omp compress` for isolated prompt-register rewriting and expands `omp cleanse` into a diagnostic-driven repair workflow. Treat both as explicit operator actions, not default skill steps; `omp cleanse` can select or infer project checkers and distribute repair work;
+- v17.3.0 removes global `advisor.subagents`. Advisor selection is now per agent through agent frontmatter `advisor` or `task.agentAdvisor`; configurations with `advisor.subagents: true` migrate automatically to `task.agentAdvisor: { task: "on" }`;
+- v17.3.0 adds Astral `ty server` as the final built-in Python LSP fallback, after `pyright`, `basedpyright`, and `pylsp`. It also adds first-party Nix source-build, development-shell, NixOS, and Home Manager support.
+
+The v17.3.0 release also repairs LSP overlay, transactional-edit, diagnostics-failure, and rust-analyzer snippet handling. Use LSP diagnostics/results as evidence; a successful invocation is not proof that every configured server started.
+
+## OMP 17.4 compatibility notes
+
+OMP v17.4.0 focuses on model-specific token accounting and context management. It changes extension-facing APIs and compaction behavior more than the ordinary tool surface.
+
+- `@oh-my-pi/pi-agent-core` removes global token helpers (`countTokens`, `countTokensConservatively`, `setTokenizerModel`, and `estimateTokens`). Extensions must use the immutable model-scoped `agent.tokenizer`, such as `agent.tokenizer.countTokens(text, mode?)`, `countMessage(message)`, and `countMessages(messages)`;
+- core context helpers (`findCutPoint`, `prepareBranchEntries`, `collectShakeRegions`, `pruneToolOutputs`, `pruneSupersededToolResults`, and `trimRemoteCompactionInputToContextWindow`) now require an explicit `Tokenizer` instance;
+- `compaction.methodOrder` replaces `compaction.strategy` and `compaction.remoteEnabled`. Configure ordered preference, such as `[remote, snap]`, when selecting provider remote compaction before local snap compaction;
+- `/handoff` and automatic handoff compaction now replace the current session context in place rather than fork a session. Do not assume handoff creates a new session branch;
+- `compaction.asyncEnabled` enables speculative background compaction. `extendedContext` and `/extended-context` choose whether supported premium long-context windows are used or context is compacted before entering higher-cost tiers;
+- custom models and `modelOverrides` can declare `tokenizer` to pin the tokenizer family for a proxy. `models.yml` `compat.qwenTemplateReasoningEffort` disables Qwen 3.8+ template reasoning-effort injection for strict local servers.
+
+The runtime now counts Claude, Qwen, DeepSeek, Kimi, GLM, and OpenAI-family tokens locally with model-specific tokenizers. Treat token budgets, compaction thresholds, and long-context cost decisions as model-specific rather than global estimates.
+
 ## Documentation and changelog lookup
 
 For current facts, check both documentation and changelogs:
