@@ -1,31 +1,37 @@
 # Harness v2 local validation report
 
+> Historical test record. This document originated as an untracked local validation note for commit `005be43` and was later committed for auditability. Statements below about files being “unstaged” or “untracked” describe the local working tree at the time of the experiment, not the current Git state.
+
 ## Purpose
 
 Local machine validation of commit `005be43` on branch `harness-v2-implementation`, covering repository tests, managed installation, OMP 18.1.18 runtime loading, CPA/Luna requests, custom task-agent discovery, and one coding A/B experiment.
 
-This report is intentionally untracked. No commit or staging operation was performed.
-
 ## Result
 
-**Partially ready.** Repository tests, installer transactions, configuration parsing, CPA/Luna requests, and native-profile custom-agent delegation passed. One runtime integration boundary needs a second architecture pass: an arbitrary `PI_CODING_AGENT_DIR` loads config/models/skills but OMP 18.1.18 does not discover custom task agents from that directory. The same installed files work when placed in OMP's native named-profile path and launched with the matching `--profile`.
+**Partially ready.** Repository tests, installer transactions, configuration parsing, CPA/Luna requests, and native-profile custom-agent delegation passed. One runtime integration boundary needed a second architecture pass: an arbitrary `PI_CODING_AGENT_DIR` loaded config/models/skills but OMP 18.1.18 did not discover custom task agents from that directory. The same installed files worked when placed in OMP's native named-profile path and launched with the matching `--profile`.
 
-The default live root `~/.omp/agent` was previewed but not overwritten because two `omp --continue` processes were active. This follows the installer's explicit shutdown requirement.
+The default live root `~/.omp/agent` was previewed but not overwritten because two `omp --continue` processes were active. This followed the installer's explicit shutdown requirement.
 
 ## Second-round topology correction
 
 Based on the runtime evidence below, the installer was updated locally to:
 
 - ignore `PI_CODING_AGENT_DIR` and legacy `AGENT_ROOT` for the default installer root;
-- target `~/.omp/agent` by default;
-- add `--omp-profile <name>` for `~/.omp/profiles/<name>/agent`, with the matching
+- target the native OMP default root;
+- add `--omp-profile <name>` for native OMP profile paths, with the matching
   `omp --profile <name>` launch command;
 - rename the kit overlay option to `--config-profile`, retaining `--profile` as a
   compatibility alias;
 - make `doctor` report incomplete for managed custom agents outside native OMP roots.
 
-The focused installer suite increased from 37 to 41 tests and passed after these
+The focused installer suite increased from 37 to 41 tests and passed after those
 changes. The tracked durable summary is in `docs/VALIDATION.md`.
+
+A later GitHub review identified additional path-compatibility issues around
+`PI_CONFIG_DIR`, OMP's exact profile-name grammar, the `default` profile sentinel,
+and active `OMP_PROFILE`/`PI_PROFILE` handling. Those follow-up fixes are recorded in
+`docs/VALIDATION.md`; the original 41/79/145-pass counts below predate that patch and
+must be treated as historical evidence rather than proof of the current head.
 
 ## Repository and static checks
 
@@ -61,8 +67,6 @@ Post-fix evidence:
 - complete root suite: 79 passed;
 - Python compilation and `git diff --check`: passed.
 
-The fix is an unstaged modification to `scripts/install_harness.py`.
-
 ## Installer transaction exercise
 
 ### Filesystem-isolated root
@@ -75,7 +79,7 @@ Observed:
 2. Real install copied config, models, APPEND_SYSTEM, four agents, and active skills.
 3. Reinstall reported every unit `unchanged`.
 4. `--doctor` found `omp`, matched every managed fingerprint, and detected required key variables without printing values.
-5. Applying `--config-profile headless` replaced only `config.yml`; the legacy `--profile headless` alias remains accepted. Runtime output contained `symbolPreset: ascii` and `browser.enabled: false`.
+5. Applying `--config-profile headless` replaced only `config.yml`; the legacy `--profile headless` alias remained accepted. Runtime output contained `symbolPreset: ascii` and `browser.enabled: false`.
 6. `--rollback` restored the prior manifest/options and restored the exact original `config.yml` SHA-256.
 
 ### Native OMP profile
@@ -132,12 +136,12 @@ Using the installed harness on this machine:
 
 **Control experiment:** the same repository agent definition installed under `~/.omp/profiles/harness-v2-test/agent` and launched with `omp --profile harness-v2-test` was discovered and executed successfully.
 
-**Root cause evidence in installed OMP 18.1.18:** task-agent discovery builds user agent paths from the native OMP config/profile directory under the user's home, while `PI_CODING_AGENT_DIR` is not used by that discovery path. This creates a partial-root condition: config/models can load from the override while custom agents do not.
+**Root cause evidence in installed OMP 18.1.18:** task-agent discovery built user agent paths from the native OMP config/profile directory under the user's home, while `PI_CODING_AGENT_DIR` was not used by that discovery path. This created a partial-root condition: config/models could load from the override while custom agents did not.
 
 **Applied second-round architecture correction:**
 
-1. The installer now targets default `~/.omp/agent` regardless of `PI_CODING_AGENT_DIR` or legacy `AGENT_ROOT`.
-2. `--omp-profile <name>` installs to the native `~/.omp/profiles/<name>/agent` path and prints the matching launch command.
+1. The installer targets OMP's native default agent root instead of following arbitrary `PI_CODING_AGENT_DIR` or legacy `AGENT_ROOT` overrides implicitly.
+2. `--omp-profile <name>` installs to OMP's native named-profile path and prints the matching launch command.
 3. Kit overlays use `--config-profile`; `--profile` remains a compatibility alias.
 4. `doctor` warns and returns incomplete when managed custom agents are outside native OMP topology.
 5. The issue remains version-scoped because OMP discovery behavior may change upstream.
@@ -199,7 +203,7 @@ A useful second experiment should use a small real project with a committed `pyp
 
 ## Remaining unverified areas
 
-- Replacing the default live `~/.omp/agent` while all OMP processes are closed.
+- Replacing the default live native agent root while all OMP processes are closed.
 - Native Windows PowerShell and macOS execution.
 - Browser relay and real browser automation under the installed profile.
 - LSP behavior inside a fresh installed-profile session.
@@ -208,10 +212,14 @@ A useful second experiment should use a small real project with a committed `pyp
 - CPA quota/accounting semantics and declared context/output limits.
 - Astra, Sol, Terra, and DeepSeek live request paths.
 
-## Local state left for review
+## Historical local state at the end of the experiment
 
-- Installed native test profile: `~/.omp/profiles/harness-v2-test/agent`.
-- Temporary experiment data: `/tmp/omp-kit-ab`, `/tmp/omp-kit-agent-smoke*`, `/tmp/omp-kit-runtime.lznJS7`.
-- Unstaged tracked fix: `scripts/install_harness.py`.
-- Untracked report: `HARNESS_V2_LOCAL_TEST_REPORT.md`.
-- Default live root was not modified.
+At the moment this report was first written locally:
+
+- installed native test profile: `~/.omp/profiles/harness-v2-test/agent`;
+- temporary experiment data: `/tmp/omp-kit-ab`, `/tmp/omp-kit-agent-smoke*`, `/tmp/omp-kit-runtime.lznJS7`;
+- the installer type fix had not yet been committed;
+- this report itself had not yet been tracked;
+- the default live root had not been modified.
+
+Those statements are retained only as an experiment snapshot and do not describe the current repository state.
