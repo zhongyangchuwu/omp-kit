@@ -464,6 +464,7 @@ def test_resolved_model_effort_suffix_preserves_task_model_identity(tmp_path: Pa
     assert result['initial_resolved_model'] == 'cpa/gpt-5.6-luna:high'
     assert result['task_models_seen'] == ['cpa/gpt-5.6-luna']
     assert result['model_trajectory'][1]['effort'] == 'high'
+    assert result['thinking_levels_seen'] == ['high']
     assert ios._policy_failures(
         result,
         _policy_args(
@@ -471,6 +472,65 @@ def test_resolved_model_effort_suffix_preserves_task_model_identity(tmp_path: Pa
             forbid_fallback=True,
         ),
     ) == []
+
+
+def test_forbid_fallback_fails_when_session_init_metadata_is_missing(tmp_path: Path):
+    session = _write(
+        tmp_path / 'missing-session-init-fallback.jsonl',
+        [
+            _header(),
+            _entry('session_init', 'a', None, agent='luna-code', resolvedModel='cpa/gpt-5.6-luna'),
+            _entry('model_change', 'bb', 'a', model='cpa/gpt-5.6-luna', role='fast_worker', resolvedModelIsFallback=False),
+        ],
+    )
+    result = ios.audit_session(session)
+    failures = ios._policy_failures(result, _policy_args(forbid_fallback=True))
+    assert result['fallback_evidence_complete'] is False
+    assert any('cannot prove absence' in failure for failure in failures)
+
+
+def test_expect_thinking_rejects_mixed_evidence(tmp_path: Path):
+    session = _write(
+        tmp_path / 'mixed-thinking.jsonl',
+        [
+            _header(),
+            _entry('session_init', 'a', None, agent='luna-code', resolvedModel='cpa/gpt-5.6-luna:high', resolvedModelIsFallback=False),
+            _entry('thinking_level_change', 'bb', 'a', thinkingLevel='low'),
+        ],
+    )
+    result = ios.audit_session(session)
+    failures = ios._policy_failures(result, _policy_args(expect_thinking='high'))
+    assert result['thinking_levels_seen'] == ['high', 'low']
+    assert any('expected only thinking level' in failure for failure in failures)
+
+
+def test_expect_thinking_accepts_only_matching_evidence(tmp_path: Path):
+    session = _write(
+        tmp_path / 'matching-thinking.jsonl',
+        [
+            _header(),
+            _entry('session_init', 'a', None, agent='luna-code', resolvedModel='cpa/gpt-5.6-luna:high', resolvedModelIsFallback=False),
+            _entry('thinking_level_change', 'bb', 'a', thinkingLevel='high'),
+        ],
+    )
+    result = ios.audit_session(session)
+    assert result['thinking_levels_seen'] == ['high']
+    assert ios._policy_failures(result, _policy_args(expect_thinking='high')) == []
+
+
+def test_expect_thinking_fails_without_evidence(tmp_path: Path):
+    session = _write(
+        tmp_path / 'missing-thinking.jsonl',
+        [
+            _header(),
+            _entry('session_init', 'a', None, agent='luna-code', resolvedModel='cpa/gpt-5.6-luna', resolvedModelIsFallback=False),
+        ],
+    )
+    result = ios.audit_session(session)
+    failures = ios._policy_failures(result, _policy_args(expect_thinking='high'))
+    assert result['thinking_levels_seen'] == []
+    assert any('no thinking evidence' in failure for failure in failures)
+
 
 
 def test_forbid_fallback_fails_when_metadata_is_missing(tmp_path: Path):

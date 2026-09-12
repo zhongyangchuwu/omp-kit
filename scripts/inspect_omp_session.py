@@ -480,12 +480,13 @@ def _model_metrics(entries: list[dict[str, Any]]) -> dict[str, Any]:
             model = _normalize_omp_model_selector(None, raw_model)
             if model is not None:
                 fallback_value = entry.get('resolvedModelIsFallback')
+                effort = _model_effort(raw_model)
                 trajectory.append(
                     {
                         'source': 'session_init',
                         'model': model,
                         'raw_model': raw_model,
-                        'effort': _model_effort(raw_model),
+                        'effort': effort,
                         'role': entry.get('modelRole') if isinstance(entry.get('modelRole'), str) else None,
                         'fallback': fallback_value if isinstance(fallback_value, bool) else None,
                         'entry_id': entry.get('id'),
@@ -493,17 +494,20 @@ def _model_metrics(entries: list[dict[str, Any]]) -> dict[str, Any]:
                         'timestamp': entry.get('timestamp'),
                     }
                 )
+                if effort is not None and effort not in thinking_levels:
+                    thinking_levels.append(effort)
         elif entry_type == 'model_change':
             raw_model = entry.get('model')
             model = _normalize_omp_model_selector(None, raw_model)
             if model is not None:
                 fallback_value = entry.get('resolvedModelIsFallback')
+                effort = _model_effort(raw_model)
                 trajectory.append(
                     {
                         'source': 'model_change',
                         'model': model,
                         'raw_model': raw_model,
-                        'effort': _model_effort(raw_model),
+                        'effort': effort,
                         'role': entry.get('role') if isinstance(entry.get('role'), str) else None,
                         'fallback': fallback_value if isinstance(fallback_value, bool) else None,
                         'entry_id': entry.get('id'),
@@ -511,6 +515,8 @@ def _model_metrics(entries: list[dict[str, Any]]) -> dict[str, Any]:
                         'timestamp': entry.get('timestamp'),
                     }
                 )
+                if effort is not None and effort not in thinking_levels:
+                    thinking_levels.append(effort)
         elif entry_type == 'thinking_level_change':
             level = entry.get('thinkingLevel')
             if isinstance(level, str) and level not in thinking_levels:
@@ -556,11 +562,8 @@ def _model_metrics(entries: list[dict[str, Any]]) -> dict[str, Any]:
 
     fallback_values = [event.get('fallback') for event in trajectory]
     fallback_observed = any(value is True for value in fallback_values)
-    model_change_events = [event for event in trajectory if event.get('source') == 'model_change']
-    explicit_fallback_values = [value for value in fallback_values if isinstance(value, bool)]
-    fallback_evidence_complete = (
-        bool(explicit_fallback_values)
-        and all(isinstance(event.get('fallback'), bool) for event in model_change_events)
+    fallback_evidence_complete = bool(trajectory) and all(
+        isinstance(value, bool) for value in fallback_values
     )
 
     ordered_task_events: list[dict[str, Any]] = []
@@ -588,6 +591,7 @@ def _model_metrics(entries: list[dict[str, Any]]) -> dict[str, Any]:
         'fallback_observed': fallback_observed,
         'fallback_evidence_complete': fallback_evidence_complete,
     }
+
 
 
 def audit_session(
@@ -704,11 +708,16 @@ def _policy_failures(result: dict[str, Any], args: argparse.Namespace) -> list[s
             f"got {result.get('final_task_model')!r}"
         )
 
-    if args.expect_thinking and args.expect_thinking not in result.get('thinking_levels_seen', []):
-        failures.append(
-            f"expected thinking level {args.expect_thinking!r}, "
-            f"got {result.get('thinking_levels_seen')!r}"
-        )
+    if args.expect_thinking:
+        thinking_levels = result.get('thinking_levels_seen', [])
+        if not isinstance(thinking_levels, list) or not thinking_levels:
+            failures.append(
+                f'cannot verify thinking level {args.expect_thinking!r}: no thinking evidence'
+            )
+        elif any(level != args.expect_thinking for level in thinking_levels):
+            failures.append(
+                f"expected only thinking level {args.expect_thinking!r}, got {thinking_levels!r}"
+            )
 
     if args.forbid_fallback:
         if result.get('fallback_observed'):

@@ -570,35 +570,40 @@ def main(argv: list[str] | None = None) -> int:
             parser.error('--config-profile default must be used alone')
         profiles = []
     try:
-        agent_root = select_cli_agent_root(args.agent_root, args.omp_profile)
-        if args.rollback:
-            print('Rolled back: ' + rollback(agent_root))
-        elif args.doctor:
-            messages, ready = doctor(agent_root)
-            print('\n'.join(messages))
-            return 0 if ready else 2
-        elif args.validate:
+        if args.validate:
             repo = args.repo_root.expanduser().resolve()
-            compose(repo, (args.local_dir or agent_root.expanduser() / '.omp-kit/local'), profiles or [])
+            if args.local_dir is not None:
+                compose(repo, args.local_dir.expanduser().resolve(), profiles or [])
+            else:
+                with tempfile.TemporaryDirectory(prefix='omp-kit-no-local-') as temp:
+                    compose(repo, Path(temp), profiles or [])
             if args.cpa_url:
                 validate_url(args.cpa_url, '--cpa-url')
             print('Static configuration and agent/skill references: valid (not an upstream OMP schema/runtime test)')
         else:
-            changes = install_harness(repo_root=args.repo_root, agent_root=agent_root,
-                                      force=args.force, dry_run=args.dry_run, profiles=profiles,
-                                      local_dir=args.local_dir, cpa_url=args.cpa_url)
-            for change in changes:
-                print(change.format())
-            if args.dry_run:
-                print('Dry run only; no runtime files were written.')
-            else:
-                print('Installed. Existing .env, auth databases, sessions, MCP config and unrelated resources were not imported or replaced.')
-                if args.omp_profile is not None:
-                    print(f'Native OMP profile installed. Start with: omp --profile {args.omp_profile}')
+            agent_root = select_cli_agent_root(args.agent_root, args.omp_profile)
+            if args.rollback:
+                print('Rolled back: ' + rollback(agent_root))
+            elif args.doctor:
                 messages, ready = doctor(agent_root)
                 print('\n'.join(messages))
-                print('Offline checks passed; live runtime still unverified.' if ready else
-                      'Files installed, but readiness is incomplete. Resolve the items above before using OMP.')
+                return 0 if ready else 2
+            else:
+                changes = install_harness(repo_root=args.repo_root, agent_root=agent_root,
+                                          force=args.force, dry_run=args.dry_run, profiles=profiles,
+                                          local_dir=args.local_dir, cpa_url=args.cpa_url)
+                for change in changes:
+                    print(change.format())
+                if args.dry_run:
+                    print('Dry run only; no runtime files were written.')
+                else:
+                    print('Installed. Existing .env, auth databases, sessions, MCP config and unrelated resources were not imported or replaced.')
+                    if args.omp_profile is not None:
+                        print(f'Native OMP profile installed. Start with: omp --profile {args.omp_profile}')
+                    messages, ready = doctor(agent_root)
+                    print('\n'.join(messages))
+                    print('Offline checks passed; live runtime still unverified.' if ready else
+                          'Files installed, but readiness is incomplete. Resolve the items above before using OMP.')
     except (InstallError, ConfigError, OSError) as exc:
         print(f'error: {exc}', file=sys.stderr)
         return 1

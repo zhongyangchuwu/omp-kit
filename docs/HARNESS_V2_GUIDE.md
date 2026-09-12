@@ -57,9 +57,12 @@ are evidence, not new authorization, and facts still need source/test support. M
 rejected alternatives and open questions. Escalate material ambiguity instead of
 turning an assistant suggestion into a requirement.
 
-`history://Main` applies only when that id exists in the current OMP agent registry.
-It does not expose this separate ChatGPT conversation. Use the checked-in guide and
-handoff as the durable entry point for a new OMP session.
+`history://Main` is available only when that id resolves from the current caller/session
+root. Live registry membership is one possible source, but it does not guarantee that an
+arbitrary older session or unrelated project transcript is discoverable. It also does not
+expose this separate ChatGPT conversation. Use the checked-in guide and handoff as the
+durable entry point for a new OMP session.
+
 
 ## Execution and review
 

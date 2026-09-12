@@ -132,17 +132,19 @@ Detailed orchestration belongs to `omp-workflow`, not a large global system prom
 Start with [installation](docs/omp-installation.md), [configuration](docs/omp-configuration.md),
 and the [migration record](docs/config-migration-2026-09-12.md).
 The [guide](docs/HARNESS_V2_GUIDE.md) describes current policy, the
-[runtime experiment plan](docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md) defines the next
-measurement phase, and [validation](docs/VALIDATION.md) records what has actually
-been tested. The [handoff](docs/HARNESS_V2_HANDOFF.md) is the current continuation
-entry point for another agent. Future OMP-native development, Bun/TypeScript adoption
-and upstream-reuse rules are recorded in the [capability roadmap](docs/omp-roadmap.md);
-the [test automation plan](docs/HARNESS_V2_TEST_AUTOMATION.md) keeps the current
+[runtime experiment record](docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md) records completed
+architecture gates and deferred endurance/quota work, and
+[validation](docs/VALIDATION.md) records what has actually been tested. The
+[handoff](docs/HARNESS_V2_HANDOFF.md) is the current continuation entry point for
+another agent. Future OMP-native development, Bun/TypeScript adoption and upstream-reuse
+rules are recorded in the [capability roadmap](docs/omp-roadmap.md); the
+[test automation plan](docs/HARNESS_V2_TEST_AUTOMATION.md) keeps the current
 fallback-auditor boundary and deferred runtime-test infrastructure work.
 
 ## Maintenance
 
 ```sh
+just verify                     # combined deterministic repository gate
 just install                    # equivalent portable installer
 just validate-harness           # static config and agent/skill references
 just doctor
@@ -151,6 +153,7 @@ just check-registry
 just validate-registry
 just test                       # combined repository tests
 ```
+
 
 `just` is optional for installation. Skill-local tools may need their own dependencies.
 Passing static checks does not establish provider connectivity or live OMP compatibility.

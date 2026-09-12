@@ -29,15 +29,12 @@ permission to remove unrelated files. Keep rollback guarded against newer work.
 
 ## Combined checks
 
-After completing a coherent batch of changes, run the combined checks:
+After completing a coherent batch of changes, run the combined deterministic gate:
 
 ```sh
-just validate-harness
-just check-registry
-just validate-registry
-just test
-git diff --check
+just verify
 ```
+
 
 Regenerate registry only when skill metadata changes. Use temporary agent roots for
 installer tests. Never install into the user's live root merely to test a script.

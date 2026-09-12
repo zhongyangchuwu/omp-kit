@@ -523,22 +523,25 @@ Stage 1 is intentionally frozen at this boundary. New OMP format/tree/migration/
 requirements should trigger upstream integration research, not automatic Python parser
 expansion.
 
-### Stage 2 — durable fixture lifecycle
+### Stage 2 — durable fixture lifecycle — DEFERRED UNTIL A REAL TRIGGER
+
+This is not a current merge requirement. If repeated runtime-smoke work creates a real
+need, then:
 
 1. Promote the cache worker fixture and oracle into separated checked-in directories.
 2. Add preparation/finalization scripts.
 3. Add isolated filesystem tests.
 4. Reproduce the existing scorer result from a fresh run directory.
 
-### Stage 3 — opt-in runtime runner and supervision evidence
+### Stage 3 — opt-in runtime runner and supervision evidence — DEFERRED UNTIL A REAL TRIGGER
 
-Prefer an `omp-rpc` runner when that official Python package has an explicit reproducible
-dependency path. It can own OMP process lifecycle, timeout/abort, subagent subscription,
-progress and session statistics while omp-kit supplies only the prompt policy, fixture
-scope and scorer.
+Prefer an `omp-rpc` runner only when that official Python package has an explicit
+reproducible dependency path. It can own OMP process lifecycle, timeout/abort, subagent
+subscription, progress and session statistics while omp-kit supplies only the prompt
+policy, fixture scope and scorer.
 
-Until then, keep live dispatch manual and expose only thin preparation/finalization
-recipes such as:
+Until then, keep live dispatch manual. Thin preparation/finalization recipes may be
+added only after a concrete trigger:
 
 ```text
 runtime-smoke-prepare
@@ -551,23 +554,26 @@ Accumulate request-count/session-span/wait evidence before changing global
 
 ## Acceptance criteria
 
-The automation batch is useful when:
+The current Stage 1 automation batch is useful when:
 
 - one deterministic command covers required repository checks;
 - session metrics/history policy are derived without manual arithmetic;
 - branched/unsupported sessions cannot silently corrupt metrics;
 - grep-before-read proves a successful search result preceded the first read;
 - every history selector is classified and policy-relevant unknowns cannot disappear;
-- model/fallback trajectories are represented accurately and missing fallback evidence fails strict assertions;
+- model/fallback/thinking trajectories are represented accurately and incomplete or
+  conflicting evidence fails strict assertions;
 - huge history ranges cannot cause line-set memory blowups;
-- worker-visible fixture and hidden oracle are isolated;
-- a fresh runtime fixture no longer depends on retained `/tmp/omp-kit-phase2/` state;
 - one explicit child record can be scored/audited into JSON and Markdown;
-- optional parent evidence can expose indefinite waits and intervention history;
 - failures are non-zero and identify violated conditions;
 - ordinary tests remain offline and credential-free;
 - live requests remain explicit/profile-scoped;
 - raw account/session evidence remains untracked.
+
+Stage 2 and Stage 3 are deferred until a real runtime-smoke or lifecycle trigger exists.
+Their fixture isolation, fresh-run lifecycle and parent-supervision criteria are not
+current merge requirements.
+
 
 ## Deferred ideas
 
@@ -582,6 +588,6 @@ Do not add without repeated need:
 - quota/billing inference;
 - a second context subsystem.
 
-The immediate value is a combined deterministic gate, one trustworthy session auditor,
-one reusable isolated fixture/oracle lifecycle, and enough timing evidence to make future
-time-budget tuning empirical rather than speculative.
+The immediate value is the combined deterministic gate, one trustworthy session auditor
+and retained real-session evidence. Durable fixture lifecycle and runtime-runner work
+remain deferred until repeated runtime-smoke needs justify them.

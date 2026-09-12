@@ -394,6 +394,48 @@ def test_cli_refuses_implicit_nondefault_active_omp_profile(dirs, tmp_path):
     assert not (home / '.omp').exists()
 
 
+def test_validate_ignores_active_omp_profile(dirs, tmp_path):
+    env = {**os.environ, 'HOME': str(tmp_path / 'home'), 'OMP_PROFILE': 'work'}
+    env.pop('PI_PROFILE', None)
+    result = subprocess.run(
+        [sys.executable, str(ROOT / 'scripts/install_harness.py'),
+         '--repo-root', str(dirs[0]), '--validate'],
+        cwd=tmp_path, capture_output=True, text=True, env=env,
+    )
+    assert result.returncode == 0, result.stderr
+    assert 'Static configuration and agent/skill references: valid' in result.stdout
+
+
+def test_validate_ignores_live_root_local_overlay(dirs, tmp_path):
+    home = tmp_path / 'home'
+    local = home / '.omp/agent/.omp-kit/local'
+    local.mkdir(parents=True)
+    (local / 'config.yml').write_text('[invalid yaml', encoding='utf-8')
+    env = {**os.environ, 'HOME': str(home)}
+    env.pop('OMP_PROFILE', None)
+    env.pop('PI_PROFILE', None)
+    result = subprocess.run(
+        [sys.executable, str(ROOT / 'scripts/install_harness.py'),
+         '--repo-root', str(dirs[0]), '--validate'],
+        cwd=tmp_path, capture_output=True, text=True, env=env,
+    )
+    assert result.returncode == 0, result.stderr
+    assert 'Static configuration and agent/skill references: valid' in result.stdout
+
+
+def test_validate_rejects_explicit_bad_local_overlay(dirs, tmp_path):
+    local = tmp_path / 'bad-local'
+    local.mkdir()
+    (local / 'config.yml').write_text('[invalid yaml', encoding='utf-8')
+    result = subprocess.run(
+        [sys.executable, str(ROOT / 'scripts/install_harness.py'),
+         '--repo-root', str(dirs[0]), '--local-dir', str(local), '--validate'],
+        cwd=tmp_path, capture_output=True, text=True,
+    )
+    assert result.returncode == 1
+    assert 'Cannot read a valid YAML mapping' in result.stderr
+
+
 def test_cli_explicit_default_profile_overrides_active_profile_env(dirs, tmp_path):
     home = tmp_path / 'home'
     env = {**os.environ, 'HOME': str(home), 'OMP_PROFILE': 'work'}
