@@ -2,7 +2,7 @@
 
 ## Current state
 
-Harness v2 is in runtime validation rather than installer design. Installation/config/profile behavior is locally validated on Linux/WSL2. Runtime Phase 1 established that the restricted custom `luna-code` worker is operationally viable against bundled `sonic` on a bounded five-task sample. Runtime Phase 2 has now produced one successful real `history://Main` context-pull smoke without decision pollution.
+Harness v2 has completed the bounded runtime-validation sequence on the current Linux/WSL2 + OMP 18.1.18 path. Installation/config/profile behavior is locally validated, and all four runtime merge gates now pass.
 
 Installer/config validation baseline:
 
@@ -15,30 +15,32 @@ validate-registry: passed
 git diff --check: passed
 ```
 
-Runtime gates satisfied so far:
+Runtime gates:
 
 ```text
-Phase 1: luna-code viability             satisfied
-Phase 2: one real history://Main pull    satisfied
+Phase 1: restricted luna-code viability        PASS
+Phase 2: real history://Main retrieval          PASS
+Phase 3: persistent same-session continuation   PASS
+Phase 4: Notes-backed rollover/recovery         PASS
 ```
 
-Read `docs/VALIDATION.md` for evidence and limits, and `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` for the active experiment sequence.
+Read `docs/VALIDATION.md` for evidence/limits and `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` for the completed smoke sequence and merge gate.
 
 ## Goal
 
-Maintain a portable personal OMP harness that uses strong models for high-leverage control decisions and inexpensive restricted workers for token-heavy execution, while preserving reproducible configuration, bounded autonomous behavior, measurable context transfer, and recoverable installation.
+Maintain a portable personal OMP harness that uses strong models for high-leverage control decisions and inexpensive restricted workers for token-heavy execution, while preserving reproducible configuration, bounded autonomous behavior, measurable context transfer and recoverable installation.
 
 ## Source priority
 
 For current behavior, prefer:
 
-1. `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` — active runtime questions and protocol;
-2. `docs/VALIDATION.md` — what has actually been tested;
+1. `docs/VALIDATION.md` — what has actually been tested;
+2. `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` — completed runtime gates and remaining limits;
 3. `README.md`, `docs/omp-installation.md`, `docs/omp-configuration.md` — operational use;
 4. `docs/HARNESS_V2_GUIDE.md` — architecture rationale;
 5. current `config/`, `agents/`, and `skills/` — executable/runtime policy.
 
-Earlier chat snippets and historical reports are design evidence, not current instructions. A new OMP session cannot retrieve the separate ChatGPT design conversation through its own `history://Main`.
+Earlier chat snippets and historical reports are design evidence, not current instructions. A new OMP session cannot retrieve a separate ChatGPT design conversation through its own `history://Main`.
 
 ## Stable implementation surface
 
@@ -47,91 +49,69 @@ Earlier chat snippets and historical reports are design evidence, not current in
 - Four role-backed restricted workers, including `luna-code` and `luna-deep`.
 - `bounded-executor` for scope/repair/stop discipline.
 - `omp-workflow` delegation and subagent-context policy.
-- Portable copy installer with dry-run, drift detection, backups, rollback, profiles, local overlays, and offline doctor.
+- Portable copy installer with dry-run, drift detection, backups, rollback, profiles, local overlays and offline doctor.
 - Native OMP root/profile handling aligned with current OMP path/profile semantics.
 - Notes-backed context enabled in the canonical default configuration, with legacy-context overlay available.
 
-Do not redesign these layers while running experiments unless a concrete failure implicates them.
+Do not redesign these layers without evidence of a concrete failure.
 
-## Phase 1 conclusion
+## Runtime conclusions
 
-The same native profile, model role, effort, fixtures, and independent verification were used for bundled `sonic` and custom `luna-code`.
+### Phase 1 — restricted worker
 
-`luna-code` matched `sonic` at 5/5 independent passes. The two arms made the same aggregate number of provider requests (35 each). `luna-code` showed a narrower enabled tool surface (10 vs 16), a shorter session-init system prompt (17,245 vs 26,808.8 mean characters), fewer observed tool calls (44 vs 54), fewer reads (19 vs 31), lower aggregate total tokens (454,638 vs 634,708), and lower aggregate wall time (240.6 s vs 273.2 s).
+`luna-code` matched bundled `sonic` at 5/5 independent passes on five bounded fixtures. It showed a narrower enabled tool surface, shorter session-init prompt, fewer observed tool calls/reads, lower aggregate total tokens and lower aggregate wall time. The token reduction was dominated by cache-read tokens, so it is not a direct Business-quota claim. Decision: keep `luna-code` unchanged.
 
-The token reduction was dominated by cache-read tokens; uncached/input tokens were nearly equal. Do not convert the 28.4% total-token reduction into a Business quota claim. Both arms still receive a substantial OMP child base harness, so this does not establish a truly minimal provider-facing prompt.
+### Phase 2 — Main-history retrieval
 
-Decision: keep `luna-code` unchanged.
+A real Main session -> `history://Main` -> one `luna-code` worker path recovered all accepted decisions, excluded superseded/rejected/unresolved material, grounded a repository fact and passed independent scoring. The child used 200,731 total tokens in that long-session smoke, which is a signal to prefer targeted retrieval over default whole-history reads, not a correctness failure.
 
-## Phase 2 conclusion
+Synthetic parents held open with long `hub wait` were discarded as invalid scaffolding. When downstream work depends on parent history, use a history barrier instead of equating message delivery with durable transcript availability.
 
-A synthetic-parent benchmark setup was discarded because long `hub wait` intervals measured lifecycle waiting and did not cleanly guarantee that every intended steering turn had become durable history.
+### Phase 3 — persistent continuation
 
-The valid smoke used the real Main session. A preflight/history barrier verified `history://Main`, the presence of accepted/superseded/rejected/unresolved discussion, the actual `luna-code` identity, Luna High, and no fallback. The worker then received only the objective, temporary fixture path, and `history://Main`.
+One `luna-code` session handled three related tasks across two direct follow-ups. The worker was observed `idle` after each task and the two continuations reported `woken`; no silent respawn/fallback occurred. Task 3 correctly followed a new decision that superseded an earlier behavior. This proves same-session continuation / idle wakeup, not a separately demonstrated `parked -> revived` transition.
 
-Independent scoring returned:
+### Phase 4 — Notes-backed rollover
 
-```text
-accepted_correct: 3/3
-superseded_incorrect: 0
-rejected_tentative_incorrect: 0
-unresolved_incorrect: 0
-repository_facts_correct: 1/1
-behavioral_pass: true
-```
+Main persisted accepted/superseded/open state into context notes, entered a new context with `new_context`, received the notes-backed state automatically, recovered exact pre-rollover evidence through targeted `history://current/full` lookup, and correctly completed a decision-dependent task. Independent tests and direct behavior checks passed.
 
-This satisfies the merge gate requiring one parent-history pull without decision pollution. It does not prove repeated reliability or quota efficiency. The observed 200,731 child tokens also show that pulling a long Main transcript can be context-heavy; a compact decision capsule/view is a future optimization only if repeated real work makes that cost material.
+Known tooling anomaly: `context_notes` documentation says omitting `text` reads the notebook, while the currently exposed schema requires `text`; an empty string clears the notebook. This was reported through `xd://report_issue`. Automatic notes injection and full-history recovery still worked, so the runtime gate remains satisfied. Avoid empty-string `context_notes` reads.
 
-For lifecycle-sensitive work, prefer complete-turn -> park/yield -> direct-message revival over unbounded `hub wait`. When downstream work depends on parent history, use a history barrier rather than equating message delivery with durable transcript availability.
+## Immediate design work
 
-## Immediate next phase
+Stop expanding runtime smoke tests. The next task is to simplify Main-session context policy before final branch review.
 
-Run **Phase 3: persistent worker continuation smoke**.
+The leading direction is:
 
-Use one `luna-code` worker for one coherent subsystem and three related steps:
+- local tasks should not read Main history;
+- context-dependent workers should search/grep `history://Main` first and read only relevant passages rather than defaulting to a full-history read;
+- high-risk/ambiguous work may receive an explicit short contract;
+- do not introduce a parallel mandatory context-capsule system unless real usage justifies it;
+- durable `.planning/` artifacts remain an explicitly chosen long-lived workflow, not an automatic mirror of session history.
 
-```text
-spawn once
--> task 1
--> park/yield
--> direct follow-up / revive
--> task 2
--> park/yield
--> direct follow-up / revive
--> task 3
-```
-
-Do not run a full fresh-vs-reused benchmark yet. The smoke gate only needs to establish:
-
-- same worker/session continuation rather than silent respawn;
-- correct independent result after each follow-up;
-- useful retained subsystem context;
-- no stale-context error when a material parent decision changes;
-- successful park/revive behavior without unbounded waiting.
-
-After Phase 3:
-
-4. one Notes-backed rollover/recovery smoke test;
-5. endurance/quota measurement after the behavior above is trustworthy.
+The exact boundary between searchable session history and durable `.planning/` state is still under design and should be settled before merge.
 
 ## Constraints
 
-- Do not commit keys, `.env`, auth stores, backups, raw session logs, or account-specific state.
+- Do not commit keys, `.env`, auth stores, backups, raw session logs or account-specific state.
 - Do not grant another machine's setup/QA consent.
-- Preserve the canonical imported CPA transport and model definitions unless measured runtime evidence requires a change.
-- Keep `luna-code` unchanged during the next smoke so worker lifecycle is the intentional variable.
+- Preserve the canonical CPA transport and model definitions unless measured runtime evidence requires a change.
 - Do not claim a custom agent has a minimal provider-facing system prompt; current OMP still constructs a substantial child harness.
 - Tool restriction reduces action-space complexity but is not security isolation.
-- Do not infer ChatGPT Business quota from configured API-equivalent prices or total-token counts.
-- Worker self-report is not verification; use independent acceptance checks.
-- Do not build synthetic parent/session machinery when the real runtime topology can answer the question more directly.
+- Do not infer ChatGPT Business quota from configured API-equivalent prices or raw token totals.
+- Worker self-report is not verification; use independent acceptance checks where failure matters.
 
 ## Merge direction
 
-Do not keep the implementation branch open indefinitely for perfect quota data. Phase 1 custom-worker viability and Phase 2 one-shot parent-history pull are satisfied. Merge to `main` once persistent continuation works at least once, Notes-backed context is smoke-tested or deliberately disabled pending testing, and no high-severity runtime defect remains.
+The installer/config gate and bounded runtime gates are satisfied. Multi-hour endurance/quota work is deferred and should not block merge.
 
-Longer endurance/quota optimization can continue after merge.
+Before merging `harness-v2-implementation` to `main`:
+
+1. settle the simplified Main-session context policy;
+2. update the relevant workflow references without creating a redundant context subsystem;
+3. perform one final branch review;
+4. merge only if no new high-severity defect is found.
 
 ## Deferred until evidence requires them
 
-No OMP fork, custom scheduler, raw cross-agent full-history API, automated context curator, pricing service, replacement minimal system prompt, complex experiment framework, or mandatory decision-capsule subsystem. Add one only when an observed failure or repeated manual cost justifies it.
+No OMP fork, custom scheduler, raw cross-agent full-history API, automated context curator, pricing service, replacement minimal system prompt, complex experiment framework or mandatory decision-capsule subsystem. Add one only when an observed failure or repeated manual cost justifies it.
