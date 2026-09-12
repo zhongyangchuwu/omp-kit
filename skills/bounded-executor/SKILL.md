@@ -1,69 +1,30 @@
 ---
 name: bounded-executor
-description: Use for implementation workers that need strict scope, bounded repair attempts, targeted verification, and explicit stopping conditions to avoid agent-loop runaway.
+description: "Bound implementation work by scope, evidence, repair attempts and explicit stop conditions."
 ---
 
-# Bounded Executor
+# Bounded execution
 
-## Purpose
+Implement only the assigned objective. Follow relevant project rules; do not turn
+unrelated findings into refactors, dependency upgrades or speculative improvements.
 
-Keep implementation agents effective without allowing open-ended exploration, speculative cleanup, or repeated repair loops.
+Retrieve only the code and referenced discussion needed to establish an implementation
+path. Separate accepted requirements from suggestions and open questions. Begin editing
+when the path is supported; more exploration is not automatically more confidence.
 
-## Execution contract
+On a concrete verification failure, diagnose it, make a relevant correction and rerun
+the narrowest useful check. If the same blocker survives two materially different
+repair attempts, stop and report evidence, attempted approaches and your best diagnosis.
+This is not a two-tool-call limit and does not require abandoning an ordinary first fix.
 
-### Scope
+Use tools actually available to you. Do not bypass a restricted toolset through another
+channel. Request an execution-capable verifier if you cannot run the required checks.
+Broader integrated gates may be explicitly delegated; otherwise report your scoped evidence.
+Do not repeat a passing check without a relevant intervening change or new evidence.
 
-- Implement only the assigned objective.
-- Follow existing repository patterns unless the task explicitly changes them.
-- Do not perform unrelated refactors, cleanup, redesign, dependency upgrades, or speculative improvements.
-- Mention unrelated findings in the final report instead of fixing them.
+Stop when the assigned acceptance criteria are met and the required evidence is available,
+or when an unresolved blocker requires escalation. Report any verification you could not
+perform. Do not turn a blocker report into a claim of completion.
 
-### Exploration
-
-- Inspect only the files, symbols, call sites, and history needed to identify a credible implementation path.
-- Once the path is clear, begin editing.
-- Do not continue searching merely to increase confidence.
-- If the assignment depends on decisions made in a parent conversation, retrieve that context once and use the worker's persistent transcript afterward.
-
-### Repair budget
-
-On a verification failure:
-
-1. diagnose the concrete failure;
-2. make the smallest relevant correction;
-3. rerun the narrowest useful verification.
-
-If the same underlying blocker remains after two materially different repair attempts, stop and return:
-
-- the blocker;
-- evidence;
-- approaches already attempted;
-- the best current diagnosis.
-
-Do not keep varying an approach that has already failed.
-
-### Verification
-
-- Prefer focused tests, checks, and runtime evidence first.
-- Broader project-wide gates belong to the integrating controller unless the assignment explicitly requires them.
-- Do not rerun a passing check without new evidence that a subsequent change may have invalidated it.
-
-### Stop condition
-
-The task is complete when:
-
-- the requested behavior is implemented;
-- the assigned acceptance criteria are met;
-- relevant focused verification passes;
-- no known defect introduced by the change remains.
-
-Once these conditions are satisfied, stop. Do not perform another polishing, refactoring, review, or exploration pass without a concrete reason.
-
-## Return format
-
-Return concise evidence sufficient for integration:
-
-- what changed;
-- verification performed and result;
-- unresolved risk or blocker, if any;
-- any decision that the parent must make.
+Return changed files, behavior/document changes, verification and outcome, and remaining
+risks or questions. Do not continue polishing after completion without new instructions.

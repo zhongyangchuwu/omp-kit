@@ -1,110 +1,123 @@
 # OMP Kit
 
-Personal Oh My Pi harness: runtime configuration, model routing, custom agents, maintained skills, and supporting automation.
+A personal Oh My Pi harness: versioned runtime configuration, model routing,
+restricted custom agents, workflow skills and a portable installer.
 
-The repository is the source of truth for portable OMP harness state. Runtime files under `~/.omp/agent/` are deployed from here rather than maintained independently by hand.
+The current settings are based on the owner's working files uploaded on
+2026-09-12, not the earlier guessed CPA configuration. The CPA route is
+`http://localhost:8317/v1` using `openai-responses` and `CPA_API_KEY`.
 
-## Layout
+## Start on another machine
+
+Prerequisites: **OMP and uv on PATH**, a reachable CPA service/account, and a CPA
+key available to OMP. The installer does not provision subscriptions, deploy CPA,
+transfer OAuth databases, install browsers/LSPs or authenticate GitHub for you.
+`uv run --script` manages the installer's Python and PyYAML dependency separately
+from the repository's larger development environment.
+
+Clone this repository using your normal GitHub access, then:
+
+```sh
+# Linux / macOS / WSL
+bash install.sh --dry-run
+bash install.sh
+```
+
+```powershell
+# Native Windows; no symlink privileges required
+.\install.ps1 --dry-run
+.\install.ps1
+```
+
+The same entry point works everywhere, from any working directory:
+
+```sh
+uv run --script /path/to/omp-kit/scripts/install_harness.py
+```
+
+Supply `CPA_API_KEY` in the environment used to launch OMP or in
+`~/.omp/agent/.env`. See `config/secrets.env.example`; never put real keys in Git.
+`DEEPSEEK_API_KEY` is optional unless you assign a DeepSeek role.
+
+For an existing setup, preview the explicitly authorized migration:
+
+```sh
+bash install.sh --force --dry-run
+bash install.sh --force
+```
+
+All replaced objects are backed up before replacement. Close active OMP sessions
+first; the installer does not lock OMP's own configuration writer.
+
+## What is installed
 
 ```text
-config/          Canonical OMP config.yml and models.yml (no secrets)
-agents/          Custom OMP task agents
-skills/          Active reusable skills
-drafts/          In-progress skills before promotion
-references/      Local upstream source/reference material (gitignored)
-docs/            Harness architecture and project documentation
-scripts/         Installation, validation, registry, and maintenance automation
-schemas/         Resource metadata schema
-tests/           Repository-level tests
-registry.yaml    Generated skill/draft index
-justfile         Common maintenance entry points
+config/config.yml             -> <agent-root>/config.yml
+config/models.yml             -> <agent-root>/models.yml
+config/APPEND_SYSTEM.md        -> <agent-root>/APPEND_SYSTEM.md
+agents/*.md                   -> <agent-root>/agents/*.md
+registry-selected active skills -> <agent-root>/skills/<name>/
 ```
 
-## Harness v2
+Default installation **copies** resources. Checkout changes do not silently alter
+running workers, and native Windows does not require symlinks. Drafts, references,
+credentials, caches and unrelated runtime resources are not imported.
 
-Current design direction:
+The manifest and private backups live in `<agent-root>/.omp-kit/`. A normal update
+replaces unchanged managed resources, but refuses unknown collisions and local
+edits. `--force` explicitly adopts/replaces conflicts with backups. Removed managed
+resources are retired only from the previous manifest, never by sweeping the directory.
+
+## Machine differences and recovery
+
+```sh
+bash install.sh --profile headless             # ASCII UI, no browser/relay
+bash install.sh --profile legacy-context       # opt out of experimental notes
+bash install.sh --profile default              # clear stored profile selection
+bash install.sh --cpa-url https://my-host.example/v1
+bash install.sh --doctor                       # offline readiness/drift check
+bash install.sh --rollback                     # undo latest install, preserving newer work
+```
+
+Profiles and the chosen CPA URL are remembered for reinstall. Local YAML overrides
+live in `<agent-root>/.omp-kit/local/`; templates are in `config/local.example/`.
+Mappings merge, arrays replace. Secret values belong in the environment or `.env`,
+not those YAML files. Use `PI_CODING_AGENT_DIR` to relocate OMP and the installer
+consistently; `--agent-root` and legacy `AGENT_ROOT` affect the installer only.
+
+## Layout and policies
 
 ```text
-Human
-  -> Sol director / control plane
-      -> Luna High routine workers
-      -> Luna Max difficult bounded workers
-      -> Sol High selective high-risk review
+config/          User-derived portable settings, profiles and non-installed references
+agents/          Role-backed custom task agents
+skills/          Maintained active skills; registry.yaml remains generated
+drafts/          Inactive work before promotion
+scripts/         Installer, static configuration checks and existing maintenance tools
+docs/            Architecture, installation, configuration and migration notes
+tests/           Repository and isolated installer tests
 ```
 
-Key policies:
+Sol/Luna routing is a selected working policy, not a claim that model benchmarks
+guarantee task success or a fixed weekly quota. The director sends intent and
+boundaries; workers retrieve relevant evidence and stop at acceptance or escalation.
+Detailed orchestration belongs to `omp-workflow`, not a large global system prompt.
 
-- expensive models make high-leverage decisions; inexpensive workers do token-heavy execution;
-- workers retrieve repository and parent-conversation context themselves when appropriate;
-- custom workers have deliberately small tool surfaces;
-- persistent workers are reused per coherent workstream;
-- high-effort workers use bounded repair and explicit stop conditions;
-- durable planning artifacts are for state that must survive sessions, not for every large edit;
-- tracked config is canonical, while credentials remain outside Git.
+Start with [installation](docs/omp-installation.md), [configuration](docs/omp-configuration.md),
+and the [migration record](docs/config-migration-2026-09-12.md).
+The [guide](docs/HARNESS_V2_GUIDE.md) describes current policy; the
+[handoff](docs/HARNESS_V2_HANDOFF.md) records remaining runtime validation.
 
-See `docs/HARNESS_V2_GUIDE.md` for the full rationale and `docs/HARNESS_V2_HANDOFF.md` for migration context.
+## Maintenance
 
-## Install
-
-Set the CLIProxyAPI bearer key outside Git:
-
-```bash
-export CLIPROXYAPI_API_KEY='...'
+```sh
+just install                    # equivalent portable installer
+just validate-harness           # static config and agent/skill references
+just doctor
+just build-registry             # only after skill metadata changes
+just check-registry
+just validate-registry
+just test                       # combined repository tests
 ```
 
-Then from the repository root:
-
-```bash
-just install
-```
-
-The installer:
-
-- symlinks active skills into `~/.omp/agent/skills/`;
-- symlinks tracked custom agents into `~/.omp/agent/agents/`;
-- copies canonical `config/config.yml` to `~/.omp/agent/config.yml`;
-- copies canonical `config/models.yml` to `~/.omp/agent/models.yml`.
-
-If runtime config differs, installation refuses to overwrite it. Review the drift, then use:
-
-```bash
-just install-force
-```
-
-`install-force` creates timestamped backups before replacing differing config files. It still refuses to replace unmanaged real agent/skill files.
-
-## Development commands
-
-```bash
-just install              # install complete harness; refuse config drift
-just install-force        # backup and replace differing runtime config
-just install-skills       # legacy skill-only linking path
-
-just build-registry       # regenerate registry.yaml from resource.yaml files
-just check-registry       # fail if registry.yaml is stale
-just validate-registry    # validate registry and resource metadata
-just build-index          # print compact registry index
-
-just promote-skill drafts/NAME --name NAME
-just test
-```
-
-## Configuration
-
-`config/config.yml` currently routes the harness around two model classes:
-
-- Luna for routine and difficult execution;
-- Sol for the main director, planning, and high-risk review.
-
-`config/models.yml` defines the local `cpa` provider through CLIProxyAPI's Codex-compatible endpoint and reads its bearer secret from `CLIPROXYAPI_API_KEY` at runtime. Sol and Terra entries route soft compaction to Luna via `compactionModel`.
-
-The tracked configuration assumes CLIProxyAPI on `http://127.0.0.1:8317`. Change the tracked provider endpoint if the deployment intentionally differs; never commit its secret.
-
-## Resource rules
-
-- `resource.yaml` remains canonical metadata for maintained skills.
-- `registry.yaml` is generated and must match resource metadata.
-- Unreviewed third-party material stays under gitignored `references/` until extracted into maintained resources or docs.
-- Project facts live in `docs/`; reusable procedure lives in the owning skill.
-- Agent definitions live in `agents/`; model/runtime routing lives in `config/`.
-- After changing scripts, metadata, configuration, agents, or skills, run `just test` and inspect the effective OMP configuration after installation.
+`just` is optional for installation. Skill-local tools may need their own dependencies.
+Passing static checks does not establish provider connectivity or live OMP compatibility.

@@ -1,75 +1,50 @@
-# Delegation Policy
+# Delegation and persistent workers
 
-## Goal
+The director owns user intent, task boundaries, shared interfaces, acceptance,
+escalation and integration decisions. Workers own scoped exploration, editing,
+local debugging and targeted verification. Optimize useful accepted work, not
+hours spent waiting or a fixed token-share target.
 
-Delegate token-heavy execution without duplicating work or turning the director into another implementation worker.
+## Select by task, not by a mandatory escalation ladder
 
-## Director responsibilities
+Use `luna-code` for clear local/pattern-based changes, `luna-deep` for difficult
+cross-file work, `luna-doc` for documentation/config synthesis and `sol-review`
+for an independent high-risk review. Resolve these from the live agent catalog;
+never assume an unavailable agent or tool exists. Model and effort live in config.
 
-The director owns:
+Give each workstream an immediate objective, allowed scope, context references and
+completion evidence. Do not restate long discussions the worker can retrieve.
+For important invariants or ambiguous behavior, give explicit acceptance criteria.
 
-- interpretation of user intent;
-- decomposition into independent workstreams;
-- cross-workstream interfaces and invariants;
-- acceptance criteria when they matter;
-- escalation and integration decisions;
-- deciding when user clarification is required.
+Use one owner for each writable scope. Concurrent independent work is useful;
+concurrent overlapping edits require isolation or a serialized integration plan.
+A director checking evidence should not repeat the entire worker investigation.
 
-Workers own scoped repository exploration, implementation, local debugging, and targeted verification for their workstream.
+## Lifecycle
 
-Verification by the director is not a license to repeat the worker's entire investigation. Inspect the minimum critical interfaces, diff, and evidence needed to judge the result.
+Use OMP's ordinary `task` tool to launch the chosen custom agent. Record its actual
+returned id, scope and expected evidence. Use the available `hub` interface or
+runtime result-delivery mechanism to continue that worker; consult the live schema
+rather than guessing a `hub wait` command. Do not promise persistence after an
+unverified restart/park/revival path. If the worker cannot be revived, launch a new
+one with a concise checkpoint and known context references.
 
-## Initial worker selection
+When blocked, wait for completion through supported blocking or async delivery.
+Avoid short repeated polling and needless supervisor wakeups. If built-in Vibe is
+being used instead, load `vibe-compat.md`; `vibe_wait` rules are not generic hub APIs.
 
-Choose one initial worker tier per workstream.
+## Escalation and verification
 
-Use a routine worker when:
+Follow the worker's bounded repair budget. Two materially different failed attempts
+on the same unresolved blocker trigger a report, not a new infinite agent loop.
+The director may clarify scope, split the problem, change tier or ask the user.
+Track provider retries, technical repairs, escalation and user scope changes separately.
 
-- the objective is well specified;
-- implementation follows established patterns;
-- failures are easy to detect;
-- the work is primarily local or mechanical.
+The director owns the integrated verification result, but can delegate the command
+execution to a suitable worker. Run a project-wide gate once for the integrated
+change, not independently in every worker. An independent reviewer needs a diff
+artifact or explicit base/current sources, requirements and verification evidence.
+Routine changes do not require a separate expensive review by default.
 
-Use a deeper worker directly when:
-
-- substantial cross-file reasoning is required;
-- difficult debugging is expected;
-- correctness depends on non-local invariants;
-- the solution space is materially ambiguous but still technically resolvable;
-- a failed cheap attempt would cost more than starting with the stronger worker.
-
-Do not routinely run two workers on the same problem merely for supervision or confidence.
-
-## Persistence and reuse
-
-Treat one persistent worker as the owner of one coherent workstream. Reuse that worker for follow-up implementation or repair while its context remains relevant. Avoid spawning a replacement worker that must rediscover the same repository state unless escalation or isolation provides a concrete benefit.
-
-## Repair and escalation
-
-Ordinary verification failures remain with the worker under the bounded-executor repair budget.
-
-When the same blocker survives two materially different repair attempts, the worker should stop and return evidence. The director then chooses among:
-
-- refining the specification;
-- splitting the workstream;
-- escalating to a stronger worker/model;
-- performing a focused architectural decision;
-- asking the user when the unresolved choice is genuinely theirs.
-
-A retry is not the same as an escalation. Track repeated repair, model escalation, and user-requested scope changes separately when evaluating the harness.
-
-## Concurrency
-
-Parallelism is useful only for genuinely independent workstreams. Prefer one worker per independent stream. Avoid concurrency that creates overlapping writes, duplicated exploration, or repeated review of the same code.
-
-## Human decision boundary
-
-Return the decision to the user when it:
-
-- changes externally visible behavior without a clear requirement;
-- commits to an expensive-to-reverse architecture;
-- represents materially different UX or product tradeoffs;
-- risks destructive or irreversible data changes;
-- depends primarily on preference rather than technical correctness.
-
-Do not ask the user for routine implementation details that can safely be inferred from repository conventions.
+Return material product preferences, irreversible architecture choices and destructive
+operations to the user. Ordinary implementation choices may follow repo conventions.

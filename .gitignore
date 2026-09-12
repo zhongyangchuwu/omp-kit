@@ -1,27 +1,32 @@
-# Python / test caches
+# Local upstream/source checkouts and environments
+/references/
+.venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.mypy_cache/
 .ruff_cache/
+node_modules/
 
-# Local environments
-.venv/
+# Never commit machine configuration, secrets or runtime state
+.env
+.env.*
+!.env.example
+!.env.sample
+config/local/
+.omp-kit/
+*.db
+*.db-wal
+*.db-shm
+*.bak-*
+*.tmp
+.DS_Store
+Thumbs.db
 
-# Local workflow state
+# Retained from the existing repository
 .worktrees/
 worktrees/
-
-
-# Local upstream source/reference checkouts
-/references/
 /incoming/
-
-# Secrets and local machine config
 secrets.json
 *.pem
 *.key
-.env
-.env.*
-
-# OS/editor noise
-.DS_Store

@@ -1,0 +1,8 @@
+browser:
+  enabled: false
+  headless: true
+  relay: false
+symbolPreset: ascii
+statusLine:
+  preset: ascii
+  separator: ascii
