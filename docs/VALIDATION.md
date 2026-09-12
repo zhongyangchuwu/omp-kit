@@ -142,6 +142,52 @@ The exposed `context_notes` schema requires `text`, while its documentation says
 
 This defect did **not** invalidate the rollover gate because the post-rollover decision was already present in automatically injected notes-backed context and exact evidence remained recoverable from full history. Treat the empty-string behavior as a known non-blocking tooling defect and avoid using an empty-string call as a read operation.
 
+## Search-first parent-history policy smoke
+
+**PASS for correctness and retrieval policy; not evidence of context/token reduction.** One `luna-code` worker searched the real `history://Main` transcript instead of receiving a rewritten requirements brief or issuing an unbounded whole-history read.
+
+Worker identity:
+
+- session id: `01a096a9-d277-77b5-9862-3af0c19b59c4`;
+- agent: `luna-code`;
+- model: `cpa/gpt-5.6-luna`, thinking level `high`;
+- fallback: false.
+
+History retrieval:
+
+- 3 `grep` calls against `history://Main`;
+- 5 bounded line-range reads;
+- no unbounded `read history://Main`;
+- successful bounded ranges collectively covered nearly all of the then-188-line concise transcript, with one final out-of-range read returning no content.
+
+Independent scorer:
+
+```text
+accepted_correct: 3/3
+superseded_incorrect: 0
+rejected_tentative_incorrect: 0
+unresolved_incorrect: 0
+repository_facts_correct: 1/1
+behavioral_pass: true
+```
+
+Worker focused test and independent reruns passed. Tracked omp-kit files remained unchanged and old Phase 2 evidence was not modified.
+
+Usage observed:
+
+```text
+total child tokens: 642,661
+input:               68,928
+cache read:         570,880
+output:                2,853
+reasoning:             1,611
+wall time:            ~1m42s
+```
+
+The earlier Phase 2 whole-history smoke observed 200,731 total child tokens, but the Main history/runtime state differed, so this is not a controlled cost or quota comparison. The result proves that direct worker search of the parent's automatic transcript can recover the correct requirements without Main rewriting a detailed brief. It does **not** prove that search-first automatically reduces model context or total token traffic.
+
+Policy implication: retain search-first Referenced retrieval, but optimize for both relevance and retrieval round trips. If matches are dense, prefer one coherent bounded span rather than mechanically tiling most of the transcript. A broader/full concise transcript read remains a fallback when most of a short transcript is genuinely relevant.
+
 ## Runtime gate status
 
 ```text
@@ -149,6 +195,7 @@ Phase 1  restricted luna-code viability        PASS
 Phase 2  real history://Main retrieval          PASS
 Phase 3  persistent same-session continuation   PASS
 Phase 4  Notes-backed rollover/recovery         PASS
+Policy   search-first parent retrieval          PASS (correctness/retrieval)
 ```
 
 The bounded runtime merge gates are satisfied. Multi-hour endurance/quota work is deferred optimization rather than a merge blocker.
@@ -173,13 +220,14 @@ The Pyright issue in `prepare()` was fixed by checking each prepared fingerprint
 
 ## Next work
 
-Stop runtime smoke expansion. The next design/review work is to simplify Main-session context policy, especially avoiding default full-history reads when targeted search/grep plus local reads are sufficient. After that policy is settled, perform a final branch review before deciding whether to merge `harness-v2-implementation` to `main`.
+Stop runtime/context smoke expansion. Perform a final branch review for policy consistency, stale documentation, accidental overclaiming, installer/config regressions, and merge readiness before deciding whether to merge `harness-v2-implementation` to `main`.
 
 ## Remaining scope limits
 
 Not yet proven:
 
 - repeated parent-history pull reliability or Business-quota efficiency;
+- search-first token/context efficiency on controlled equivalent sessions;
 - true `parked -> revived` worker lifecycle across longer inactivity/process boundaries;
 - native Windows/macOS installation;
 - browser relay and fresh-profile browser automation;
