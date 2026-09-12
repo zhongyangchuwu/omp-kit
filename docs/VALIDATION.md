@@ -62,7 +62,58 @@ Descriptively, `luna-code` used **28.4% fewer total tokens**, **11.9% less aggre
 
 The child runtime evidence confirms that tool restriction is real, but the custom agent still receives a substantial OMP child harness. This is evidence for a narrower worker action/prompt surface, not for a minimal provider-facing system prompt.
 
-Decision: **keep `luna-code` unchanged** for the next phase. It matched `sonic` on independent correctness in this sample while showing lower descriptive total-token/tool/wall-time activity. The sample is small and homogeneous, so no broader reliability or cost claim is made.
+Decision: **keep `luna-code` unchanged**. It matched `sonic` on independent correctness in this sample while showing lower descriptive total-token/tool/wall-time activity. The sample is small and homogeneous, so no broader reliability or cost claim is made.
+
+## Runtime Phase 2 — real history://Main smoke
+
+The initial synthetic-parent approach was abandoned as invalid experimental scaffolding. Unbounded/long `hub wait` measured coordination waiting rather than model inference, and successful message delivery was not treated as proof that every intended steering turn had reached durable history. The valid test used the actual Main session directly.
+
+Topology:
+
+```text
+real Main session
+-> history://Main preflight/barrier
+-> one luna-code worker
+-> independent scorer
+```
+
+Preflight established:
+
+- `history://Main` existed and was readable;
+- the transcript visibly contained accepted, superseded, rejected, and unresolved material;
+- the child was actually `luna-code`;
+- model was `cpa/gpt-5.6-luna`, thinking level `high`;
+- `resolvedModelIsFallback: false`;
+- the preflight child read `history://Main` once.
+
+The implementation worker received only the objective, temporary fixture path, and `history://Main`; it did not receive a rewritten final requirements brief.
+
+Observed worker evidence:
+
+- actual agent: `luna-code`;
+- history reads: 1;
+- wall time: about 85 seconds;
+- total child tokens: 200,731;
+- modifications were confined to the temporary fixture;
+- tracked omp-kit working tree was unchanged;
+- focused worker test: 3 passed.
+
+Independent scorer:
+
+```text
+accepted_correct: 3/3
+superseded_incorrect: 0
+rejected_tentative_incorrect: 0
+unresolved_incorrect: 0
+repository_facts_correct: 1/1
+behavioral_pass: true
+```
+
+This is one successful context-interpretation smoke, not a reliability benchmark. It supports the architectural claim that a `luna-code` worker can, at least once, recover current accepted decisions from a real long `history://Main` transcript while excluding superseded/rejected/open material and grounding a repository fact independently.
+
+The 200,731-token child total is not interpreted as a Business-quota measurement, but it is a practical signal that a long Main transcript can be context-heavy. A compact materialized decision view/capsule remains a possible future optimization if repeated real work shows history reconstruction to be a material latency/quota cost. It is not required by current correctness evidence.
+
+Decision: the current merge gate requiring **one parent-history pull without decision pollution is satisfied**. Do not spend additional benchmark time on Phase 2 before testing the next lifecycle layer.
 
 ## Earlier runtime evidence
 
@@ -85,6 +136,18 @@ The historical raw record is `docs/HARNESS_V2_LOCAL_TEST_REPORT.md`. Its older t
 
 OMP 18.1.18 did not discover custom task agents from an arbitrary `PI_CODING_AGENT_DIR` in local testing, although config/models/skills could load there. Harness v2 therefore treats OMP's native default/profile roots as the full custom-agent topology and reports arbitrary managed roots as incomplete in `doctor` for this version-scoped compatibility case.
 
+### Parent lifecycle and history barrier
+
+For context-transfer validation, a synthetic parent held open with `hub wait` is the wrong abstraction. Long waits measure lifecycle waiting and can interact with steering delivery. The safer runtime pattern is:
+
+```text
+agent completes turn
+-> yield/park
+-> later direct message revives it
+```
+
+When another worker depends on parent history, successful message delivery alone is not enough. Verify the intended transcript is actually readable from `history://<parent-id>` before dispatching the dependent worker.
+
 ### OMP root and profile semantics
 
 The installer mirrors OMP's relevant path semantics rather than reusing omp-kit resource naming rules:
@@ -101,20 +164,19 @@ The Pyright issue in `prepare()` was fixed by checking each prepared fingerprint
 
 ## Next validation phase
 
-Phase 1 has satisfied the custom-worker viability gate. The next runtime questions are:
+Phase 1 custom-worker viability and the Phase 2 single real-parent-history smoke gate are satisfied. Next:
 
-1. long explicit task brief versus short intent + parent-history retrieval;
-2. persistent worker reuse versus repeated fresh workers;
-3. Notes-backed context rollover/recovery;
-4. multi-hour real-work quota/endurance after the above behavior is stable.
+1. one three-step persistent `luna-code` workstream using park/revive continuation;
+2. one Notes-backed context rollover/recovery smoke;
+3. multi-hour real-work quota/endurance after the above behavior is stable.
 
-See `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` for the protocol and merge gate.
+See `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` for the minimal protocol and merge gate.
 
 ## Remaining scope limits
 
 Not yet proven:
 
-- parent-history pull accuracy across superseded/rejected/open decisions;
+- repeated parent-history pull reliability or quota efficiency;
 - persistent worker park/revive/reuse behavior;
 - Notes-backed long rollover/recovery;
 - native Windows/macOS installation;
