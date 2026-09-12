@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Installer/config portability is now locally validated on the current Linux/WSL2 machine. The next phase should stop changing installation machinery unless a real defect appears and instead test the runtime hypotheses that motivated Harness v2.
+Installer/config portability is locally validated on the current Linux/WSL2 machine. Runtime Phase 1 has also established that the restricted custom `luna-code` worker is operationally viable against bundled `sonic` on five bounded coding fixtures. The next phase should continue testing the runtime hypotheses that motivated Harness v2 rather than returning to installer work without a concrete defect.
 
-The order below is deliberate: first isolate worker-harness effects, then context transfer, then persistence, then long-context management, and only then measure endurance/quota behavior. Do not tune multiple layers at once or conclusions will be hard to attribute.
+The order below is deliberate: worker-harness effects first, then context transfer, then persistence, then long-context management, and only then endurance/quota behavior. Do not tune multiple layers at once or conclusions will be hard to attribute.
 
 ## Experiment policy
 
@@ -14,10 +14,10 @@ The order below is deliberate: first isolate worker-harness effects, then contex
 - Verify which child agent actually ran; a silent fallback invalidates the run.
 - Verify behavior independently from the worker's self-report.
 - Record provider requests, input/cache/output/reasoning tokens, wall time, tool calls, retries/repairs, human intervention, and final correctness when available.
-- Do not treat configured API-equivalent cost as ChatGPT Business quota accounting.
+- Do not treat configured API-equivalent cost or total tokens as direct ChatGPT Business quota accounting.
 - Keep raw experiment output outside tracked docs until reviewed; commit durable conclusions, not every transient log.
 
-## Phase 1 — Luna worker harness A/B
+## Phase 1 — Luna worker harness A/B — COMPLETE
 
 ### Question
 
@@ -25,54 +25,34 @@ Does a restricted custom Luna worker complete scoped coding tasks at least as re
 
 ### Arms
 
-Use the same native Harness v2 profile and the same model role for both arms:
-
 ```text
 A: bundled sonic -> @fast_worker -> Luna High
 B: custom luna-code -> @fast_worker -> Luna High
 ```
 
-This is intentionally not a default-root-vs-profile comparison. Both arms must run inside the same installed profile so configuration, provider, model, and parent environment are held constant. The main variable should be the worker contract/tool surface.
+### Completed protocol
 
-### Protocol
+Five deterministic Python fixtures were run in alternating A/B order inside the same native profile, with pristine copies and independent focused verification after each child completed. Both requested agents were confirmed from child `session_init` records; all ten children resolved to `cpa/gpt-5.6-luna:high`.
 
-Run at least 5 alternating repetitions per arm. Prefer several independently verifiable tasks rather than one trivial task repeated ten times. Each task should have a fresh checkout/copy and a focused test command known before the worker starts.
+### Result
 
-For each run capture:
+- correctness: `sonic` 5/5, `luna-code` 5/5;
+- provider requests: 35 per arm;
+- total tokens: 634,708 vs 454,638 (**28.4% lower** for `luna-code`);
+- aggregate wall time: 273.2 s vs 240.6 s (**11.9% lower**);
+- effective enabled tools: 16 vs 10;
+- mean session-init system prompt: 26,808.8 vs 17,245 characters;
+- observed tool calls: 54 vs 44;
+- `read` calls: 31 vs 19;
+- failed tool calls: 0 in both arms.
 
-```text
-run id
-arm / actual child agent id
-model + effort
-success / independent verification
-provider request count
-input tokens
-cache-read tokens
-output tokens
-reasoning tokens
-wall-clock time
-worker tool-call count by tool
-failed tool calls
-repair attempts
-parent interventions / steering
-files changed
-```
+The total-token reduction was mainly cache-read reduction (482,816 vs 302,080); uncached/input tokens were nearly equal (144,582 vs 145,424). The experiment therefore supports a narrower and descriptively leaner worker harness, but does not prove proportional Business quota savings or a minimal provider-facing prompt.
 
-Also inspect at least one child session-init record from each arm and record the effective system-prompt size/tool list if OMP exposes them. This is necessary to distinguish "restricted custom agent" from the stronger claim "minimal provider-facing harness".
+### Decision
 
-### Decision rule
+Keep `luna-code` unchanged for the next phase. Do not change its tool list, bounded-executor policy, or effort based on this sample alone.
 
-Do not optimize for token count alone. Prefer `luna-code` as the routine worker if it is non-inferior on correctness and human intervention while showing a repeatable reduction in one or more of:
-
-- uncached/input tokens;
-- unnecessary tool calls or exploration;
-- retries/repair loops;
-- wall time;
-- director duplication.
-
-If it is worse, inspect whether the failure came from missing tools, bounded-executor guidance, task routing, or base OMP prompt overhead before changing the model effort.
-
-## Phase 2 — Parent-context pull A/B
+## Phase 2 — Parent-context pull A/B — NEXT
 
 ### Question
 
@@ -85,22 +65,59 @@ A: explicit long brief containing all accepted requirements
 B: short intent + scope + parent-history URI
 ```
 
-Use the same custom worker, model, repository fixture, and acceptance checks.
+Use the same `luna-code` worker, model, repository fixture, and acceptance checks in both arms.
 
-Construct a parent discussion that contains:
+### Required parent discussion shape
+
+Construct one controlled parent conversation containing:
 
 - several explicit accepted decisions;
-- at least one older decision superseded later;
-- at least two rejected/tentative alternatives;
-- one open question that must not become a requirement.
+- at least one earlier decision explicitly superseded later;
+- at least two rejected or tentative alternatives;
+- at least one unresolved/open question that must not become a requirement;
+- repository facts that are independently readable from the fixture rather than restated by the parent.
 
-The worker output should be scored for both inclusion and exclusion: it must implement/document accepted decisions and must not encode rejected or unresolved ideas.
+The final worker result must be scored for both inclusion and exclusion:
 
-Measure total director + worker tokens, not worker tokens alone. A history-pull strategy is useful only if it reduces expensive restatement without degrading interpretation.
+- accepted current decisions must appear in the implementation/documentation;
+- superseded decisions must not survive;
+- rejected/tentative options must not be promoted to requirements;
+- unresolved questions must remain unresolved unless the task contract itself resolves them;
+- repository facts should come from repository inspection, not from invented transcript content.
+
+### Protocol
+
+Run at least five paired repetitions using freshly constructed but structurally equivalent parent discussions. Alternate arm order where practical. Keep worker/model/effort/tool list fixed.
+
+For each run record:
+
+```text
+run id
+arm / actual child agent
+parent agent id / history URI used
+model + effort
+accepted decisions recovered correctly
+superseded decisions excluded
+rejected/tentative ideas excluded
+open question left unresolved
+independent verification result
+provider request count
+parent input/output/cache/reasoning tokens
+worker input/output/cache/reasoning tokens
+total parent + worker tokens
+wall-clock time
+worker history reads / targeted rereads
+parent steering/intervention
+unexpected behavior
+```
+
+The main metric is not worker-token reduction alone. Compare **total director + worker cost/activity** because the point of history pull is to avoid expensive director restatement while retaining interpretation quality.
 
 ### Gate
 
-Keep the Referenced context policy only if repeated runs show the worker can distinguish accepted/superseded/tentative material. If exact wording matters, require targeted retrieval of the original passage rather than trusting summaries.
+Keep the Referenced context policy only if repeated runs show that the worker can distinguish accepted, superseded, tentative, rejected, and unresolved material without material correctness loss.
+
+If exact wording matters, require targeted retrieval of the original passage rather than trusting a compacted summary. If `history://<parent-agent-id>` is unavailable or resolves to the wrong agent, stop and classify it as a routing/runtime failure rather than substituting another context source silently.
 
 ## Phase 3 — Persistent worker reuse
 
@@ -115,7 +132,7 @@ A: spawn a fresh luna-code worker for each of three related follow-ups
 B: spawn once, then continue the same worker through hub messages
 ```
 
-The three tasks should build on the same subsystem and require some shared repository understanding. Record repeated read/grep activity, tokens, time, repair count, and correctness.
+The three tasks should build on the same subsystem and require shared repository understanding. Record repeated read/grep activity, tokens, time, repair count, and correctness.
 
 A useful persistent worker should need less rediscovery while still noticing new parent decisions. Re-read parent history only when a material decision changed.
 
@@ -139,7 +156,7 @@ Do not compare quota/endurance until this behavior is trustworthy. If notes beco
 
 ## Phase 5 — Real-work endurance
 
-Only after Phases 1–4 are stable, run normal project work for multi-hour windows and measure the actual objective: useful completed work per human hour and per Business quota window.
+Only after Phases 2–4 are stable, run normal project work for multi-hour windows and measure the actual objective: useful completed work per human hour and per Business quota window.
 
 Track at least:
 
@@ -160,7 +177,7 @@ The implementation branch is ready to merge to `main` when:
 
 1. installer/config regression suite remains green;
 2. native-profile custom workers are confirmed in live OMP;
-3. Phase 1 shows `luna-code` is at least operationally viable versus bundled sonic;
+3. **Phase 1 custom-worker viability is satisfied** (`luna-code` matched bundled `sonic` 5/5 on the bounded fixture sample without fallback);
 4. one parent-history pull task succeeds without turning rejected/open discussion into requirements;
 5. persistent worker continuation works at least once without fallback or context loss;
 6. notes-backed context receives a basic rollover/recovery smoke test, or is explicitly disabled in the default profile pending that test;

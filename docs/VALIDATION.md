@@ -4,7 +4,7 @@ Date: 2026-09-12
 
 ## Current branch validation
 
-Current validated branch/head:
+Current validated installer/config head:
 
 ```text
 branch: harness-v2-implementation
@@ -35,6 +35,35 @@ This validates the second-round installer corrections for:
 
 No local test failure or working-tree residue was reported at this head.
 
+## Runtime Phase 1 — bundled sonic vs custom luna-code
+
+Phase 1 ran on omp-kit commit `eebeb1ac1b992cf754930cf50b1a29c547867187` with OMP 18.1.18 inside the same native profile (`harness-v2-test`). The parent was `cpa/gpt-5.6-sol:medium`; both worker arms resolved through `@fast_worker` to `cpa/gpt-5.6-luna:high`.
+
+Protocol: five deterministic Python coding fixtures, alternating arm order, pristine copies per arm, explicit direct task-agent selection, and independent `python -m unittest discover -v` verification after every run. No Vibe mode, fallback, tracked-file modification, or parent steering occurred.
+
+Observed result:
+
+| Metric | bundled `sonic` | custom `luna-code` |
+| --- | ---: | ---: |
+| Runs / independent passes | 5 / 5 | 5 / 5 |
+| Provider requests | 35 | 35 |
+| Input tokens | 144,582 | 145,424 |
+| Cache-read tokens | 482,816 | 302,080 |
+| Output tokens | 7,310 | 7,134 |
+| Reasoning tokens | 3,493 | 3,639 |
+| Total tokens | 634,708 | 454,638 |
+| Mean wall time | 54.65 s | 48.13 s |
+| Effective session-init tools | 16 | 10 |
+| Mean session-init system prompt | 26,808.8 chars | 17,245 chars |
+| Total observed tool calls | 54 | 44 |
+| `read` calls | 31 | 19 |
+
+Descriptively, `luna-code` used **28.4% fewer total tokens**, **11.9% less aggregate wall time**, **37.5% fewer enabled tool entries**, and a **35.7% shorter session-init system prompt**. Total-token reduction appeared in all five paired tasks. The aggregate token reduction was driven mainly by cache-read tokens (**37.4% lower**); uncached/input tokens were effectively flat (**0.6% higher**). Therefore this experiment does **not** establish an equivalent reduction in ChatGPT Business quota consumption.
+
+The child runtime evidence confirms that tool restriction is real, but the custom agent still receives a substantial OMP child harness. This is evidence for a narrower worker action/prompt surface, not for a minimal provider-facing system prompt.
+
+Decision: **keep `luna-code` unchanged** for the next phase. It matched `sonic` on independent correctness in this sample while showing lower descriptive total-token/tool/wall-time activity. The sample is small and homogeneous, so no broader reliability or cost claim is made.
+
 ## Earlier runtime evidence
 
 Before the final path/profile correction, the same machine established the following runtime behavior on the Harness v2 implementation line:
@@ -46,7 +75,7 @@ Before the final path/profile correction, the same machine established the follo
 - Non-interactive CPA/Luna request: passed with the expected sentinel response.
 - Native profile install at `~/.omp/profiles/harness-v2-test/agent`: passed.
 - Native profile custom `luna-code` task delegation and parent verification: passed.
-- Two-arm coding experiment: both implementations passed independent focused verification, but the comparison was invalid for worker-harness conclusions because the treatment used an arbitrary `PI_CODING_AGENT_DIR` path that did not expose custom task agents.
+- An earlier two-arm coding experiment completed functionally but was invalid for worker-harness conclusions because the treatment used an arbitrary `PI_CODING_AGENT_DIR` path that did not expose custom task agents.
 
 The historical raw record is `docs/HARNESS_V2_LOCAL_TEST_REPORT.md`. Its older test counts describe the commit tested at that time and are retained for auditability.
 
@@ -58,7 +87,7 @@ OMP 18.1.18 did not discover custom task agents from an arbitrary `PI_CODING_AGE
 
 ### OMP root and profile semantics
 
-The installer now mirrors OMP's relevant path semantics rather than reusing omp-kit resource naming rules:
+The installer mirrors OMP's relevant path semantics rather than reusing omp-kit resource naming rules:
 
 - `PI_CONFIG_DIR` changes the home-relative native config root;
 - named profiles resolve below that root;
@@ -72,13 +101,12 @@ The Pyright issue in `prepare()` was fixed by checking each prepared fingerprint
 
 ## Next validation phase
 
-Installer/config portability is no longer the primary unknown on the validated Linux/WSL2 machine. Runtime experiments should now test the behavior that motivated Harness v2:
+Phase 1 has satisfied the custom-worker viability gate. The next runtime questions are:
 
-1. bundled `sonic` versus custom restricted `luna-code`, holding Luna High/model/config constant;
-2. long explicit task briefs versus short intent + parent-history retrieval;
-3. persistent worker reuse versus repeated fresh workers;
-4. Notes-backed context rollover/recovery;
-5. multi-hour real-work quota/endurance after the above behavior is stable.
+1. long explicit task brief versus short intent + parent-history retrieval;
+2. persistent worker reuse versus repeated fresh workers;
+3. Notes-backed context rollover/recovery;
+4. multi-hour real-work quota/endurance after the above behavior is stable.
 
 See `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` for the protocol and merge gate.
 
@@ -86,13 +114,14 @@ See `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` for the protocol and merge gate.
 
 Not yet proven:
 
+- parent-history pull accuracy across superseded/rejected/open decisions;
+- persistent worker park/revive/reuse behavior;
+- Notes-backed long rollover/recovery;
 - native Windows/macOS installation;
 - browser relay and fresh-profile browser automation;
 - fresh-profile LSP behavior;
-- Notes-backed long rollover/recovery;
-- worker park/revive/reuse behavior;
 - all provider/model live routes;
 - ChatGPT Business quota/accounting semantics;
 - default-root replacement after shutting down all live OMP sessions.
 
-Static checks and one successful provider path do not establish those claims.
+Static checks and bounded runtime experiments do not establish those claims.
