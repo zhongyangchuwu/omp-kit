@@ -59,11 +59,12 @@ providers:
     baseUrl: https://your-private-cpa.example/v1
 ```
 
-Composition is `tracked config -> ordered profiles -> local YAML -> explicit CPA URL`.
-Mappings merge recursively; arrays replace wholesale. To change a single model's
-metadata, prefer `modelOverrides` rather than accidentally replacing all `models`.
-Both YAML names in a local directory may be omitted. `--local-dir` chooses another
-private directory; the installer remembers it on that machine.
+Composition is `tracked config -> ordered config profiles -> local YAML -> explicit CPA URL`.
+Mappings merge recursively; arrays replace wholesale. The installer exposes these
+overlays as `--config-profile`; `--profile` remains a compatibility alias. To change
+a single model's metadata, prefer `modelOverrides` rather than accidentally replacing
+all `models`. Both YAML names in a local directory may be omitted. `--local-dir`
+chooses another private directory; the installer remembers it on that machine.
 
 `setupVersion` and `dev.autoqaConsent` are deliberately absent from the tracked base.
 An existing machine's values are retained from its own configuration; a fresh machine

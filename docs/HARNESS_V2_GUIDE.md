@@ -99,11 +99,19 @@ wait timeouts rather than repeated supervisor polling.
 
 ## Portable operation
 
-Canonical source -> optional profiles -> machine-local overrides -> managed runtime
-copies. The installer tracks what it owns, checks all conflicts first, backs up
-replacements and supports rollback. Auth state and project/system dependencies are
-not a portable part of this repository. See installation documentation before
-adopting an existing runtime with --force.
+Canonical source -> optional config profiles -> machine-local overrides -> managed
+runtime copies. The installer tracks what it owns, checks all conflicts first, backs
+up replacements and supports rollback. Auth state and project/system dependencies
+are not a portable part of this repository. See installation documentation before
+adopting an existing runtime with `--force`.
+
+Use `--config-profile` for omp-kit overlays; `--profile` is its compatibility alias.
+Use `--omp-profile <name>` for a native OMP profile at
+`~/.omp/profiles/<name>/agent`, then launch with `omp --profile <name>`. Full custom
+agent discovery is supported for `~/.omp/agent` and native profile roots. An
+arbitrary `PI_CODING_AGENT_DIR` can relocate OMP state but is not a full Harness v2
+root on OMP 18.1.18; doctor reports that topology as incomplete when custom agents
+are managed.
 
 Use normal development and existing stats for feedback. Separate model requests,
 provider retries, repair loops, review findings, human interventions and elapsed time.

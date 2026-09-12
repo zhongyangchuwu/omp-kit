@@ -23,13 +23,24 @@ uv run --script /absolute/path/to/omp-kit/scripts/install_harness.py --dry-run
 uv run --script /absolute/path/to/omp-kit/scripts/install_harness.py
 ```
 
+For a full native OMP named profile, use the separate installer option:
+
+```sh
+bash install.sh --omp-profile harness-v2-test --dry-run
+bash install.sh --omp-profile harness-v2-test
+omp --profile harness-v2-test
+```
+
 `bash /path/to/omp-kit/install.sh` and PowerShell `& C:\path\omp-kit\install.ps1`
 are wrappers for the same script. Native Windows defaults to copies and does not
 need administrator/Developer Mode symlink permissions.
 
-Root selection: `--agent-root`, otherwise `PI_CODING_AGENT_DIR`, otherwise legacy
-`AGENT_ROOT`, otherwise `~/.omp/agent`. Only `PI_CODING_AGENT_DIR` also changes OMP's
-own root. A target cannot contain the repository or be contained in it.
+Root selection: `--agent-root` is an explicit installer-only root; `--omp-profile`
+selects `~/.omp/profiles/<name>/agent`; with neither option the installer targets
+`~/.omp/agent`. `PI_CODING_AGENT_DIR` is not used as the installer's default root,
+because OMP 18.1.18 may load config/models/skills from an arbitrary override while
+not discovering custom task agents there. A target cannot contain the repository or
+be contained in it.
 
 ## Existing machine migration
 
@@ -59,8 +70,6 @@ An individual old skill symlink can be backed up and replaced without modifying 
 source. A **parent** `skills/` or `agents/` symlink/junction is refused: migrate that
 parent to a real directory deliberately before installing.
 
-## Normal updates and drift
-
 After `git pull`, run the installer again. If an installed managed unit still
 matches its last-deployed fingerprint, a newer repository version can replace it.
 If a local edit or an OMP settings write changed it, installation refuses to silently
@@ -68,9 +77,10 @@ lose it. Move intended non-secret differences into local overrides, preview, the
 use `--force` to accept the replacement. Pure formatting changes can also cause
 byte-level drift; fingerprints are deliberately conservative.
 
-Changing a profile can change runtime config. `--profile` accepts repeated named
-overlays; `--profile default` alone clears remembered overlays. A chosen CPA URL
-and custom `--local-dir` are also remembered. `--cpa-url` validates a plain HTTP(S)
+Changing a config profile can change runtime config. `--config-profile` accepts
+repeated named overlays; `--profile` remains a compatibility alias;
+`--config-profile default` alone clears remembered overlays. A chosen CPA URL and
+custom `--local-dir` are also remembered. `--cpa-url` validates a plain HTTP(S)
 base URL and rejects embedded credentials, queries and fragments.
 
 ## Rollback

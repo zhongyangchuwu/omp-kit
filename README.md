@@ -18,9 +18,17 @@ from the repository's larger development environment.
 Clone this repository using your normal GitHub access, then:
 
 ```sh
-# Linux / macOS / WSL
+# Linux / macOS / WSL; installs into ~/.omp/agent
 bash install.sh --dry-run
 bash install.sh
+```
+
+For a full native OMP named profile:
+
+```sh
+bash install.sh --omp-profile harness-v2-test --dry-run
+bash install.sh --omp-profile harness-v2-test
+omp --profile harness-v2-test
 ```
 
 ```powershell
@@ -35,9 +43,10 @@ The same entry point works everywhere, from any working directory:
 uv run --script /path/to/omp-kit/scripts/install_harness.py
 ```
 
-Supply `CPA_API_KEY` in the environment used to launch OMP or in
-`~/.omp/agent/.env`. See `config/secrets.env.example`; never put real keys in Git.
-`DEEPSEEK_API_KEY` is optional unless you assign a DeepSeek role.
+Supply `CPA_API_KEY` in the environment used to launch OMP or in the selected
+`<agent-root>/.env` (for example `~/.omp/agent/.env` or a native profile root).
+See `config/secrets.env.example`; never put real keys in Git. `DEEPSEEK_API_KEY`
+is optional unless you assign a DeepSeek role.
 
 For an existing setup, preview the explicitly authorized migration:
 
@@ -71,19 +80,23 @@ resources are retired only from the previous manifest, never by sweeping the dir
 ## Machine differences and recovery
 
 ```sh
-bash install.sh --profile headless             # ASCII UI, no browser/relay
-bash install.sh --profile legacy-context       # opt out of experimental notes
-bash install.sh --profile default              # clear stored profile selection
+bash install.sh --config-profile headless       # kit overlay: ASCII UI, no browser/relay
+bash install.sh --config-profile legacy-context # kit overlay: opt out of experimental notes
+bash install.sh --config-profile default        # clear stored overlay selection
+bash install.sh --profile headless              # compatibility alias for --config-profile
+bash install.sh --omp-profile harness-v2-test   # native OMP profile root
 bash install.sh --cpa-url https://my-host.example/v1
-bash install.sh --doctor                       # offline readiness/drift check
-bash install.sh --rollback                     # undo latest install, preserving newer work
+bash install.sh --doctor                        # offline readiness/drift check
+bash install.sh --rollback                      # undo latest install, preserving newer work
 ```
 
-Profiles and the chosen CPA URL are remembered for reinstall. Local YAML overrides
-live in `<agent-root>/.omp-kit/local/`; templates are in `config/local.example/`.
-Mappings merge, arrays replace. Secret values belong in the environment or `.env`,
-not those YAML files. Use `PI_CODING_AGENT_DIR` to relocate OMP and the installer
-consistently; `--agent-root` and legacy `AGENT_ROOT` affect the installer only.
+`--config-profile`/`--profile` are omp-kit config overlays. `--omp-profile` is the
+native OMP profile selector and is distinct from them. Full custom-agent discovery
+requires `~/.omp/agent` or a native `~/.omp/profiles/<name>/agent` root. An arbitrary
+`PI_CODING_AGENT_DIR` can relocate OMP state but is not treated as a full Harness v2
+root on OMP 18.1.18. Local YAML overrides live in `<agent-root>/.omp-kit/local/`;
+templates are in `config/local.example/`. Mappings merge, arrays replace, and secret
+values belong in the environment or `.env`, not those YAML files.
 
 ## Layout and policies
 

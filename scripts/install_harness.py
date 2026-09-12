@@ -26,12 +26,12 @@ from typing import Iterator
 import uuid
 
 try:
-    from scripts.harness_config import (ConfigError, ENV_NAME, active_skills, compose,
+    from scripts.harness_config import (ConfigError, ENV_NAME, SAFE_NAME, active_skills, compose,
                                         load_mapping, validate_url, yaml_bytes)
 except ModuleNotFoundError as exc:
     if exc.name not in {'scripts', 'scripts.harness_config'}:
         raise
-    from harness_config import (ConfigError, ENV_NAME, active_skills, compose,
+    from harness_config import (ConfigError, ENV_NAME, SAFE_NAME, active_skills, compose,
                                 load_mapping, validate_url, yaml_bytes)
 
 STATE_VERSION = 1
@@ -59,7 +59,28 @@ class Action:
 
 
 def default_agent_root() -> Path:
-    return Path(os.environ.get('PI_CODING_AGENT_DIR') or os.environ.get('AGENT_ROOT') or '~/.omp/agent').expanduser()
+    """Return OMP's default native agent root, not an arbitrary override root."""
+    return Path('~/.omp/agent').expanduser()
+
+
+def default_omp_config_root() -> Path:
+    return Path(os.environ.get('PI_CONFIG_DIR') or '~/.omp').expanduser()
+
+
+def native_profile_agent_root(profile: str) -> Path:
+    if not SAFE_NAME.fullmatch(profile):
+        raise ConfigError('OMP profile names must be kebab-case')
+    return default_omp_config_root() / 'profiles' / profile / 'agent'
+
+
+def is_native_omp_agent_root(root: Path) -> bool:
+    root = root.expanduser().resolve()
+    config_root = default_omp_config_root().resolve()
+    if root == config_root / 'agent':
+        return True
+    return (root.parent.parent == config_root / 'profiles'
+            and root.name == 'agent'
+            and bool(SAFE_NAME.fullmatch(root.parent.name)))
 
 
 def _valid_relative(name: str) -> bool:
@@ -192,7 +213,13 @@ def prepare(repo: Path, root: Path, stage: Path, profiles: list[str], local: Pat
         rel = f'agents/{source.name}'
         _copy_resource(source, stage / rel)
         units.append(rel)
-    return {rel: fingerprint(stage / rel) for rel in units}, models
+    desired = {}
+    for rel in units:
+        digest = fingerprint(stage / rel)
+        if digest is None:
+            raise InstallError(f'Prepared install unit is missing: {rel}')
+        desired[rel] = digest
+    return desired, models
 
 
 def plan(root: Path, desired: dict[str, str], previous: dict, *, force: bool) -> list[Action]:
@@ -415,8 +442,6 @@ def _dotenv_values(path: Path) -> dict[str, str]:
                 value = value.split(' #', 1)[0].strip()
             result[name] = value
     return result
-
-
 def doctor(root: Path) -> tuple[list[str], bool]:
     """Offline readiness/drift check. No inference, HTTP, key printing or auth-db reads."""
     root = root.expanduser().resolve()
@@ -436,6 +461,10 @@ def doctor(root: Path) -> tuple[list[str], bool]:
         ready = False
     else:
         lines.append('OK: managed files match the last installation')
+    if any(rel.startswith('agents/') for rel in manifest['units']) and not is_native_omp_agent_root(root):
+        lines.append('INCOMPLETE: This root is not a native OMP agent/profile root.')
+        lines.append('OMP 18.1.18 may load config/models/skills here but not custom task agents.')
+        ready = False
     config, models = load_mapping(root / 'config.yml'), load_mapping(root / 'models.yml')
     variables = {**_dotenv_values(root / '.env'), **os.environ}
     required = {s.split('/', 1)[0] for s in config.get('modelRoles', {}).values() if isinstance(s, str)}
@@ -453,17 +482,21 @@ def doctor(root: Path) -> tuple[list[str], bool]:
     if config.get('compaction', {}).get('experimentalContextManagement'):
         lines.append('NOTE: notes-backed context enabled; verify support in your installed OMP and restart sessions')
     if config.get('symbolPreset') == 'nerd':
-        lines.append('NOTE: Nerd Font required for the chosen symbols; --profile headless uses ASCII')
+        lines.append('NOTE: Nerd Font required for the chosen symbols; --config-profile headless uses ASCII')
     lines.append('UNVERIFIED: provider reachability/authentication, quota, browser/relay, LSP and project dependencies')
     return lines, ready
+
+
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repo-root', type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument('--agent-root', type=Path, default=default_agent_root())
+    parser.add_argument('--agent-root', type=Path, help='Explicit installer root; use --omp-profile for native OMP profiles')
+    parser.add_argument('--omp-profile', metavar='NAME', help='Install into ~/.omp/profiles/NAME/agent and launch with omp --profile NAME')
     parser.add_argument('--force', action='store_true', help='Adopt/replace conflicts after backup; never deletes unrelated resources')
-    parser.add_argument('--profile', action='append', default=None, help='Repeatable config overlay; default clears stored overlays')
+    parser.add_argument('--config-profile', '--profile', dest='profiles', action='append', default=None,
+                        help='Repeatable omp-kit config overlay; --profile is a compatibility alias')
     parser.add_argument('--local-dir', type=Path, help='Optional machine config/models overlay directory')
     parser.add_argument('--cpa-url', help='Override and remember the CPA /v1 base URL (never a key)')
     actions = parser.add_mutually_exclusive_group()
@@ -472,26 +505,30 @@ def main(argv: list[str] | None = None) -> int:
     actions.add_argument('--doctor', action='store_true', help='Offline runtime readiness/drift report; exit 2 when incomplete')
     actions.add_argument('--rollback', action='store_true', help='Roll back the latest install, refusing to overwrite newer local work')
     args = parser.parse_args(argv)
-    profiles = args.profile
+    if args.agent_root is not None and args.omp_profile is not None:
+        parser.error('--agent-root and --omp-profile are mutually exclusive')
+    profiles = args.profiles
     if profiles is not None and 'default' in profiles:
         if profiles != ['default']:
-            parser.error('--profile default must be used alone')
+            parser.error('--config-profile default must be used alone')
         profiles = []
     try:
+        agent_root = (args.agent_root or native_profile_agent_root(args.omp_profile)
+                      if args.omp_profile else args.agent_root or default_agent_root())
         if args.rollback:
-            print('Rolled back: ' + rollback(args.agent_root))
+            print('Rolled back: ' + rollback(agent_root))
         elif args.doctor:
-            messages, ready = doctor(args.agent_root)
+            messages, ready = doctor(agent_root)
             print('\n'.join(messages))
             return 0 if ready else 2
         elif args.validate:
             repo = args.repo_root.expanduser().resolve()
-            compose(repo, (args.local_dir or args.agent_root.expanduser() / '.omp-kit/local'), profiles or [])
+            compose(repo, (args.local_dir or agent_root.expanduser() / '.omp-kit/local'), profiles or [])
             if args.cpa_url:
                 validate_url(args.cpa_url, '--cpa-url')
             print('Static configuration and agent/skill references: valid (not an upstream OMP schema/runtime test)')
         else:
-            changes = install_harness(repo_root=args.repo_root, agent_root=args.agent_root,
+            changes = install_harness(repo_root=args.repo_root, agent_root=agent_root,
                                       force=args.force, dry_run=args.dry_run, profiles=profiles,
                                       local_dir=args.local_dir, cpa_url=args.cpa_url)
             for change in changes:
@@ -500,7 +537,9 @@ def main(argv: list[str] | None = None) -> int:
                 print('Dry run only; no runtime files were written.')
             else:
                 print('Installed. Existing .env, auth databases, sessions, MCP config and unrelated resources were not imported or replaced.')
-                messages, ready = doctor(args.agent_root)
+                if args.omp_profile:
+                    print(f'Native OMP profile installed. Start with: omp --profile {args.omp_profile}')
+                messages, ready = doctor(agent_root)
                 print('\n'.join(messages))
                 print('Offline checks passed; live runtime still unverified.' if ready else
                       'Files installed, but readiness is incomplete. Resolve the items above before using OMP.')

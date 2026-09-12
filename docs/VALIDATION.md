@@ -2,44 +2,44 @@
 
 Date: 2026-09-12
 
-## Executed in the development container
+## Local machine evidence
 
-Environment: Linux, Python 3.13.5. No OMP process, CPA endpoint or real provider
-credentials were used. Tests operate on temporary roots and never on the owner's
-live agent directory.
+Environment: Linux/WSL2, Python 3.12.12, OMP 18.1.18, CPA reachable at the
+configured local endpoint. No default live agent root was overwritten while active
+`omp --continue` sessions were running.
 
-- `PYTHONPATH=. python -m pytest -q tests/test_install_harness.py`: **37 passed**.
-- Python compilation of the authored installer/config modules: passed.
-- `bash -n install.sh`: passed.
-- YAML parsing of all authored config/profile/reference files: passed.
-- Imported config compared to uploaded config: identical parsed values except
-  setupVersion and dev.autoqaConsent intentionally excluded from the portable source.
-- The original APPEND_SYSTEM upload was archived byte-for-byte.
-- Agent definitions checked for role indirection and disabled nested spawning.
+- `just test`: **79 passed**.
+- `uv run python -m pytest -q tests/test_install_harness.py`: **41 passed** after
+  the topology/CLI changes.
+- AutoDL skill-local suite: **60 passed**.
+- Skill Authoring suite: **6 passed**.
+- Combined durable pytest cases executed: **145 passed**.
+- `just validate-harness`, `just check-registry`, `just validate-registry`, Python
+  compilation, `bash -n install.sh`, and `git diff --check`: passed.
+- Installer dry-run, isolated copy install, idempotent reinstall, headless overlay,
+  rollback, and doctor checks: passed.
+- `omp models cpa`: Astra, Sol, Terra and Luna recognized.
+- Non-interactive CPA/Luna request: passed with the expected sentinel response.
+- Native profile install at `~/.omp/profiles/harness-v2-test/agent`: passed.
+- Native profile custom `luna-code` task delegation and parent verification: passed.
+- Two-arm coding experiment: both implementations passed independent `uv run
+  --with pytest python -m pytest -q` checks, **2 passed** per arm.
 
-Installer coverage includes clean/idempotent copying, no-write preview, all-conflict
-preflight, local drift, explicit adoption, backups/rollback, aliases, source and parent
-symlink rejection, legacy individual-link migration, new-work rollback protection,
-ordinary error recovery, pending transactions/locks, local/profile/URL persistence,
-secret-reference checks, and command execution from an unrelated directory.
+## Architecture correction
+
+OMP 18.1.18 does not discover custom task agents from an arbitrary
+`PI_CODING_AGENT_DIR`, although config/models/skills can load there. The installer
+now defaults to `~/.omp/agent`, adds `--omp-profile <name>` for the native
+`~/.omp/profiles/<name>/agent` topology, and reserves `--config-profile` for
+omp-kit overlays (`--profile` remains a compatibility alias). `doctor` returns
+incomplete for managed custom agents installed outside a native OMP root.
+
+The installer return-type issue found by Pyright in `prepare()` was also fixed by
+checking each prepared fingerprint before returning it.
 
 ## Scope limits
 
-The shipped config and agent definitions were checked using isolated skill fixtures.
-The entire private repository was not cloned into this test container. The original
-full registry/root test suite and skill-local suites were **not rerun** here. They
-remain a combined checkout gate before merging/deploying:
-
-```sh
-just validate-harness
-just check-registry
-just validate-registry
-just test
-git diff --check
-```
-
-Native PowerShell/Windows and macOS were not executed. The Windows wrapper and
-copy-based design need target-machine smoke verification. OMP startup/schema parsing,
-provider auth/streaming, declared model limits/effort, quotas, history routes,
-notes-backed rollover, worker reuse and browser/LSP capabilities remain unverified.
-Static success must not be reported as live end-to-end success.
+Not proven here: native Windows/macOS, browser relay, fresh-profile LSP behavior,
+notes-backed long rollover, worker park/revive, all provider/model routes, quota
+semantics, and default-root replacement after shutting down live OMP sessions.
+Static checks and a successful CPA request do not establish those claims.

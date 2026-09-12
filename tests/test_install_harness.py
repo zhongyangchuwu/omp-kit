@@ -332,10 +332,55 @@ def test_unsafe_manifest_paths_rejected(dirs):
         install(dirs, force=True)
 
 
-def test_env_root_precedence(monkeypatch):
+def test_default_root_ignores_runtime_override_environment(monkeypatch):
     monkeypatch.setenv('AGENT_ROOT', '/old-root')
     monkeypatch.setenv('PI_CODING_AGENT_DIR', '/native-root')
-    assert ih.default_agent_root() == Path('/native-root')
+    assert ih.default_agent_root() == Path('~/.omp/agent').expanduser()
+
+
+def test_native_profile_root_is_distinct_from_config_overlay(tmp_path, monkeypatch):
+    config_root = tmp_path / 'omp'
+    monkeypatch.setenv('PI_CONFIG_DIR', str(config_root))
+    assert ih.native_profile_agent_root('harness-v2-test') == config_root / 'profiles/harness-v2-test/agent'
+    with pytest.raises(ih.ConfigError, match='kebab-case'):
+        ih.native_profile_agent_root('../unsafe')
+
+
+def test_cli_accepts_config_profile_and_legacy_alias(dirs, tmp_path):
+    for flag in ('--config-profile', '--profile'):
+        result = subprocess.run([sys.executable, str(ROOT / 'scripts/install_harness.py'),
+                                 '--repo-root', str(dirs[0]), '--agent-root', str(dirs[1]),
+                                 flag, 'headless', '--dry-run'],
+                                cwd=tmp_path, capture_output=True, text=True)
+        assert result.returncode == 0, result.stderr
+        assert 'Dry run only' in result.stdout
+        assert not dirs[1].exists()
+
+
+def test_native_omp_profile_cli_selects_profile_root(dirs, tmp_path, monkeypatch):
+    home = tmp_path / 'home'
+    monkeypatch.setenv('HOME', str(home))
+    result = subprocess.run([sys.executable, str(ROOT / 'scripts/install_harness.py'),
+                             '--repo-root', str(dirs[0]), '--omp-profile', 'harness-v2-test',
+                             '--dry-run'], cwd=tmp_path, capture_output=True, text=True,
+                            env={**os.environ, 'HOME': str(home)})
+    assert result.returncode == 0, result.stderr
+    assert str(home / '.omp/profiles/harness-v2-test/agent') in result.stdout
+    assert not (home / '.omp').exists()
+
+
+def test_native_and_arbitrary_roots_have_different_doctor_readiness(dirs, tmp_path, monkeypatch):
+    monkeypatch.setattr(ih.shutil, 'which', lambda _: '/fake/omp')
+    monkeypatch.setenv('CPA_API_KEY', 'test-key')
+    install(dirs)
+    messages, ready = ih.doctor(dirs[1])
+    assert not ready and any('not a native OMP agent/profile root' in m for m in messages)
+    home = tmp_path / 'home'
+    monkeypatch.setenv('HOME', str(home))
+    native = home / '.omp/agent'
+    ih.install_harness(repo_root=dirs[0], agent_root=native)
+    messages, ready = ih.doctor(native)
+    assert ready and not any('not a native OMP agent/profile root' in m for m in messages)
 
 
 def test_offline_doctor_hides_secret_and_reports_missing(dirs, monkeypatch):
@@ -344,9 +389,10 @@ def test_offline_doctor_hides_secret_and_reports_missing(dirs, monkeypatch):
     monkeypatch.setattr(ih.shutil, 'which', lambda _: '/fake/omp')
     messages, ready = ih.doctor(dirs[1])
     assert not ready and any('MISSING: CPA_API_KEY' in m for m in messages)
+    assert any('not a native OMP agent/profile root' in m for m in messages)
     (dirs[1] / '.env').write_text('CPA_API_KEY="private-value"\n')
     messages, ready = ih.doctor(dirs[1])
-    assert ready
+    assert not ready
     assert 'private-value' not in '\n'.join(messages)
     assert any('UNVERIFIED:' in m for m in messages)
 
