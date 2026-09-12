@@ -284,12 +284,14 @@ def test_install_error_restores_all_applied_targets(dirs, monkeypatch):
     (root / 'APPEND_SYSTEM.md').write_text('original append')
     original = ih.os.replace
     failed = False
+
     def fail_once(src, dst):
         nonlocal failed
         if Path(dst) == root / 'models.yml' and not failed:
             failed = True
             raise OSError('simulated replace failure')
         return original(src, dst)
+
     monkeypatch.setattr(ih.os, 'replace', fail_once)
     with pytest.raises(OSError, match='simulated'):
         install(dirs, force=True)
@@ -332,18 +334,27 @@ def test_unsafe_manifest_paths_rejected(dirs):
         install(dirs, force=True)
 
 
-def test_default_root_ignores_runtime_override_environment(monkeypatch):
+def test_default_root_ignores_agent_override_but_respects_pi_config_dir(monkeypatch):
     monkeypatch.setenv('AGENT_ROOT', '/old-root')
     monkeypatch.setenv('PI_CODING_AGENT_DIR', '/native-root')
-    assert ih.default_agent_root() == Path('~/.omp/agent').expanduser()
+    monkeypatch.setenv('PI_CONFIG_DIR', '.omp-alt')
+    assert ih.default_agent_root() == Path.home() / '.omp-alt/agent'
 
 
-def test_native_profile_root_is_distinct_from_config_overlay(tmp_path, monkeypatch):
-    config_root = tmp_path / 'omp'
-    monkeypatch.setenv('PI_CONFIG_DIR', str(config_root))
+def test_native_profile_root_matches_omp_profile_grammar(monkeypatch):
+    monkeypatch.setenv('PI_CONFIG_DIR', '.omp-test')
+    config_root = Path.home() / '.omp-test'
     assert ih.native_profile_agent_root('harness-v2-test') == config_root / 'profiles/harness-v2-test/agent'
-    with pytest.raises(ih.ConfigError, match='kebab-case'):
-        ih.native_profile_agent_root('../unsafe')
+    assert ih.native_profile_agent_root('work.dev') == config_root / 'profiles/work.dev/agent'
+    assert ih.native_profile_agent_root('work_2') == config_root / 'profiles/work_2/agent'
+    assert ih.native_profile_agent_root('default') == config_root / 'agent'
+
+
+@pytest.mark.parametrize('bad', ['../unsafe', 'Work', 'con', 'con.foo', 'name.', 'a/b'])
+def test_native_profile_rejects_names_omp_rejects(monkeypatch, bad):
+    monkeypatch.setenv('PI_CONFIG_DIR', '.omp-test')
+    with pytest.raises(ih.ConfigError, match='Invalid OMP profile'):
+        ih.native_profile_agent_root(bad)
 
 
 def test_cli_accepts_config_profile_and_legacy_alias(dirs, tmp_path):
@@ -357,21 +368,55 @@ def test_cli_accepts_config_profile_and_legacy_alias(dirs, tmp_path):
         assert not dirs[1].exists()
 
 
-def test_native_omp_profile_cli_selects_profile_root(dirs, tmp_path, monkeypatch):
+def test_native_omp_profile_cli_selects_profile_root(dirs, tmp_path):
     home = tmp_path / 'home'
-    monkeypatch.setenv('HOME', str(home))
+    env = {**os.environ, 'HOME': str(home), 'PI_CONFIG_DIR': '.omp-alt'}
+    env.pop('OMP_PROFILE', None)
+    env.pop('PI_PROFILE', None)
     result = subprocess.run([sys.executable, str(ROOT / 'scripts/install_harness.py'),
                              '--repo-root', str(dirs[0]), '--omp-profile', 'harness-v2-test',
-                             '--dry-run'], cwd=tmp_path, capture_output=True, text=True,
-                            env={**os.environ, 'HOME': str(home)})
+                             '--dry-run'], cwd=tmp_path, capture_output=True, text=True, env=env)
     assert result.returncode == 0, result.stderr
-    assert str(home / '.omp/profiles/harness-v2-test/agent') in result.stdout
+    assert str(home / '.omp-alt/profiles/harness-v2-test/agent') in result.stdout
+    assert not (home / '.omp-alt').exists()
+
+
+def test_cli_refuses_implicit_nondefault_active_omp_profile(dirs, tmp_path):
+    home = tmp_path / 'home'
+    env = {**os.environ, 'HOME': str(home), 'OMP_PROFILE': 'work'}
+    env.pop('PI_PROFILE', None)
+    result = subprocess.run([sys.executable, str(ROOT / 'scripts/install_harness.py'),
+                             '--repo-root', str(dirs[0]), '--dry-run'],
+                            cwd=tmp_path, capture_output=True, text=True, env=env)
+    assert result.returncode == 1
+    assert "Active OMP profile 'work' detected" in result.stderr
+    assert '--omp-profile work' in result.stderr
     assert not (home / '.omp').exists()
+
+
+def test_cli_explicit_default_profile_overrides_active_profile_env(dirs, tmp_path):
+    home = tmp_path / 'home'
+    env = {**os.environ, 'HOME': str(home), 'OMP_PROFILE': 'work'}
+    result = subprocess.run([sys.executable, str(ROOT / 'scripts/install_harness.py'),
+                             '--repo-root', str(dirs[0]), '--omp-profile', 'default', '--dry-run'],
+                            cwd=tmp_path, capture_output=True, text=True, env=env)
+    assert result.returncode == 0, result.stderr
+    assert str(home / '.omp/agent') in result.stdout
+    assert str(home / '.omp/profiles/work/agent') not in result.stdout
+
+
+def test_omp_profile_env_precedence_matches_omp(monkeypatch):
+    monkeypatch.setenv('PI_PROFILE', 'legacy')
+    monkeypatch.setenv('OMP_PROFILE', '')
+    assert ih.active_omp_profile_from_env() is None
+    monkeypatch.setenv('OMP_PROFILE', 'work.dev')
+    assert ih.active_omp_profile_from_env() == 'work.dev'
 
 
 def test_native_and_arbitrary_roots_have_different_doctor_readiness(dirs, tmp_path, monkeypatch):
     monkeypatch.setattr(ih.shutil, 'which', lambda _: '/fake/omp')
     monkeypatch.setenv('CPA_API_KEY', 'test-key')
+    monkeypatch.delenv('PI_CONFIG_DIR', raising=False)
     install(dirs)
     messages, ready = ih.doctor(dirs[1])
     assert not ready and any('not a native OMP agent/profile root' in m for m in messages)

@@ -26,21 +26,25 @@ from typing import Iterator
 import uuid
 
 try:
-    from scripts.harness_config import (ConfigError, ENV_NAME, SAFE_NAME, active_skills, compose,
+    from scripts.harness_config import (ConfigError, ENV_NAME, active_skills, compose,
                                         load_mapping, validate_url, yaml_bytes)
 except ModuleNotFoundError as exc:
     if exc.name not in {'scripts', 'scripts.harness_config'}:
         raise
-    from harness_config import (ConfigError, ENV_NAME, SAFE_NAME, active_skills, compose,
+    from harness_config import (ConfigError, ENV_NAME, active_skills, compose,
                                 load_mapping, validate_url, yaml_bytes)
 
 STATE_VERSION = 1
 IGNORED = {'.git', '.venv', '__pycache__', '.pytest_cache', '.mypy_cache', '.ruff_cache', 'node_modules'}
+ROOT_FILES = {'config.yml', 'models.yml', 'APPEND_SYSTEM.md', 'config.yaml', 'models.yaml'}
+OMP_PROFILE_RE = re.compile(r'[a-z0-9][a-z0-9._-]{0,63}\Z')
+WINDOWS_RESERVED_PROFILE_RE = re.compile(
+    r'(?:CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(?:\..*)?\Z', re.IGNORECASE
+)
+
+
 def is_link(path: Path) -> bool:
     return path.is_symlink() or (hasattr(path, 'is_junction') and path.is_junction())
-
-
-ROOT_FILES = {'config.yml', 'models.yml', 'APPEND_SYSTEM.md', 'config.yaml', 'models.yaml'}
 
 
 class InstallError(RuntimeError):
@@ -58,29 +62,80 @@ class Action:
         return f'{self.kind}: {self.target}'
 
 
-def default_agent_root() -> Path:
-    """Return OMP's default native agent root, not an arbitrary override root."""
-    return Path('~/.omp/agent').expanduser()
-
-
 def default_omp_config_root() -> Path:
-    return Path(os.environ.get('PI_CONFIG_DIR') or '~/.omp').expanduser()
+    """Mirror OMP's PI_CONFIG_DIR-as-a-home-relative-config-name behavior."""
+    value = os.environ.get('PI_CONFIG_DIR') or '.omp'
+    if '\x00' in value:
+        raise ConfigError('PI_CONFIG_DIR contains an invalid NUL byte')
+    fragment = Path(value)
+    if fragment.anchor:
+        # OMP uses path.join(home, PI_CONFIG_DIR), so even an absolute-looking
+        # value is re-rooted beneath home rather than treated as a filesystem root.
+        fragment = Path(*fragment.parts[1:])
+    return Path.home() / fragment
+
+
+def default_agent_root() -> Path:
+    """Return OMP's native default agent root, ignoring arbitrary agent overrides."""
+    return default_omp_config_root() / 'agent'
+
+
+def normalize_omp_profile(profile: str | None) -> str | None:
+    """Mirror OMP 18.1.18 profile normalization closely enough for install paths."""
+    normalized = profile.strip() if profile is not None else ''
+    if not normalized or normalized == 'default':
+        return None
+    if (normalized in {'.', '..'} or normalized.endswith('.')
+            or not OMP_PROFILE_RE.fullmatch(normalized)
+            or WINDOWS_RESERVED_PROFILE_RE.fullmatch(normalized)):
+        raise ConfigError(
+            'Invalid OMP profile name. Expected 1-64 lowercase characters matching '
+            '[a-z0-9][a-z0-9._-]*, excluding dot segments, trailing dots, and Windows '
+            'reserved device names.'
+        )
+    return normalized
+
+
+def active_omp_profile_from_env() -> str | None:
+    """Resolve OMP_PROFILE first, then legacy PI_PROFILE, matching OMP precedence."""
+    raw = os.environ.get('OMP_PROFILE') if 'OMP_PROFILE' in os.environ else os.environ.get('PI_PROFILE')
+    return normalize_omp_profile(raw)
 
 
 def native_profile_agent_root(profile: str) -> Path:
-    if not SAFE_NAME.fullmatch(profile):
-        raise ConfigError('OMP profile names must be kebab-case')
-    return default_omp_config_root() / 'profiles' / profile / 'agent'
+    normalized = normalize_omp_profile(profile)
+    if normalized is None:
+        return default_agent_root()
+    return default_omp_config_root() / 'profiles' / normalized / 'agent'
 
 
 def is_native_omp_agent_root(root: Path) -> bool:
     root = root.expanduser().resolve()
     config_root = default_omp_config_root().resolve()
-    if root == config_root / 'agent':
+    if root == (config_root / 'agent').resolve():
         return True
-    return (root.parent.parent == config_root / 'profiles'
-            and root.name == 'agent'
-            and bool(SAFE_NAME.fullmatch(root.parent.name)))
+    if root.name != 'agent' or root.parent.parent != config_root / 'profiles':
+        return False
+    try:
+        normalized = normalize_omp_profile(root.parent.name)
+    except ConfigError:
+        return False
+    return normalized == root.parent.name
+
+
+def select_cli_agent_root(agent_root: Path | None, omp_profile: str | None) -> Path:
+    """Select an install root without silently diverging from an active OMP profile."""
+    if agent_root is not None:
+        return agent_root
+    if omp_profile is not None:
+        return native_profile_agent_root(omp_profile)
+    active = active_omp_profile_from_env()
+    if active is not None:
+        raise ConfigError(
+            f"Active OMP profile '{active}' detected. Use --omp-profile {active} to install "
+            'there, or --omp-profile default to target the native default root explicitly.'
+        )
+    return default_agent_root()
 
 
 def _valid_relative(name: str) -> bool:
@@ -139,6 +194,7 @@ def read_manifest(root: Path) -> dict:
 def fingerprint(path: Path) -> str | None:
     """Hash symlinks without following them; directory hashes include unknown files."""
     h = hashlib.sha256()
+
     def visit(p: Path, label: str) -> None:
         h.update(label.encode('utf-8') + b'\0')
         if is_link(p):
@@ -154,6 +210,7 @@ def fingerprint(path: Path) -> str | None:
                     h.update(block)
         else:
             raise InstallError(f'Unsupported filesystem object: {p}')
+
     if not path.exists() and not is_link(path):
         return None
     visit(path, '')
@@ -442,6 +499,8 @@ def _dotenv_values(path: Path) -> dict[str, str]:
                 value = value.split(' #', 1)[0].strip()
             result[name] = value
     return result
+
+
 def doctor(root: Path) -> tuple[list[str], bool]:
     """Offline readiness/drift check. No inference, HTTP, key printing or auth-db reads."""
     root = root.expanduser().resolve()
@@ -487,13 +546,11 @@ def doctor(root: Path) -> tuple[list[str], bool]:
     return lines, ready
 
 
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repo-root', type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument('--agent-root', type=Path, help='Explicit installer root; use --omp-profile for native OMP profiles')
-    parser.add_argument('--omp-profile', metavar='NAME', help='Install into ~/.omp/profiles/NAME/agent and launch with omp --profile NAME')
+    parser.add_argument('--omp-profile', metavar='NAME', help='Install into OMP native profile root and launch with omp --profile NAME')
     parser.add_argument('--force', action='store_true', help='Adopt/replace conflicts after backup; never deletes unrelated resources')
     parser.add_argument('--config-profile', '--profile', dest='profiles', action='append', default=None,
                         help='Repeatable omp-kit config overlay; --profile is a compatibility alias')
@@ -513,8 +570,7 @@ def main(argv: list[str] | None = None) -> int:
             parser.error('--config-profile default must be used alone')
         profiles = []
     try:
-        agent_root = (args.agent_root or native_profile_agent_root(args.omp_profile)
-                      if args.omp_profile else args.agent_root or default_agent_root())
+        agent_root = select_cli_agent_root(args.agent_root, args.omp_profile)
         if args.rollback:
             print('Rolled back: ' + rollback(agent_root))
         elif args.doctor:
@@ -537,7 +593,7 @@ def main(argv: list[str] | None = None) -> int:
                 print('Dry run only; no runtime files were written.')
             else:
                 print('Installed. Existing .env, auth databases, sessions, MCP config and unrelated resources were not imported or replaced.')
-                if args.omp_profile:
+                if args.omp_profile is not None:
                     print(f'Native OMP profile installed. Start with: omp --profile {args.omp_profile}')
                 messages, ready = doctor(agent_root)
                 print('\n'.join(messages))

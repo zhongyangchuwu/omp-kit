@@ -18,10 +18,14 @@ from the repository's larger development environment.
 Clone this repository using your normal GitHub access, then:
 
 ```sh
-# Linux / macOS / WSL; installs into ~/.omp/agent
+# Linux / macOS / WSL; installs into OMP's native default agent root
 bash install.sh --dry-run
 bash install.sh
 ```
+
+The native default is normally `~/.omp/agent`. If `PI_CONFIG_DIR` is set, the
+installer follows OMP's home-relative config-root semantics and uses
+`~/<PI_CONFIG_DIR>/agent` instead.
 
 For a full native OMP named profile:
 
@@ -85,18 +89,28 @@ bash install.sh --config-profile legacy-context # kit overlay: opt out of experi
 bash install.sh --config-profile default        # clear stored overlay selection
 bash install.sh --profile headless              # compatibility alias for --config-profile
 bash install.sh --omp-profile harness-v2-test   # native OMP profile root
+bash install.sh --omp-profile default           # explicitly select native default root
 bash install.sh --cpa-url https://my-host.example/v1
 bash install.sh --doctor                        # offline readiness/drift check
 bash install.sh --rollback                      # undo latest install, preserving newer work
 ```
 
 `--config-profile`/`--profile` are omp-kit config overlays. `--omp-profile` is the
-native OMP profile selector and is distinct from them. Full custom-agent discovery
-requires `~/.omp/agent` or a native `~/.omp/profiles/<name>/agent` root. An arbitrary
-`PI_CODING_AGENT_DIR` can relocate OMP state but is not treated as a full Harness v2
-root on OMP 18.1.18. Local YAML overrides live in `<agent-root>/.omp-kit/local/`;
-templates are in `config/local.example/`. Mappings merge, arrays replace, and secret
-values belong in the environment or `.env`, not those YAML files.
+native OMP profile selector and is distinct from them. OMP profile names follow OMP's
+own grammar, including `.` and `_`; the special value `default` selects the native
+default root.
+
+If `OMP_PROFILE` or legacy `PI_PROFILE` selects a non-default profile and no explicit
+`--omp-profile`/`--agent-root` is given, the installer refuses to guess. Use
+`--omp-profile <name>` to target that profile or `--omp-profile default` to make the
+default-root choice explicit.
+
+Full custom-agent discovery requires OMP's native default/profile topology. An
+arbitrary `PI_CODING_AGENT_DIR` can relocate OMP state but is not treated as a full
+Harness v2 root on OMP 18.1.18. Local YAML overrides live in
+`<agent-root>/.omp-kit/local/`; templates are in `config/local.example/`. Mappings
+merge, arrays replace, and secret values belong in the environment or `.env`, not
+those YAML files.
 
 ## Layout and policies
 

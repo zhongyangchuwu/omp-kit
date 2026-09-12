@@ -23,6 +23,10 @@ uv run --script /absolute/path/to/omp-kit/scripts/install_harness.py --dry-run
 uv run --script /absolute/path/to/omp-kit/scripts/install_harness.py
 ```
 
+With no explicit root/profile, the installer targets OMP's native default agent root:
+normally `~/.omp/agent`, or `~/<PI_CONFIG_DIR>/agent` when `PI_CONFIG_DIR` changes
+OMP's home-relative config directory name.
+
 For a full native OMP named profile, use the separate installer option:
 
 ```sh
@@ -31,16 +35,25 @@ bash install.sh --omp-profile harness-v2-test
 omp --profile harness-v2-test
 ```
 
+`--omp-profile default` explicitly selects the native default root. OMP profile names
+follow OMP's own grammar (`[a-z0-9][a-z0-9._-]{0,63}` plus OMP's reserved-name rules),
+not omp-kit's kebab-case resource naming rules.
+
 `bash /path/to/omp-kit/install.sh` and PowerShell `& C:\path\omp-kit\install.ps1`
 are wrappers for the same script. Native Windows defaults to copies and does not
 need administrator/Developer Mode symlink permissions.
 
 Root selection: `--agent-root` is an explicit installer-only root; `--omp-profile`
-selects `~/.omp/profiles/<name>/agent`; with neither option the installer targets
-`~/.omp/agent`. `PI_CODING_AGENT_DIR` is not used as the installer's default root,
-because OMP 18.1.18 may load config/models/skills from an arbitrary override while
-not discovering custom task agents there. A target cannot contain the repository or
-be contained in it.
+selects OMP's native named/default profile root; with neither option the installer
+uses OMP's native default root. `PI_CODING_AGENT_DIR` and legacy `AGENT_ROOT` are not
+used as implicit install destinations, because OMP 18.1.18 may load
+config/models/skills from an arbitrary override while not discovering custom task
+agents there. A target cannot contain the repository or be contained in it.
+
+If `OMP_PROFILE` (or legacy `PI_PROFILE` when `OMP_PROFILE` is undefined) selects a
+non-default profile and neither `--omp-profile` nor `--agent-root` is supplied, the
+installer refuses to guess. Use `--omp-profile <name>` to install into that active
+native profile, or `--omp-profile default` to explicitly target the default root.
 
 ## Existing machine migration
 
@@ -109,6 +122,11 @@ Doctor is offline: it checks the OMP executable, managed-file drift and named ke
 presence in the environment or `<agent-root>/.env`, without printing values or
 opening auth databases. Exit 2 means readiness is incomplete. It does not call a
 model, check quotas, validate a bearer token, or prove the CPA endpoint is reachable.
+
+When managed custom agents are installed outside OMP's native default/profile
+topology, doctor reports the root as incomplete on OMP 18.1.18. This is a
+version-scoped runtime compatibility guard, not a permanent claim about all future
+OMP versions.
 
 After first install, launch/restart OMP, inspect `/model` and `/agents`, and confirm
 the required context-management tools before long work. Project `.omp/` settings,

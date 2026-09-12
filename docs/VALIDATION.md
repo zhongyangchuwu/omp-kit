@@ -29,13 +29,42 @@ configured local endpoint. No default live agent root was overwritten while acti
 
 OMP 18.1.18 does not discover custom task agents from an arbitrary
 `PI_CODING_AGENT_DIR`, although config/models/skills can load there. The installer
-now defaults to `~/.omp/agent`, adds `--omp-profile <name>` for the native
-`~/.omp/profiles/<name>/agent` topology, and reserves `--config-profile` for
-omp-kit overlays (`--profile` remains a compatibility alias). `doctor` returns
-incomplete for managed custom agents installed outside a native OMP root.
+now defaults to OMP's native default agent root, adds `--omp-profile <name>` for the
+native profile topology, and reserves `--config-profile` for omp-kit overlays
+(`--profile` remains a compatibility alias). `doctor` returns incomplete for managed
+custom agents installed outside a native OMP root.
 
 The installer return-type issue found by Pyright in `prepare()` was also fixed by
 checking each prepared fingerprint before returning it.
+
+## Post-review path compatibility correction
+
+A follow-up source review against OMP 18.1.18 identified three path-selection issues
+that were not covered by the 145-test local run above:
+
+- `PI_CONFIG_DIR` is a home-relative OMP config-directory name and must affect both
+  the default and named-profile install roots;
+- OMP profile validation accepts `.` and `_` inside names, treats `default` as the
+  default profile sentinel, and rejects reserved/pathological names using OMP's own
+  grammar rather than omp-kit's kebab-case resource grammar;
+- a non-default `OMP_PROFILE`/legacy `PI_PROFILE` environment selection must not be
+  silently ignored by a bare installer invocation.
+
+The branch now contains regression tests and installer changes for those cases. This
+GitHub-authored follow-up has **not yet been rerun on the owner's local machine**.
+Before merging to `main`, rerun at minimum:
+
+```sh
+uv run python -m pytest -q tests/test_install_harness.py
+just test
+just validate-harness
+just check-registry
+just validate-registry
+git diff --check
+```
+
+The earlier counts in this document remain historical evidence for the prior tested
+commit; they must not be interpreted as proof of the follow-up patch until rerun.
 
 ## Scope limits
 
