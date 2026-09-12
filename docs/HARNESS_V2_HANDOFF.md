@@ -2,18 +2,20 @@
 
 ## Current state
 
-Harness v2 has completed the bounded runtime-validation sequence and the search-first parent-history policy smoke on the current Linux/WSL2 + OMP 18.1.18 path. Installation/config/profile behavior is locally validated, all four runtime merge gates pass, and the simplified context policy has one real worker proof.
+Harness v2 has completed the bounded runtime-validation sequence and the search-first
+parent-history policy smoke on the current Linux/WSL2 + OMP 18.1.18 path. The historical
+runtime gates remain valid for the behavior they observed. The final-review auditor now
+uses stricter proof rules, which expose one retained-record evidence gap described below.
 
-Installer/config validation baseline:
+Final-review validation for implementation commit `d4467c5`:
 
 ```text
-installer tests: 50 passed
-root tests:      88 passed
-validate-harness: passed
-check-registry:   passed
-validate-registry: passed
-git diff --check: passed
+installer tests: 53 passed
+auditor tests:   28 passed
+root tests:     119 passed
+just verify:     passed
 ```
+
 
 Runtime/policy gates:
 
@@ -131,9 +133,11 @@ Stage 1 is now locally validated:
 
 - `just verify` is the deterministic non-provider gate;
 - the bounded Python auditor closes the known policy false-PASS paths;
-- 24 offline auditor regressions pass;
-- the retained SearchFirst child record passes strict causal history, model, thinking and
-  fallback assertions after normalizing OMP's `resolvedModel` effort suffix;
+- 28 offline auditor regressions pass;
+- the retained SearchFirst child record still passes agent, task-model, thinking and
+  causal history assertions, but now fails `--forbid-fallback` because its
+  `session_init` event lacks boolean fallback metadata. No fallback was observed; the
+  stricter policy correctly treats the absence claim as unproven;
 - general aggregate usage remains owned by `omp stats --json`.
 
 Upstream capability probes constrain the next architecture step. `omp-rpc` is not
@@ -149,11 +153,11 @@ an `omp-rpc` dependency path is deliberately adopted.
 
 ## Immediate next action
 
-Implement Stage 2 only if more runtime smoke work is needed before merge: check in the
-small worker fixture and physically separate hidden oracle, then add preparation and
-finalization helpers around the bounded policy auditor. Otherwise defer Stage 2 and
-perform final branch review. Do not expand the Python parser to absorb OMP runtime
-semantics and do not start another context benchmark.
+Perform final verification and make the merge-readiness decision. Stage 2 and Stage 3
+remain deferred until a real trigger. Do not expand the Python parser to absorb OMP
+runtime semantics and do not start another context benchmark. The retained SearchFirst
+fallback-metadata gap must be weighed as an evidence limitation, not rewritten into a
+false strict pass.
 
 ## Constraints
 

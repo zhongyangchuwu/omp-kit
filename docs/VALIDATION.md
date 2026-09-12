@@ -4,27 +4,36 @@ Date: 2026-09-13
 
 ## Current branch validation
 
-Current validated installer/config head:
+Final-review implementation commit:
 
 ```text
 branch: harness-v2-implementation
-head:   a99dd42b
+head:   d4467c5
 ```
 
-Environment: Linux/WSL2, Python 3.12.12, OMP 18.1.18, CPA reachable at the configured local endpoint.
-
-The post-review path/profile patch was synchronized locally with `git pull --ff-only`; the working tree was clean and matched the remote branch.
+Environment: Linux/WSL2, Python 3.12.12, OMP 18.1.18.
 
 Current regression evidence:
 
-- `uv run python -m pytest -q tests/test_install_harness.py`: **50 passed**.
-- `just test`: **88 passed**.
-- `just validate-harness`: passed (`Static configuration and agent/skill references: valid`).
-- `just check-registry`: passed (`registry.yaml is up to date`).
-- `just validate-registry`: passed.
-- `git diff --check`: passed.
+- `uv run python -m pytest -q tests/test_install_harness.py`: **53 passed**.
+- `uv run python -m pytest -q tests/test_inspect_omp_session.py`: **28 passed**.
+- `just test`: **119 passed**.
+- `just verify`: passed, including source validation, registry checks and
+  `git diff --check HEAD`.
+- Pyright/LSP diagnostics: no errors in `scripts/install_harness.py` or
+  `scripts/inspect_omp_session.py`; the installer retains pre-existing style warnings.
 
-This validates the second-round installer corrections for `PI_CONFIG_DIR`, native OMP profile semantics, the `default` sentinel, active profile precedence/override behavior, historical-report wording, and regression coverage.
+The retained SearchFirst child record was re-audited with the same strict policy. Agent,
+task-model, thinking and causal history assertions still pass, but `--forbid-fallback`
+now fails because `session_init.resolvedModelIsFallback` is missing. The trajectory has
+no observed fallback; the stricter rule correctly reports that absence cannot be proven.
+The old Phase 2 child remains descriptively readable and has the same incomplete
+session-init fallback metadata. These current re-audits do not rewrite the historical
+runtime reports below.
+
+This validates deterministic source-only `--validate`, explicit local-overlay handling,
+complete fallback evidence requirements, strict thinking trajectory assertions and the
+associated documentation corrections.
 
 ## Runtime Phase 1 — bundled sonic vs custom luna-code
 
@@ -220,7 +229,10 @@ The Pyright issue in `prepare()` was fixed by checking each prepared fingerprint
 
 ## Next work
 
-Stop runtime/context smoke expansion. Perform a final branch review for policy consistency, stale documentation, accidental overclaiming, installer/config regressions, and merge readiness before deciding whether to merge `harness-v2-implementation` to `main`.
+Perform the final merge-readiness review and decide whether the retained SearchFirst
+fallback-evidence limitation requires a fresh runtime record or can be accepted as a
+documented historical-evidence gap. Do not resume Stage 2/3 or broader Harness v2
+development without a real trigger.
 
 ## Remaining scope limits
 
