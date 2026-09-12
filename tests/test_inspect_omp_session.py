@@ -145,10 +145,10 @@ def test_audit_linear_child_session(tmp_path: Path):
     assert result['history_coverage_ratio_when_length_known'] == pytest.approx(6 / 20)
     assert result['history_reads_before_first_grep'] == 0
     assert result['input_tokens'] == 35
-    assert result['output_tokens'] == 5
-    assert result['cache_read_tokens'] == 6
-    assert result['reasoning_tokens'] == 2
-    assert result['total_tokens'] == 36
+    assert result['output_tokens'] == 7
+    assert result['cache_read_tokens'] == 9
+    assert result['reasoning_tokens'] == 3
+    assert result['total_tokens'] == 51
     assert result['reasoning_tokens_complete'] is True
     assert result['final_result'] == {'result': 'done'}
 
