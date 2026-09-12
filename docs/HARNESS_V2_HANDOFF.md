@@ -2,7 +2,7 @@
 
 ## Current state
 
-Harness v2 is now in runtime validation rather than installer design. Installation/config/profile behavior is locally validated on Linux/WSL2, and Runtime Phase 1 has established that the restricted custom `luna-code` worker is operationally viable against bundled `sonic` on a bounded five-task sample.
+Harness v2 is in runtime validation rather than installer design. Installation/config/profile behavior is locally validated on Linux/WSL2. Runtime Phase 1 established that the restricted custom `luna-code` worker is operationally viable against bundled `sonic` on a bounded five-task sample. Runtime Phase 2 has now produced one successful real `history://Main` context-pull smoke without decision pollution.
 
 Installer/config validation baseline:
 
@@ -15,14 +15,11 @@ validate-registry: passed
 git diff --check: passed
 ```
 
-Runtime Phase 1 baseline:
+Runtime gates satisfied so far:
 
 ```text
-native profile: harness-v2-test
-parent:         cpa/gpt-5.6-sol:medium
-both arms:      cpa/gpt-5.6-luna:high
-sonic:          5/5 independent passes
-luna-code:      5/5 independent passes
+Phase 1: luna-code viability             satisfied
+Phase 2: one real history://Main pull    satisfied
 ```
 
 Read `docs/VALIDATION.md` for evidence and limits, and `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` for the active experiment sequence.
@@ -64,29 +61,57 @@ The same native profile, model role, effort, fixtures, and independent verificat
 
 The token reduction was dominated by cache-read tokens; uncached/input tokens were nearly equal. Do not convert the 28.4% total-token reduction into a Business quota claim. Both arms still receive a substantial OMP child base harness, so this does not establish a truly minimal provider-facing prompt.
 
-Decision: keep `luna-code` unchanged and continue the runtime sequence.
+Decision: keep `luna-code` unchanged.
+
+## Phase 2 conclusion
+
+A synthetic-parent benchmark setup was discarded because long `hub wait` intervals measured lifecycle waiting and did not cleanly guarantee that every intended steering turn had become durable history.
+
+The valid smoke used the real Main session. A preflight/history barrier verified `history://Main`, the presence of accepted/superseded/rejected/unresolved discussion, the actual `luna-code` identity, Luna High, and no fallback. The worker then received only the objective, temporary fixture path, and `history://Main`.
+
+Independent scoring returned:
+
+```text
+accepted_correct: 3/3
+superseded_incorrect: 0
+rejected_tentative_incorrect: 0
+unresolved_incorrect: 0
+repository_facts_correct: 1/1
+behavioral_pass: true
+```
+
+This satisfies the merge gate requiring one parent-history pull without decision pollution. It does not prove repeated reliability or quota efficiency. The observed 200,731 child tokens also show that pulling a long Main transcript can be context-heavy; a compact decision capsule/view is a future optimization only if repeated real work makes that cost material.
+
+For lifecycle-sensitive work, prefer complete-turn -> park/yield -> direct-message revival over unbounded `hub wait`. When downstream work depends on parent history, use a history barrier rather than equating message delivery with durable transcript availability.
 
 ## Immediate next phase
 
-Run **Phase 2: Context transfer A/B**.
+Run **Phase 3: persistent worker continuation smoke**.
 
-Compare:
+Use one `luna-code` worker for one coherent subsystem and three related steps:
 
 ```text
-A: explicit long brief containing all accepted requirements
-B: short intent + scope + history://<parent-agent-id>
+spawn once
+-> task 1
+-> park/yield
+-> direct follow-up / revive
+-> task 2
+-> park/yield
+-> direct follow-up / revive
+-> task 3
 ```
 
-Keep `luna-code`, Luna High, tool list, parent model, repository fixture class, and acceptance scoring fixed.
+Do not run a full fresh-vs-reused benchmark yet. The smoke gate only needs to establish:
 
-The parent discussion must contain accepted current decisions, one superseded earlier decision, rejected/tentative alternatives, and at least one unresolved question. Score both inclusion and exclusion. A worker that implements a rejected or unresolved idea fails the interpretation criterion even if tests pass.
+- same worker/session continuation rather than silent respawn;
+- correct independent result after each follow-up;
+- useful retained subsystem context;
+- no stale-context error when a material parent decision changes;
+- successful park/revive behavior without unbounded waiting.
 
-Measure total parent + worker activity rather than worker tokens alone. The purpose is to test whether parent-history pull avoids expensive restatement without degrading requirement interpretation.
+After Phase 3:
 
-After Phase 2:
-
-3. persistent worker reuse — fresh workers vs one continued worker;
-4. Notes-backed rollover/recovery smoke test;
+4. one Notes-backed rollover/recovery smoke test;
 5. endurance/quota measurement after the behavior above is trustworthy.
 
 ## Constraints
@@ -94,19 +119,19 @@ After Phase 2:
 - Do not commit keys, `.env`, auth stores, backups, raw session logs, or account-specific state.
 - Do not grant another machine's setup/QA consent.
 - Preserve the canonical imported CPA transport and model definitions unless measured runtime evidence requires a change.
-- Keep `luna-code` unchanged during Phase 2 so context transfer is the only intentional variable.
+- Keep `luna-code` unchanged during the next smoke so worker lifecycle is the intentional variable.
 - Do not claim a custom agent has a minimal provider-facing system prompt; current OMP still constructs a substantial child harness.
 - Tool restriction reduces action-space complexity but is not security isolation.
 - Do not infer ChatGPT Business quota from configured API-equivalent prices or total-token counts.
-- A run is invalid for comparison if the requested child agent silently falls back to another agent or the requested history URI is unavailable and silently replaced by another context source.
-- Worker self-report is not verification; score outputs independently against the controlled decision set and repository facts.
+- Worker self-report is not verification; use independent acceptance checks.
+- Do not build synthetic parent/session machinery when the real runtime topology can answer the question more directly.
 
 ## Merge direction
 
-Do not keep the implementation branch open indefinitely for perfect quota data. Phase 1 custom-worker viability is now satisfied. Merge to `main` once a parent-history pull task succeeds without decision pollution, persistent continuation works at least once, Notes-backed context is smoke-tested or deliberately disabled pending testing, and no high-severity runtime defect remains.
+Do not keep the implementation branch open indefinitely for perfect quota data. Phase 1 custom-worker viability and Phase 2 one-shot parent-history pull are satisfied. Merge to `main` once persistent continuation works at least once, Notes-backed context is smoke-tested or deliberately disabled pending testing, and no high-severity runtime defect remains.
 
 Longer endurance/quota optimization can continue after merge.
 
 ## Deferred until evidence requires them
 
-No OMP fork, custom scheduler, raw cross-agent full-history API, automated context curator, pricing service, replacement minimal system prompt, or complex experiment framework. Add one only when an observed failure or repeated manual cost justifies it.
+No OMP fork, custom scheduler, raw cross-agent full-history API, automated context curator, pricing service, replacement minimal system prompt, complex experiment framework, or mandatory decision-capsule subsystem. Add one only when an observed failure or repeated manual cost justifies it.
