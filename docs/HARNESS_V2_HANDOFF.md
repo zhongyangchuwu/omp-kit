@@ -24,7 +24,7 @@ Phase 3: persistent same-session continuation   PASS
 Phase 4: Notes-backed rollover/recovery         PASS
 ```
 
-Read `docs/VALIDATION.md` for evidence/limits and `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` for the completed smoke sequence and merge gate.
+Read `docs/VALIDATION.md` for evidence/limits and `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` for the completed smoke sequence, context-policy smoke and merge gate.
 
 ## Goal
 
@@ -34,13 +34,13 @@ Maintain a portable personal OMP harness that uses strong models for high-levera
 
 For current behavior, prefer:
 
-1. `docs/VALIDATION.md` — what has actually been tested;
-2. `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` — completed runtime gates and remaining limits;
-3. `README.md`, `docs/omp-installation.md`, `docs/omp-configuration.md` — operational use;
-4. `docs/HARNESS_V2_GUIDE.md` — architecture rationale;
-5. current `config/`, `agents/`, and `skills/` — executable/runtime policy.
+1. current `config/`, `agents/`, and `skills/` — executable/runtime policy;
+2. `docs/VALIDATION.md` — what has actually been tested;
+3. `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` — completed gates and active policy smoke;
+4. `README.md`, `docs/omp-installation.md`, `docs/omp-configuration.md` — operational use;
+5. `docs/HARNESS_V2_GUIDE.md` — architecture rationale.
 
-Earlier chat snippets and historical reports are design evidence, not current instructions. A new OMP session cannot retrieve a separate ChatGPT design conversation through its own `history://Main`.
+Earlier chat snippets and historical reports are design evidence, not current instructions. A new OMP session cannot assume that a separate prior session is available through its own `history://Main`.
 
 ## Stable implementation surface
 
@@ -77,19 +77,33 @@ Main persisted accepted/superseded/open state into context notes, entered a new 
 
 Known tooling anomaly: `context_notes` documentation says omitting `text` reads the notebook, while the currently exposed schema requires `text`; an empty string clears the notebook. This was reported through `xd://report_issue`. Automatic notes injection and full-history recovery still worked, so the runtime gate remains satisfied. Avoid empty-string `context_notes` reads.
 
-## Immediate design work
+## Context-policy decision
 
-Stop expanding runtime smoke tests. The next task is to simplify Main-session context policy before final branch review.
+The workflow now separates session delegation context from durable planning:
 
-The leading direction is:
+```text
+current task      -> dispatch
+implementation    -> repository facts
+same-session talk -> history://<parent>
+cross-session     -> deliberate .planning/ artifacts
+rollover in Main  -> context notes
+```
 
-- local tasks should not read Main history;
-- context-dependent workers should search/grep `history://Main` first and read only relevant passages rather than defaulting to a full-history read;
-- high-risk/ambiguous work may receive an explicit short contract;
-- do not introduce a parallel mandatory context-capsule system unless real usage justifies it;
-- durable `.planning/` artifacts remain an explicitly chosen long-lived workflow, not an automatic mirror of session history.
+`history://Main` is an automatic concise transcript of the current Main session; Main does not maintain a second history document for workers. For Referenced tasks, workers should `grep` the parent transcript first and use targeted line-range reads. Whole long-transcript reads are fallback behavior only.
 
-The exact boundary between searchable session history and durable `.planning/` state is still under design and should be settled before merge.
+`.planning/` remains the durable project-state mechanism when work must survive a fresh OMP session or deliberate multi-phase workflow. It should materialize accepted/current state, not copy the conversation transcript. Do not create a default `SESSION.md` mirror or mandatory context-capsule subsystem.
+
+See `skills/omp-workflow/references/subagent-context.md` and `skills/omp-workflow/references/context-and-plan.md` for the active policy.
+
+## Immediate next action
+
+Run exactly one **search-first parent-history smoke** before final branch review.
+
+Use a real Main discussion with accepted, superseded, rejected and unresolved material. Dispatch one `luna-code` worker with only objective, fixture/scope, `history://Main` and a few topic hints. The worker must `grep` the parent transcript and read only relevant surrounding ranges; an unbounded whole-history read invalidates the intended policy test unless targeted retrieval demonstrably failed.
+
+Independently verify decision interpretation and behavior. Record actual agent/model, grep patterns, targeted history ranges, any whole-history read, correctness, child tokens and wall time if readily available. One clean pass is enough; do not create another benchmark framework.
+
+If it passes, stop context experimentation and perform final branch review before deciding whether to merge `harness-v2-implementation` to `main`.
 
 ## Constraints
 
@@ -107,9 +121,9 @@ The installer/config gate and bounded runtime gates are satisfied. Multi-hour en
 
 Before merging `harness-v2-implementation` to `main`:
 
-1. settle the simplified Main-session context policy;
-2. update the relevant workflow references without creating a redundant context subsystem;
-3. perform one final branch review;
+1. run the one search-first parent-history policy smoke;
+2. record the result and any concrete defect;
+3. perform final branch review;
 4. merge only if no new high-severity defect is found.
 
 ## Deferred until evidence requires them
