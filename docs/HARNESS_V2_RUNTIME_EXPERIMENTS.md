@@ -134,9 +134,56 @@ All seven conditions are currently satisfied on the validated Linux/WSL2 + OMP 1
 
 Before merging to `main`, settle the remaining context-policy simplification and perform a final branch review. Endurance/quota optimization can continue after merge.
 
-## Next design question — Main-session context policy
+## Context policy — search-first referenced retrieval
 
-Do not add a parallel context subsystem by default. The next design work should simplify how workers consume Main context, especially replacing default whole-history reads with targeted search/grep and local reads where possible. Durable `.planning/` artifacts should remain a deliberately chosen long-lived project workflow rather than a mandatory mirror of session history.
+The intended division is now:
+
+- `history://Main` is automatic same-session conversation context for delegation; Main does not maintain a second history document;
+- `.planning/` is durable cross-session project state when that workflow is deliberately used;
+- context notes preserve the current Main session across rollover rather than replacing project planning;
+- local tasks do not read Main history;
+- context-dependent workers search the concise parent transcript first and then read only relevant ranges;
+- full parent-transcript reads are fallback behavior, not the default;
+- high-risk or still-ambiguous work receives an explicit contract.
+
+Do not introduce a mandatory decision-capsule/context-curator subsystem unless real usage later justifies it.
+
+## Policy smoke — search-first parent transcript — NEXT
+
+Question: can the same kind of context-dependent coding task succeed when `luna-code` is forbidden from reading the entire `history://Main` transcript and instead must use `grep` plus targeted line-range reads?
+
+Use one real Main session and one worker, not an A/B benchmark. The Main discussion should contain accepted, superseded, rejected and unresolved material plus one repository fact the worker must inspect independently.
+
+Dispatch only:
+
+- objective;
+- fixture path/scope;
+- `history://Main`;
+- a few topic/search hints.
+
+Require the worker to:
+
+1. verify the route;
+2. `grep` the parent transcript for the supplied topics;
+3. read only matching/surrounding ranges;
+4. never issue an unbounded whole-transcript read unless targeted retrieval demonstrably fails;
+5. recover current decisions and inspect the repository;
+6. implement and verify the task.
+
+Record only:
+
+- actual worker/model/fallback status;
+- grep count and patterns;
+- targeted history ranges read;
+- whether any whole-history read occurred;
+- accepted/superseded/rejected/open interpretation score;
+- repository-fact score;
+- independent behavioral verification;
+- child total tokens and wall time if readily available.
+
+Success is one clean pass with no whole-history read and no decision pollution. Compare token traffic only descriptively against the earlier 200,731-token Phase 2 observation because the session and fixture are not controlled enough for a formal cost claim.
+
+If this smoke passes, adopt search-first Referenced retrieval as the normal workflow policy and proceed to final branch review rather than building more context infrastructure.
 
 ## Change discipline
 
