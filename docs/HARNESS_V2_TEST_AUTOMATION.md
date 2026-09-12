@@ -18,6 +18,29 @@ This document is a maintenance plan, not evidence that every proposed script alr
 exists, and the tooling is not a Harness v2 merge gate. Implement the smallest pieces
 that remove repeated manual work.
 
+## Upstream capability boundary
+
+OMP should own OMP format/runtime semantics; omp-kit should own only Harness-specific
+policy, fixture isolation and independent scoring. Local capability probes against the
+installed OMP 18.1.18 environment established:
+
+- `omp stats --json` works and is the authoritative local aggregate for requests,
+  errors, tokens, cache, duration and model/folder summaries;
+- the separate Python `omp-rpc` package is not installed in the current project/runtime
+  environment, so a live RPC runner cannot be assumed available;
+- Bun resolves `@oh-my-pi/pi-coding-agent/session/session-manager` and
+  `session/session-loader`, but importing either from the global package cache currently
+  fails because the matching `pi_natives` addon is absent there;
+- no package, native addon or external runtime dependency was installed merely to make
+  the probe pass.
+
+Decision: keep `inspect_omp_session.py` as a deliberately narrow version-3/linear-session
+fallback for current policy evidence. Do not add branch reconstruction, migrations,
+general corpus statistics or broader OMP compatibility semantics to it. Revisit an
+upstream TypeScript loader only when the installed package can execute cleanly, and
+adopt `omp-rpc` for live smoke orchestration only after its dependency/install contract
+is explicit and reproducible.
+
 ## Automation boundaries
 
 ### Automate fully
@@ -29,9 +52,9 @@ These operations are deterministic and safe to repeat:
 - fixture creation from checked-in pristine sources;
 - checksums proving fixture/oracle sources were not changed;
 - independent fixture scoring;
-- read-only OMP session JSONL parsing;
+- narrow policy-oriented inspection of an explicitly supplied OMP v3 linear child record;
 - model/fallback/tool-call and history-access assertions;
-- token, request-count and session-span aggregation;
+- persisted per-session usage and session-span evidence needed by one audit;
 - coordination/wait audit when an explicit parent session is supplied;
 - tracked-working-tree checks;
 - stable JSON evidence and Markdown rendering.
@@ -192,6 +215,8 @@ session_id
 agent
 model_role
 initial_model
+initial_model_effort
+initial_resolved_model
 model_trajectory
 task_request_model_events
 task_models_seen
@@ -254,6 +279,11 @@ Do not collapse runtime identity to one scalar. Keep ordered task-model evidence
 `session_init`, `model_change`, and assistant requests. Keep auxiliary `model_usage`
 (title/tiny/etc.) separate so those calls cannot change task-model assertions.
 
+OMP may persist an effort suffix in `session_init.resolvedModel` (for example,
+`cpa/gpt-5.6-luna:high`) while assistant request events identify the same model as
+`cpa/gpt-5.6-luna`. Normalize only recognized OMP effort suffixes for task-model
+comparison, preserve the raw resolved value, and report the extracted effort separately.
+
 A strict task-model assertion means every observed task model must equal the expected
 model. A Luna-to-Sol transition must fail an "only Luna" assertion even when neither
 transition is a fallback.
@@ -264,17 +294,19 @@ Do not convert absent metadata into `false`.
 
 #### Usage semantics
 
-Aggregate persisted usage without double-counting:
+Use `omp stats --json` for general installation-wide and corpus-level request/token/cache
+statistics. The fallback auditor aggregates only persisted usage belonging to its one
+explicit linear session so a smoke report can remain self-contained:
 
 - sum conversation assistant usage on the audited branch;
-- include `model_usage` entries for model calls that are stored outside the normal
-  conversation transcript;
+- include `model_usage` entries for model calls stored outside the normal conversation;
 - keep `reasoningTokens` as a reported subset of output, not an extra component added
   to total;
-- prefer persisted `totalTokens` rather than reconstructing a different accounting
-  formula when it is present.
+- prefer persisted `totalTokens` rather than reconstructing a different formula.
 
-Unknown usage fields remain unknown rather than being guessed.
+This narrow aggregation is not a replacement for OMP stats and must not grow into a
+second corpus statistics implementation. Unknown usage fields remain unknown rather
+than being guessed.
 
 #### Timing semantics
 
@@ -476,17 +508,20 @@ coordination behavior are under test.
 
 ## Implementation order
 
-### Stage 1 — deterministic gate and parser
+### Stage 1 — deterministic gate and bounded fallback auditor
 
-1. Add `just verify`.
-2. Add `scripts/inspect_omp_session.py` with audit schema version 1 and linear-session
-   protection.
-3. Add synthetic parser tests, including explicit false-PASS regressions.
-4. Validate locally against retained Phase 2/search-first records without committing
-   those records.
+Implemented:
 
-Stage 1 is merge evidence only after both the synthetic policy tests and real retained
-record audit pass with the stricter evidence rules.
+1. `just verify` provides the deterministic repository gate.
+2. `scripts/inspect_omp_session.py` provides audit schema v1 for explicit OMP v3 linear
+   records and Harness-specific assertions.
+3. Synthetic regressions cover the known false-PASS paths.
+4. The retained SearchFirst record is the real compatibility check, including OMP's
+   effort-suffixed `session_init.resolvedModel` representation.
+
+Stage 1 is intentionally frozen at this boundary. New OMP format/tree/migration/statistics
+requirements should trigger upstream integration research, not automatic Python parser
+expansion.
 
 ### Stage 2 — durable fixture lifecycle
 
@@ -495,18 +530,24 @@ record audit pass with the stricter evidence rules.
 3. Add isolated filesystem tests.
 4. Reproduce the existing scorer result from a fresh run directory.
 
-### Stage 3 — opt-in runtime recipes and supervision evidence
+### Stage 3 — opt-in runtime runner and supervision evidence
 
-Add only thin explicit recipes such as:
+Prefer an `omp-rpc` runner when that official Python package has an explicit reproducible
+dependency path. It can own OMP process lifecycle, timeout/abort, subagent subscription,
+progress and session statistics while omp-kit supplies only the prompt policy, fixture
+scope and scorer.
+
+Until then, keep live dispatch manual and expose only thin preparation/finalization
+recipes such as:
 
 ```text
 runtime-smoke-prepare
 runtime-smoke-finish SESSION=... [PARENT_SESSION=...]
 ```
 
-Do not add a default recipe that launches paid/authenticated model traffic. Accumulate
-request-count/session-span/wait evidence before changing global `task.softRequestBudget`
-or `task.maxRuntimeMs` from their validated defaults/current configuration.
+Do not launch paid/authenticated model traffic from ordinary tests or `just verify`.
+Accumulate request-count/session-span/wait evidence before changing global
+`task.softRequestBudget` or `task.maxRuntimeMs`.
 
 ## Acceptance criteria
 

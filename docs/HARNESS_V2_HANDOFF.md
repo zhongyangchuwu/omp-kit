@@ -127,27 +127,33 @@ OMP 18.1.18 supports bounded `hub wait` timeouts; `timeoutMs: 0` waits indefinit
 
 ## Test automation status
 
-A combined deterministic `just verify` recipe has been added. The remaining automation plan is intentionally staged:
+Stage 1 is now locally validated:
 
-1. implement a trustworthy read-only OMP session auditor with session-tree protection, model/fallback trajectory and usage/history/wait metrics;
-2. separate worker-visible runtime fixtures from hidden independent oracles;
-3. add preparation/finalization helpers that create structured JSON evidence before Markdown reports;
-4. optionally audit an explicitly supplied parent session for bounded-supervision evidence.
+- `just verify` is the deterministic non-provider gate;
+- the bounded Python auditor closes the known policy false-PASS paths;
+- 24 offline auditor regressions pass;
+- the retained SearchFirst child record passes strict causal history, model, thinking and
+  fallback assertions after normalizing OMP's `resolvedModel` effort suffix;
+- general aggregate usage remains owned by `omp stats --json`.
 
-Live provider/model dispatch remains manual and opt-in. No ordinary test or CI recipe should launch paid/authenticated runtime work.
+Upstream capability probes constrain the next architecture step. `omp-rpc` is not
+installed in the current Python environment. The installed OMP package exports its
+SessionManager/loader modules and Bun resolves them, but direct imports currently fail
+because the corresponding `pi_natives` addon is absent from the global Bun cache. No
+dependency or native addon was installed merely to make the probe pass.
+
+Therefore `inspect_omp_session.py` remains a narrow OMP v3 linear-session fallback, not a
+new SessionManager or stats implementation. Do not add branch reconstruction, migrations
+or corpus analytics to it. Live provider/model dispatch remains manual and opt-in until
+an `omp-rpc` dependency path is deliberately adopted.
 
 ## Immediate next action
 
-Before final branch review, implement and locally validate the non-provider Stage 1 automation (`inspect_omp_session.py` plus offline parser tests) and verify the new `just verify` recipe. If that batch is clean, either implement Stage 2 immediately or defer it explicitly; do not expand another live context benchmark.
-
-Then perform final branch review for:
-
-- policy consistency across skills/docs/config;
-- stale experiment language;
-- accidental claims stronger than the evidence;
-- installer/config regressions or drift;
-- references/registry validity;
-- merge readiness of `harness-v2-implementation` against `main`.
+Implement Stage 2 only if more runtime smoke work is needed before merge: check in the
+small worker fixture and physically separate hidden oracle, then add preparation and
+finalization helpers around the bounded policy auditor. Otherwise defer Stage 2 and
+perform final branch review. Do not expand the Python parser to absorb OMP runtime
+semantics and do not start another context benchmark.
 
 ## Constraints
 

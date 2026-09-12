@@ -433,6 +433,46 @@ def test_expect_only_task_model_accepts_repeated_expected_model(tmp_path: Path):
     assert failures == []
 
 
+def test_resolved_model_effort_suffix_preserves_task_model_identity(tmp_path: Path):
+    session = _write(
+        tmp_path / 'model-effort.jsonl',
+        [
+            _header(),
+            _entry(
+                'model_change',
+                'a',
+                None,
+                model='cpa/gpt-5.6-luna',
+                resolvedModelIsFallback=False,
+            ),
+            _entry(
+                'session_init',
+                'bb',
+                'a',
+                agent='luna-code',
+                resolvedModel='cpa/gpt-5.6-luna:high',
+                resolvedModelIsFallback=False,
+            ),
+            _assistant_entry('ccc', 'bb', [{'type': 'text', 'text': 'done'}]),
+        ],
+    )
+
+    result = ios.audit_session(session)
+
+    assert result['initial_model'] == 'cpa/gpt-5.6-luna'
+    assert result['initial_model_effort'] == 'high'
+    assert result['initial_resolved_model'] == 'cpa/gpt-5.6-luna:high'
+    assert result['task_models_seen'] == ['cpa/gpt-5.6-luna']
+    assert result['model_trajectory'][1]['effort'] == 'high'
+    assert ios._policy_failures(
+        result,
+        _policy_args(
+            expect_only_task_model='cpa/gpt-5.6-luna',
+            forbid_fallback=True,
+        ),
+    ) == []
+
+
 def test_forbid_fallback_fails_when_metadata_is_missing(tmp_path: Path):
     session = _write(
         tmp_path / 'missing-fallback.jsonl',

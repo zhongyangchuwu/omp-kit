@@ -7,13 +7,13 @@ smokes. It never discovers sessions implicitly and never invokes OMP/provider tr
 from __future__ import annotations
 
 import argparse
+import json
+import re
+import sys
 from collections import Counter
 from collections.abc import Iterable
 from datetime import datetime
-import json
 from pathlib import Path
-import re
-import sys
 from typing import Any
 
 AUDIT_SCHEMA_VERSION = 1
@@ -41,6 +41,8 @@ BOUNDED_DASH_SELECTOR = re.compile(rf'^(?P<start>{POSITIVE_INT})-(?P<end>{POSITI
 BOUNDED_COUNT_SELECTOR = re.compile(rf'^(?P<start>{POSITIVE_INT})\+(?P<count>{POSITIVE_INT})$')
 OPEN_ENDED_SELECTOR = re.compile(rf'^(?P<start>{POSITIVE_INT})-?$')
 RELATIVE_BOUNDED_SELECTOR = re.compile(rf'^-(?P<count>{POSITIVE_INT})$')
+MODEL_EFFORT_SUFFIXES = {'off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'auto'}
+
 
 
 class AuditError(RuntimeError):
@@ -446,14 +448,23 @@ def _last_result(calls: list[dict[str, Any]], entries: Iterable[dict[str, Any]])
     return None
 
 
-def _model_identity(provider: Any, model: Any) -> str | None:
+def _normalize_omp_model_selector(provider: Any, model: Any) -> str | None:
     if not isinstance(model, str) or not model:
         return None
-    if '/' in model:
-        return model
-    if isinstance(provider, str) and provider:
-        return f'{provider}/{model}'
-    return model
+    identity = model if '/' in model else f'{provider}/{model}' if isinstance(provider, str) and provider else model
+    base, separator, suffix = identity.rpartition(':')
+    if separator and '/' in base and suffix in MODEL_EFFORT_SUFFIXES:
+        return base
+    return identity
+
+
+def _model_effort(model: Any) -> str | None:
+    if not isinstance(model, str):
+        return None
+    base, separator, suffix = model.rpartition(':')
+    if separator and '/' in base and suffix in MODEL_EFFORT_SUFFIXES:
+        return suffix
+    return None
 
 
 def _model_metrics(entries: list[dict[str, Any]]) -> dict[str, Any]:
@@ -465,13 +476,16 @@ def _model_metrics(entries: list[dict[str, Any]]) -> dict[str, Any]:
     for entry_index, entry in enumerate(entries):
         entry_type = entry.get('type')
         if entry_type == 'session_init':
-            model = entry.get('resolvedModel')
-            if isinstance(model, str):
+            raw_model = entry.get('resolvedModel')
+            model = _normalize_omp_model_selector(None, raw_model)
+            if model is not None:
                 fallback_value = entry.get('resolvedModelIsFallback')
                 trajectory.append(
                     {
                         'source': 'session_init',
                         'model': model,
+                        'raw_model': raw_model,
+                        'effort': _model_effort(raw_model),
                         'role': entry.get('modelRole') if isinstance(entry.get('modelRole'), str) else None,
                         'fallback': fallback_value if isinstance(fallback_value, bool) else None,
                         'entry_id': entry.get('id'),
@@ -480,13 +494,16 @@ def _model_metrics(entries: list[dict[str, Any]]) -> dict[str, Any]:
                     }
                 )
         elif entry_type == 'model_change':
-            model = entry.get('model')
-            if isinstance(model, str):
+            raw_model = entry.get('model')
+            model = _normalize_omp_model_selector(None, raw_model)
+            if model is not None:
                 fallback_value = entry.get('resolvedModelIsFallback')
                 trajectory.append(
                     {
                         'source': 'model_change',
                         'model': model,
+                        'raw_model': raw_model,
+                        'effort': _model_effort(raw_model),
                         'role': entry.get('role') if isinstance(entry.get('role'), str) else None,
                         'fallback': fallback_value if isinstance(fallback_value, bool) else None,
                         'entry_id': entry.get('id'),
@@ -499,7 +516,7 @@ def _model_metrics(entries: list[dict[str, Any]]) -> dict[str, Any]:
             if isinstance(level, str) and level not in thinking_levels:
                 thinking_levels.append(level)
         elif entry_type == 'model_usage':
-            model = _model_identity(entry.get('provider'), entry.get('model'))
+            model = _normalize_omp_model_selector(entry.get('provider'), entry.get('model'))
             if model is not None:
                 auxiliary_usage_events.append(
                     {
@@ -515,7 +532,7 @@ def _model_metrics(entries: list[dict[str, Any]]) -> dict[str, Any]:
             message = entry.get('message')
             if not isinstance(message, dict) or message.get('role') != 'assistant':
                 continue
-            model = _model_identity(message.get('provider'), message.get('model'))
+            model = _normalize_omp_model_selector(message.get('provider'), message.get('model'))
             if model is not None:
                 task_request_events.append(
                     {
@@ -603,7 +620,9 @@ def audit_session(
     session_init = next((entry for entry in entries if entry.get('type') == 'session_init'), {})
     agent = session_init.get('agent') if isinstance(session_init.get('agent'), str) else None
     model_role = session_init.get('modelRole') if isinstance(session_init.get('modelRole'), str) else None
-    initial_model = session_init.get('resolvedModel') if isinstance(session_init.get('resolvedModel'), str) else None
+    initial_resolved_model = session_init.get('resolvedModel') if isinstance(session_init.get('resolvedModel'), str) else None
+    initial_model = _normalize_omp_model_selector(None, initial_resolved_model)
+    initial_model_effort = _model_effort(initial_resolved_model)
 
     timestamps: list[str] = []
     for entry in entries:
@@ -637,6 +656,8 @@ def audit_session(
         'agent': agent,
         'model_role': model_role,
         'initial_model': initial_model,
+        'initial_model_effort': initial_model_effort,
+        'initial_resolved_model': initial_resolved_model,
         **model_metrics,
         'first_entry_at': first_entry_at,
         'last_entry_at': last_entry_at,
