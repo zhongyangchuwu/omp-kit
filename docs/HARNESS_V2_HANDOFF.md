@@ -25,7 +25,7 @@ Phase 4: Notes-backed rollover/recovery         PASS
 Policy:  search-first parent retrieval          PASS (correctness/retrieval)
 ```
 
-Read `docs/VALIDATION.md` for evidence/limits and `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` for the completed smoke sequence, context-policy result and merge gate.
+Read `docs/VALIDATION.md` for evidence/limits, `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` for the completed smoke sequence and merge gate, and `docs/HARNESS_V2_TEST_AUTOMATION.md` for the non-blocking reusable validation-tooling plan.
 
 ## Goal
 
