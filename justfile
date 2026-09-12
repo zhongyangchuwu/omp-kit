@@ -1,12 +1,16 @@
 set dotenv-load := false
 
-# Install each ./skills/* directory into ~/.omp/agent/skills.
+# Install the complete tracked OMP harness into ~/.omp/agent without overwriting drift.
 install *args:
-    uv run python scripts/link_skills.py {{args}}
+    uv run python scripts/install_harness.py {{args}}
 
-# Replace stale per-skill symlinks under ~/.omp/agent/skills.
+# Replace differing tracked config after timestamped backups; relink managed symlinks.
 install-force:
-    uv run python scripts/link_skills.py --force --prune
+    uv run python scripts/install_harness.py --force
+
+# Legacy skill-only installer for focused maintenance/debugging.
+install-skills *args:
+    uv run python scripts/link_skills.py {{args}}
 
 # Generate registry.yaml from resource.yaml files.
 build-registry:
@@ -27,7 +31,6 @@ build-index:
 # Scan a path for risky files and command patterns.
 scan-risk path:
     uv run python scripts/scan_risk.py {{path}}
-
 
 # Promote a draft skill into skills/ and update generated registry.yaml.
 promote-skill path *args:

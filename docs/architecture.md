@@ -2,152 +2,128 @@
 
 ## Goal
 
-OMP Kit is the OMP-first workbench for maintained agent skills. It should stay auditable, testable, installable, and easy to simplify.
+OMP Kit is a personal Oh My Pi harness: a versioned, auditable, testable source of truth for runtime configuration, model routing, custom agents, reusable skills, and the automation that installs them.
+
+The repository previously centered on a maintained skill library. Harness v2 keeps that skill lifecycle but places it inside a broader runtime architecture.
 
 ## Operating principles
 
-- `registry.yaml` is the index of record, not a policy database.
-- Active skills live only in `skills/`; drafts live only in `drafts/`.
-- External source material lives in gitignored `references/`; everything else stays out until it is real.
+- Repository state is canonical; `~/.omp/agent/` is deployed runtime state.
+- Secrets never belong in Git. Provider credentials come from environment variables, OMP auth storage, or command-resolved secret references.
 - Detailed constraints live with the resource they govern.
-- Python maintenance scripts provide repository automation.
-- Tests validate registry consistency, script behavior, and active skill safety invariants.
-- Skill design follows `docs/skill-design.md`: one owner domain per skill, concise descriptions for automatic selection, and no duplicated guidance across skills.
+- Runtime policy, model routing, agent behavior, skills, and project facts are separate concerns.
+- Use the smallest capability surface that solves a task reliably.
+- Strong models should spend tokens on high-leverage decisions, not context搬运, repetitive repository exploration, or mechanical edits.
+- Durable artifacts exist to preserve state across sessions/people, not merely because a task is large.
+- Tests validate installation safety, metadata consistency, and maintained resource invariants.
 
 ## Directory layout
 
 ```text
-skills/          Active skills linked into OMP.
+config/          Canonical portable OMP runtime/model configuration.
+agents/          Custom task-agent definitions with role and tool restrictions.
+skills/          Active reusable workflow/reference packs.
 drafts/          In-progress skills before promotion.
 references/      Gitignored upstream source/reference material.
-docs/            Project documentation.
-scripts/         Repository maintenance automation.
+docs/            Durable harness/project design documentation.
+scripts/         Install, registry, validation, promotion, and maintenance automation.
 tests/           Repository-level tests.
-schemas/         Resource metadata schema.
-registry.yaml    Canonical generated resource index.
+schemas/         Skill resource metadata schema.
+registry.yaml    Generated index for maintained skills/drafts.
 justfile         Common maintenance entry points.
 ```
 
-Tracked empty framework directories are intentionally not kept. Create new roots only when a real maintained resource exists.
+## Harness layers
 
-## Resource boundaries
+### Runtime policy
+
+Universal runtime behavior should stay small. `APPEND_SYSTEM.md` is a last-mile patch surface, not the primary architecture store.
+
+Workflow-level orchestration belongs in `omp-workflow` and its references. Task-specific execution discipline belongs in dedicated skills such as `bounded-executor`.
+
+### Model routing
+
+`config/config.yml` maps semantic roles to concrete provider/model selectors.
+
+Current architecture favors:
+
+```text
+Sol = control plane
+Luna = workforce
+```
+
+Terra remains available as a fallback/experimental niche rather than requiring a permanent default role.
+
+### Custom agents
+
+`agents/` defines task shapes with intentionally narrow tool surfaces. Model identity should normally be indirect through role aliases such as `@fast_worker`, `@good_worker`, or `@review`.
+
+The initial workers are:
+
+```text
+luna-code   routine scoped implementation
+luna-deep   difficult bounded implementation/debugging
+luna-doc    documentation/config synthesis from accepted context
+sol-review  selective high-risk review
+```
 
 ### Skills
 
-Skills are model-readable workflow and reference packs:
+Skills remain model-readable procedures and reference packs. Each skill owns one stable concern and uses progressive disclosure rather than becoming a catch-all system prompt.
 
-```text
-skills/<name>/SKILL.md
-```
+`resource.yaml` remains the source of truth for maintained skill metadata; `registry.yaml` remains generated.
 
-Use skills for activation guidance, task workflows, decision rules, tool selection, safety notes, and references. Current-project facts belong in `docs/`; reusable skill instructions belong in the owning skill.
+### Context
 
-### Drafts
+The director should communicate immediate intent and boundaries. Workers should retrieve repository facts and, when needed, parent discussion themselves.
 
-Drafts are reviewed but inactive skill work:
+Parent transcript retrieval is pull-based rather than automatically inherited. `omp-workflow/references/subagent-context.md` defines Direct, Referenced, and Explicit-contract context transfer.
 
-```text
-drafts/<name>/SKILL.md
-drafts/<name>/resource.yaml
-```
+Main sessions may use OMP's notes-backed context windows; restricted workers can retain simpler context maintenance.
 
-Drafts appear in `registry.yaml` under `drafts:` and are never linked into OMP by the install script.
+### Observability
 
-### References
+Harness decisions should be evaluated from real workloads: completed tasks, retries, escalations, wall time, human interventions, token/cache use, duplicate exploration, and review findings. Model benchmarks inform routing but do not replace measured harness behavior.
 
-External material is kept under gitignored `references/` while it is being studied or mined for ideas. Durable work moves through:
+## Installation model
 
-```text
-references/ -> review/extract -> drafts/<name> -> skills/<name> -> registry.yaml
-```
+`scripts/install_harness.py` deploys the canonical repository state into an OMP agent root.
 
-Do not treat upstream references as design authority. `resource.yaml` records provenance; local skills may deliberately diverge after review.
+- skills are linked individually;
+- agents are linked individually;
+- `config.yml` and `models.yml` are copied rather than symlinked because OMP may write runtime configuration;
+- differing runtime config is treated as drift and is not overwritten without `--force`;
+- forced replacement creates a timestamped backup first;
+- unmanaged real skill/agent files are never replaced by force.
 
-## Registry model
+This makes the repository the source of truth while preserving a recoverable runtime boundary.
 
-Resource-local `resource.yaml` files are the source of truth for detailed metadata. Top-level `registry.yaml` is a committed generated index produced by `scripts/build_registry.py`.
+## Configuration boundary
 
-`resource.yaml` answers detailed questions:
+`config/config.yml` contains portable OMP settings and model-role routing.
 
-- Where did this skill or draft come from?
-- Why does it have this risk level?
-- How does it activate?
-- How is it verified?
-- What upstream references informed it?
+`config/models.yml` contains portable provider/model metadata. It may reference secret environment variables through OMP's command-resolved secret syntax, but must never contain the secret value itself.
 
-`registry.yaml` answers only fast-index questions:
+Machine-specific or sensitive state should remain outside the repository unless a real multi-machine requirement justifies a separate explicit override mechanism.
 
-- What skill or draft exists?
-- Where is it?
-- What status is it in?
-- What risk class is it?
+## Skill resource model
 
-Generated registry entry shape:
+Resource-local `resource.yaml` files answer detailed provenance/risk/activation/verification questions. Top-level `registry.yaml` answers only fast index questions.
 
-```yaml
-# Generated by scripts/build_registry.py. Do not edit manually.
+Active skills live under `skills/<name>/`; drafts live under `drafts/<name>/`; external source material remains under gitignored `references/` until reviewed and extracted.
 
-skills:
-  name:
-    status: active
-    risk: low
-    path: skills/name
-```
+## Workflow boundary
 
-Allowed top-level resource groups:
+`omp-workflow` coordinates who works, how workstreams persist, when to escalate, and how context is transferred.
 
-```text
-skills
-drafts
-```
+`bounded-executor` governs how an implementation worker executes, repairs, verifies, and stops.
 
-Generated entries contain only:
+`omp-review` and specialized review agents govern review behavior.
 
-```text
-path
-status
-risk
-```
-
-Detailed policy belongs in `resource.yaml` and resource-local files:
-
-- active skill behavior: `SKILL.md`, references, and `resource.yaml`;
-- draft review details: `drafts/<name>/resource.yaml` and resource-local notes.
-
-## Maintenance scripts
-
-```text
-scripts/link_skills.py        Links each ./skills/* directory into ~/.omp/agent/skills/.
-scripts/resource_metadata.py  Loads, validates, and converts resource.yaml files.
-scripts/build_registry.py     Generates or checks registry.yaml from resource.yaml files.
-scripts/validate_registry.py  Validates generated registry shape and drift.
-scripts/build_index.py        Prints a compact index from registry.yaml.
-scripts/scan_risk.py          Scans a directory for review-worthy risk indicators.
-scripts/promote_skill.py      Safely copies reviewed draft skills into skills/.
-```
-
-Promotion scripts are intentionally local-path only; they do not download network sources or overwrite existing resource directories.
-
-## Testing strategy
-
-Repository tests cover:
-
-- resource metadata YAML parseability;
-- generated registry YAML parseability;
-- allowed registry groups and resource kinds;
-- required resource metadata fields;
-- resource path and name consistency;
-- generated `registry.yaml` matching `resource.yaml` files;
-- active skill frontmatter name matching;
-- draft entries staying out of active `skills/`;
-- active skill safety invariants;
-- maintenance script behavior;
-- safe skill-linking behavior.
-
-`just test` is the fast gate for repository changes.
+Project-specific facts remain in project docs/rules rather than reusable global skills.
 
 ## Future upgrade path
 
-Future OMP extensions, deterministic tools, MCP servers, and packages are roadmap items, not tracked roots. Add a root only when there is a real maintained artifact and a testable install workflow for it.
+Potential future additions include stronger context-curator agents, more role-specific workers, observability tooling, MCP/tool packages, and minimal-harness support upstream in OMP. Add these only when a real maintained artifact and measurable use case exist.
 
-The long-term target is a tested local OMP skill kit rather than a loose collection of prompts and scripts.
+The target is not maximum framework complexity. It is a small, inspectable harness that completes more reliable work with less human attention and less expensive-model usage.

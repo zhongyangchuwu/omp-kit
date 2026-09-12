@@ -1,0 +1,50 @@
+providers:
+  cpa:
+    # CLIProxyAPI default local Codex-compatible endpoint. Override this tracked
+    # file if the deployment intentionally uses a different host/port.
+    baseUrl: http://127.0.0.1:8317/backend-api
+    apiKey: "!printenv CLIPROXYAPI_API_KEY"
+    api: openai-codex-responses
+    authHeader: true
+    auth: apiKey
+    models:
+      - id: gpt-5.6-luna
+        name: GPT-5.6 Luna (CPA)
+        api: openai-codex-responses
+        reasoning: true
+        thinking:
+          mode: effort
+          efforts: [low, medium, high, xhigh, max]
+          defaultLevel: medium
+        input: [text, image]
+        contextWindow: 1000000
+        maxTokens: 128000
+        preferWebsockets: false
+
+      - id: gpt-5.6-terra
+        name: GPT-5.6 Terra (CPA)
+        api: openai-codex-responses
+        reasoning: true
+        thinking:
+          mode: effort
+          efforts: [low, medium, high, xhigh, max]
+          defaultLevel: medium
+        input: [text, image]
+        contextWindow: 1000000
+        maxTokens: 128000
+        preferWebsockets: false
+        compactionModel: cpa/gpt-5.6-luna
+
+      - id: gpt-5.6-sol
+        name: GPT-5.6 Sol (CPA)
+        api: openai-codex-responses
+        reasoning: true
+        thinking:
+          mode: effort
+          efforts: [low, medium, high, xhigh, max]
+          defaultLevel: medium
+        input: [text, image]
+        contextWindow: 1000000
+        maxTokens: 128000
+        preferWebsockets: false
+        compactionModel: cpa/gpt-5.6-luna

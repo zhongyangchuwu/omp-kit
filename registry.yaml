@@ -5,6 +5,10 @@ skills:
     status: active
     risk: high
     path: skills/autodl
+  bounded-executor:
+    status: active
+    risk: low
+    path: skills/bounded-executor
   code-taste:
     status: active
     risk: low
