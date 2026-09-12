@@ -33,6 +33,47 @@ When blocked, wait for completion through supported blocking or async delivery.
 Avoid short repeated polling and needless supervisor wakeups. If built-in Vibe is
 being used instead, load `vibe-compat.md`; `vibe_wait` rules are not generic hub APIs.
 
+## Time budget and supervision
+
+A delegated task should have a rough **first-checkpoint window** chosen from its shape,
+not an exact completion promise. Use a simple bucket rather than false precision:
+
+- **quick** — local edit/doc/config or one narrow check: about 2 minutes;
+- **standard** — scoped implementation plus targeted tests: about 5 minutes;
+- **deep** — cross-file debugging/refactor or several dependent checks: about 10 minutes.
+
+Known slow builds, installs or external services may justify a longer window based on
+observed baselines. The estimate is for supervisor cadence only; it is not a requirement
+for the worker to sacrifice correctness or skip verification.
+
+When the live `hub` schema exposes a timeout, prefer one bounded wait that roughly
+matches the checkpoint window. Never use an indefinite wait (`timeoutMs: 0`) merely to
+watch a worker finish. A wait timeout is a checkpoint, not a failure.
+
+On the **first material overrun**:
+
+1. inspect supported job/agent status (`hub jobs` / `hub list` or the equivalent live
+   schema) rather than repeatedly polling every few seconds;
+2. if the worker is still running without a delivered result, send one concise checkpoint
+   request asking for progress, current blocker, next action and whether director help is
+   needed;
+3. if there is concrete new progress, grant one new bounded window appropriate to the
+   remaining work.
+
+Do not inspect another live agent by scraping its session file or repeatedly reading its
+history just to infer whether it is busy; use coordination/status surfaces and ask the
+worker directly. History remains useful for completed evidence and context retrieval.
+
+On a **second comparable overrun**, or sooner when the checkpoint reports stagnation:
+ask the worker to yield partial findings, clarify/split/escalate the task, or cancel the
+specific background job if continued execution has no justified next step. Do not keep
+extending the same blocked approach. Cancellation is an intervention tool, not an
+ordinary completion path; preserve the worker's available evidence before replacing it.
+
+These checkpoint windows complement, rather than replace, OMP runtime guards such as
+soft request budgets or hard runtime limits. Do not lower global guards from one slow
+experiment; collect real request/session-span evidence first.
+
 ## Escalation and verification
 
 Follow the worker's bounded repair budget. Two materially different failed attempts
