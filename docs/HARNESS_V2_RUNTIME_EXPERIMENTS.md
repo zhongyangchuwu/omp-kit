@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Installer/config portability is locally validated on the current Linux/WSL2 machine. The bounded runtime architecture gates are now also complete: restricted `luna-code` viability, one real `history://Main` pull without decision pollution, same-session persistent continuation, and Notes-backed rollover/recovery have all passed.
+Installer/config portability is locally validated on the current Linux/WSL2 machine. The bounded runtime architecture gates are now also complete: restricted `luna-code` viability, one real `history://Main` pull without decision pollution, same-session persistent continuation, Notes-backed rollover/recovery, and one search-first parent-history policy smoke have all passed.
 
 Do not continue expanding synthetic smoke tests without a concrete unresolved architectural question. Multi-hour endurance/quota measurement can continue later during real work and is not a merge blocker.
 
@@ -112,6 +112,60 @@ Phase 3  persistent same-session continuation   PASS
 Phase 4  Notes-backed rollover/recovery         PASS
 ```
 
+## Context policy — search-first referenced retrieval
+
+The intended division is:
+
+- `history://Main` is automatic same-session conversation context for delegation; Main does not maintain a second history document;
+- `.planning/` is durable cross-session project state when that workflow is deliberately used;
+- context notes preserve the current Main session across rollover rather than replacing project planning;
+- local tasks do not read Main history;
+- context-dependent workers search the concise parent transcript first and then read only relevant passages;
+- high-risk or still-ambiguous work receives an explicit contract.
+
+Search-first is a relevance policy, not a promise of lower provider-token traffic. Minimize both transcript coverage and retrieval round trips; do not mechanically tile most of a transcript with adjacent bounded reads merely to avoid one broad read.
+
+Do not introduce a mandatory decision-capsule/context-curator subsystem unless real usage later justifies it.
+
+## Policy smoke — search-first parent transcript — COMPLETE
+
+Question: can a context-dependent coding task succeed when `luna-code` must search `history://Main` first and use bounded line-range reads rather than an unbounded whole-transcript read?
+
+One real Main / one-worker smoke passed. The worker received only the objective, fresh fixture path, `history://Main`, topic/search hints, and verification target. It did not receive a rewritten final requirements list or tracked omp-kit documentation containing the answer.
+
+Observed retrieval:
+
+- actual agent: `luna-code`;
+- model: `cpa/gpt-5.6-luna`, thinking level `high`;
+- fallback: false;
+- 3 `grep` calls against `history://Main`;
+- 5 bounded line-range reads;
+- no unbounded `read history://Main`;
+- successful ranges covered lines 5-188 in several chunks, apart from small gaps; one final range beyond line 188 returned no history content.
+
+Independent scoring:
+
+```text
+accepted_correct: 3/3
+superseded_incorrect: 0
+rejected_tentative_incorrect: 0
+unresolved_incorrect: 0
+repository_facts_correct: 1/1
+behavioral_pass: true
+```
+
+The worker focused test and independent reruns passed, and the tracked omp-kit tree stayed clean.
+
+Observed child usage was 642,661 total tokens, including 570,880 cache-read tokens, with about 1m42s wall time. This is descriptively higher than the earlier Phase 2 whole-history smoke (200,731 total child tokens), but the Main transcript/runtime state differed and the comparison is not controlled.
+
+### Interpretation
+
+The policy smoke establishes the important architecture claim: a worker can search the parent's automatic transcript, recover current decisions, and implement correctly without Main rewriting a detailed brief or issuing an unbounded history read.
+
+It does **not** establish that search-first automatically reduces context volume or quota use. In this run the bounded reads collectively covered most of the 188-line transcript, so the test was retrieval-policy compliant but not strongly selective. The high cache-read total is a warning that additional grep/read/model turns can outweigh smaller individual payloads; do not attribute causality or quota behavior from this one run.
+
+Decision: keep search-first as the normal Referenced workflow because it provides selective retrieval when useful, but make the policy adaptive. Prefer one coherent bounded span when matches are dense; allow a broader/full concise transcript read as fallback when most of a short transcript is genuinely relevant. Do not build more context infrastructure from this result.
+
 ## Phase 5 — Real-work endurance — DEFERRED
 
 Measure multi-hour real work only when useful operational data accumulates. Track active wall time before account-limit/recovery events, completed accepted workstreams, Luna/Sol request and token share, cache-read rate, retries/escalations, worker reuse, human interventions and escaped review findings.
@@ -130,60 +184,11 @@ The bounded runtime gate is satisfied when:
 6. Phase 4 Notes-backed rollover/recovery succeeds or Notes-backed context is deliberately disabled;
 7. no unresolved high-severity runtime defect remains.
 
-All seven conditions are currently satisfied on the validated Linux/WSL2 + OMP 18.1.18 path. The `context_notes` schema/documentation mismatch is a known non-blocking runtime tooling defect, not a failure of the rollover/recovery path.
+All seven conditions are currently satisfied on the validated Linux/WSL2 + OMP 18.1.18 path. The search-first policy smoke is also complete. The `context_notes` schema/documentation mismatch is a known non-blocking runtime tooling defect, not a failure of the rollover/recovery path.
 
-Before merging to `main`, settle the remaining context-policy simplification and perform a final branch review. Endurance/quota optimization can continue after merge.
+## Next step — final branch review
 
-## Context policy — search-first referenced retrieval
-
-The intended division is now:
-
-- `history://Main` is automatic same-session conversation context for delegation; Main does not maintain a second history document;
-- `.planning/` is durable cross-session project state when that workflow is deliberately used;
-- context notes preserve the current Main session across rollover rather than replacing project planning;
-- local tasks do not read Main history;
-- context-dependent workers search the concise parent transcript first and then read only relevant ranges;
-- full parent-transcript reads are fallback behavior, not the default;
-- high-risk or still-ambiguous work receives an explicit contract.
-
-Do not introduce a mandatory decision-capsule/context-curator subsystem unless real usage later justifies it.
-
-## Policy smoke — search-first parent transcript — NEXT
-
-Question: can the same kind of context-dependent coding task succeed when `luna-code` is forbidden from reading the entire `history://Main` transcript and instead must use `grep` plus targeted line-range reads?
-
-Use one real Main session and one worker, not an A/B benchmark. The Main discussion should contain accepted, superseded, rejected and unresolved material plus one repository fact the worker must inspect independently.
-
-Dispatch only:
-
-- objective;
-- fixture path/scope;
-- `history://Main`;
-- a few topic/search hints.
-
-Require the worker to:
-
-1. verify the route;
-2. `grep` the parent transcript for the supplied topics;
-3. read only matching/surrounding ranges;
-4. never issue an unbounded whole-transcript read unless targeted retrieval demonstrably fails;
-5. recover current decisions and inspect the repository;
-6. implement and verify the task.
-
-Record only:
-
-- actual worker/model/fallback status;
-- grep count and patterns;
-- targeted history ranges read;
-- whether any whole-history read occurred;
-- accepted/superseded/rejected/open interpretation score;
-- repository-fact score;
-- independent behavioral verification;
-- child total tokens and wall time if readily available.
-
-Success is one clean pass with no whole-history read and no decision pollution. Compare token traffic only descriptively against the earlier 200,731-token Phase 2 observation because the session and fixture are not controlled enough for a formal cost claim.
-
-If this smoke passes, adopt search-first Referenced retrieval as the normal workflow policy and proceed to final branch review rather than building more context infrastructure.
+Stop context smoke expansion. Perform a final review of `harness-v2-implementation` for policy consistency, stale documentation, accidental overclaiming, installer/config regressions, and merge readiness. Endurance/quota optimization can continue after merge.
 
 ## Change discipline
 
