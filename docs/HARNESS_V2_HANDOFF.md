@@ -25,7 +25,7 @@ Phase 4: Notes-backed rollover/recovery         PASS
 Policy:  search-first parent retrieval          PASS (correctness/retrieval)
 ```
 
-Read `docs/VALIDATION.md` for evidence/limits, `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` for the completed smoke sequence and merge gate, and `docs/HARNESS_V2_TEST_AUTOMATION.md` for the non-blocking reusable validation-tooling plan.
+Read `docs/VALIDATION.md` for evidence/limits, `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` for the completed smoke sequence and merge gate, and `docs/HARNESS_V2_TEST_AUTOMATION.md` for the reusable validation-tooling and supervision-audit plan.
 
 ## Goal
 
@@ -48,8 +48,8 @@ Earlier chat snippets and historical reports are design evidence, not current in
 - Canonical user-derived config/models using CPA `/v1`, `openai-responses`, and `CPA_API_KEY`.
 - Sol control-plane / Luna workforce role mapping.
 - Four role-backed restricted workers, including `luna-code` and `luna-deep`.
-- `bounded-executor` for scope/repair/stop discipline.
-- `omp-workflow` delegation and subagent-context policy.
+- `bounded-executor` for scope/repair/stop discipline, now including stagnation/time signals.
+- `omp-workflow` delegation, bounded supervision and subagent-context policy.
 - Portable copy installer with dry-run, drift detection, backups, rollback, profiles, local overlays and offline doctor.
 - Native OMP root/profile handling aligned with current OMP path/profile semantics.
 - Notes-backed context enabled in the canonical default configuration, with legacy-context overlay available.
@@ -115,11 +115,32 @@ The important limitation is that the successful bounded ranges collectively cove
 
 Policy refinement: minimize both transcript coverage and retrieval round trips. If relevant matches are dense, prefer one coherent bounded span instead of mechanically tiling most of the transcript. A broader/full concise transcript read remains a fallback when most of a short transcript is genuinely relevant.
 
+## Bounded supervision policy
+
+The prior timeout-heavy synthetic experiment exposed a separate orchestration failure mode: a director can waste substantial wall time merely waiting, while a worker can waste requests repeating a blocker.
+
+The active policy now uses rough first-checkpoint windows (quick/standard/deep), bounded coordination waits, one checkpoint intervention on a material overrun, and escalation/yield/cancellation rather than repeatedly extending the same blocked approach. Workers stop after two materially different failed repairs on one unresolved blocker and also escalate when repeated timeouts or missing capabilities produce no new evidence.
+
+This is policy, not a new fixed global timeout. Do not change `task.softRequestBudget` or add a hard `task.maxRuntimeMs` solely from one slow run. The automation plan now records session spans, request counts and optional parent wait/intervention evidence so future guard tuning can be empirical.
+
+OMP 18.1.18 supports bounded `hub wait` timeouts; `timeoutMs: 0` waits indefinitely. The workflow must not use an indefinite wait merely to supervise a worker.
+
+## Test automation status
+
+A combined deterministic `just verify` recipe has been added. The remaining automation plan is intentionally staged:
+
+1. implement a trustworthy read-only OMP session auditor with session-tree protection, model/fallback trajectory and usage/history/wait metrics;
+2. separate worker-visible runtime fixtures from hidden independent oracles;
+3. add preparation/finalization helpers that create structured JSON evidence before Markdown reports;
+4. optionally audit an explicitly supplied parent session for bounded-supervision evidence.
+
+Live provider/model dispatch remains manual and opt-in. No ordinary test or CI recipe should launch paid/authenticated runtime work.
+
 ## Immediate next action
 
-Stop context smoke expansion. Perform the final branch review.
+Before final branch review, implement and locally validate the non-provider Stage 1 automation (`inspect_omp_session.py` plus offline parser tests) and verify the new `just verify` recipe. If that batch is clean, either implement Stage 2 immediately or defer it explicitly; do not expand another live context benchmark.
 
-Review for:
+Then perform final branch review for:
 
 - policy consistency across skills/docs/config;
 - stale experiment language;
@@ -127,8 +148,6 @@ Review for:
 - installer/config regressions or drift;
 - references/registry validity;
 - merge readiness of `harness-v2-implementation` against `main`.
-
-Do not start another context benchmark merely to optimize token counts. Real-work endurance/quota measurement can continue after merge.
 
 ## Constraints
 
@@ -146,10 +165,11 @@ The installer/config gate, bounded runtime gates and search-first policy smoke a
 
 Before merging `harness-v2-implementation` to `main`:
 
-1. perform final branch review;
-2. fix only concrete inconsistencies/defects found by that review;
-3. merge only if no new high-severity defect is found.
+1. validate the small offline automation batch and bounded-supervision policy text;
+2. perform final branch review;
+3. fix only concrete inconsistencies/defects found by that review;
+4. merge only if no new high-severity defect is found.
 
 ## Deferred until evidence requires them
 
-No OMP fork, custom scheduler, raw cross-agent full-history API, automated context curator, pricing service, replacement minimal system prompt, complex experiment framework or mandatory decision-capsule subsystem. Add one only when an observed failure or repeated manual cost justifies it.
+No OMP fork, custom scheduler, raw cross-agent full-history API, automated context curator, pricing service, replacement minimal system prompt, complex experiment framework, automatic cancellation solely by elapsed time, or mandatory decision-capsule subsystem. Add one only when an observed failure or repeated manual cost justifies it.
