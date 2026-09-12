@@ -44,12 +44,19 @@ For a Referenced task:
    separate history index or special anchor database.
 3. Read only the matching ranges plus enough surrounding turns to detect whether an
    apparent decision was superseded, rejected, tentative or left open.
-4. Broaden the search only when the targeted passages are insufficient. Do not read an
-   entire long parent transcript by default.
+4. Minimize both transcript coverage and retrieval round trips. If relevant matches are
+   dense, prefer one coherent bounded range over mechanically tiling most of the
+   transcript with adjacent reads. A broader/full concise transcript read remains a
+   fallback when most of a short transcript is genuinely relevant; it is not the
+   default for a long parent session.
 5. Inspect the repository independently for implementation facts. Conversation claims
    do not override observable code/test state.
 6. If the current requirement is still materially ambiguous, stop and ask the director
    for an explicit contract rather than guessing.
+
+Search-first retrieval is primarily a relevance and delegation policy. It does not by
+itself guarantee fewer provider tokens: extra grep/read/model turns can outweigh a
+smaller per-read payload. Measure real work before making quota or cost claims.
 
 A deliberate `.planning/` workflow changes the default source of durable project
 state: read the relevant planning artifact for cross-session decisions, and use parent
