@@ -135,7 +135,10 @@ The [guide](docs/HARNESS_V2_GUIDE.md) describes current policy, the
 [runtime experiment plan](docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md) defines the next
 measurement phase, and [validation](docs/VALIDATION.md) records what has actually
 been tested. The [handoff](docs/HARNESS_V2_HANDOFF.md) is the current continuation
-entry point for another agent.
+entry point for another agent. Future OMP-native development, Bun/TypeScript adoption
+and upstream-reuse rules are recorded in the [capability roadmap](docs/omp-roadmap.md);
+the [test automation plan](docs/HARNESS_V2_TEST_AUTOMATION.md) keeps the current
+fallback-auditor boundary and deferred runtime-test infrastructure work.
 
 ## Maintenance
 
