@@ -1,6 +1,6 @@
 # Validation record
 
-Date: 2026-09-12
+Date: 2026-09-13
 
 ## Current branch validation
 
@@ -24,24 +24,13 @@ Current regression evidence:
 - `just validate-registry`: passed.
 - `git diff --check`: passed.
 
-This validates the second-round installer corrections for:
-
-- `PI_CONFIG_DIR` native-root derivation;
-- OMP profile grammar;
-- the `default` profile sentinel;
-- `OMP_PROFILE` / `PI_PROFILE` precedence;
-- explicit root/profile selection when an active profile is present;
-- historical validation-report wording and regression coverage.
-
-No local test failure or working-tree residue was reported at this head.
+This validates the second-round installer corrections for `PI_CONFIG_DIR`, native OMP profile semantics, the `default` sentinel, active profile precedence/override behavior, historical-report wording, and regression coverage.
 
 ## Runtime Phase 1 — bundled sonic vs custom luna-code
 
 Phase 1 ran on omp-kit commit `eebeb1ac1b992cf754930cf50b1a29c547867187` with OMP 18.1.18 inside the same native profile (`harness-v2-test`). The parent was `cpa/gpt-5.6-sol:medium`; both worker arms resolved through `@fast_worker` to `cpa/gpt-5.6-luna:high`.
 
-Protocol: five deterministic Python coding fixtures, alternating arm order, pristine copies per arm, explicit direct task-agent selection, and independent `python -m unittest discover -v` verification after every run. No Vibe mode, fallback, tracked-file modification, or parent steering occurred.
-
-Observed result:
+Five deterministic Python fixtures were run in alternating A/B order with pristine copies and independent verification after every run.
 
 | Metric | bundled `sonic` | custom `luna-code` |
 | --- | ---: | ---: |
@@ -58,17 +47,13 @@ Observed result:
 | Total observed tool calls | 54 | 44 |
 | `read` calls | 31 | 19 |
 
-Descriptively, `luna-code` used **28.4% fewer total tokens**, **11.9% less aggregate wall time**, **37.5% fewer enabled tool entries**, and a **35.7% shorter session-init system prompt**. Total-token reduction appeared in all five paired tasks. The aggregate token reduction was driven mainly by cache-read tokens (**37.4% lower**); uncached/input tokens were effectively flat (**0.6% higher**). Therefore this experiment does **not** establish an equivalent reduction in ChatGPT Business quota consumption.
-
-The child runtime evidence confirms that tool restriction is real, but the custom agent still receives a substantial OMP child harness. This is evidence for a narrower worker action/prompt surface, not for a minimal provider-facing system prompt.
-
-Decision: **keep `luna-code` unchanged**. It matched `sonic` on independent correctness in this sample while showing lower descriptive total-token/tool/wall-time activity. The sample is small and homogeneous, so no broader reliability or cost claim is made.
+Decision: **keep `luna-code` unchanged**. It matched `sonic` on independent correctness in this sample while showing lower descriptive total-token/tool/wall-time activity. The token reduction was dominated by cache-read tokens, so it is not a direct Business-quota claim.
 
 ## Runtime Phase 2 — real history://Main smoke
 
-The initial synthetic-parent approach was abandoned as invalid experimental scaffolding. Unbounded/long `hub wait` measured coordination waiting rather than model inference, and successful message delivery was not treated as proof that every intended steering turn had reached durable history. The valid test used the actual Main session directly.
+The initial synthetic-parent approach was discarded because long `hub wait` intervals measured coordination waiting rather than model inference and did not cleanly guarantee durable transcript state.
 
-Topology:
+The valid topology was:
 
 ```text
 real Main session
@@ -77,25 +62,17 @@ real Main session
 -> independent scorer
 ```
 
-Preflight established:
+The worker received only the objective, temporary fixture path, and `history://Main`; it did not receive a rewritten final requirements brief.
 
-- `history://Main` existed and was readable;
-- the transcript visibly contained accepted, superseded, rejected, and unresolved material;
-- the child was actually `luna-code`;
-- model was `cpa/gpt-5.6-luna`, thinking level `high`;
-- `resolvedModelIsFallback: false`;
-- the preflight child read `history://Main` once.
-
-The implementation worker received only the objective, temporary fixture path, and `history://Main`; it did not receive a rewritten final requirements brief.
-
-Observed worker evidence:
+Observed child evidence:
 
 - actual agent: `luna-code`;
+- model: `cpa/gpt-5.6-luna`, thinking level `high`;
+- `resolvedModelIsFallback: false`;
 - history reads: 1;
 - wall time: about 85 seconds;
 - total child tokens: 200,731;
-- modifications were confined to the temporary fixture;
-- tracked omp-kit working tree was unchanged;
+- edits confined to the temporary fixture;
 - focused worker test: 3 passed.
 
 Independent scorer:
@@ -109,26 +86,72 @@ repository_facts_correct: 1/1
 behavioral_pass: true
 ```
 
-This is one successful context-interpretation smoke, not a reliability benchmark. It supports the architectural claim that a `luna-code` worker can, at least once, recover current accepted decisions from a real long `history://Main` transcript while excluding superseded/rejected/open material and grounding a repository fact independently.
+This satisfies the one-shot parent-history merge gate. It does not establish repeated reliability or quota efficiency. The 200,731-token child total is a practical signal that reading a long Main transcript can be context-heavy.
 
-The 200,731-token child total is not interpreted as a Business-quota measurement, but it is a practical signal that a long Main transcript can be context-heavy. A compact materialized decision view/capsule remains a possible future optimization if repeated real work shows history reconstruction to be a material latency/quota cost. It is not required by current correctness evidence.
+## Runtime Phase 3 — persistent same-session continuation
 
-Decision: the current merge gate requiring **one parent-history pull without decision pollution is satisfied**. Do not spend additional benchmark time on Phase 2 before testing the next lifecycle layer.
+**PASS.** One `luna-code` worker handled three related tasks in one session across two direct-message wakeups.
 
-## Earlier runtime evidence
+Observed evidence:
 
-Before the final path/profile correction, the same machine established the following runtime behavior on the Harness v2 implementation line:
+- agent: `luna-code`;
+- model: `cpa/gpt-5.6-luna`, thinking level `high`;
+- `resolvedModelIsFallback: false`;
+- one session id handled Task 1, Task 2 and Task 3;
+- status after each task was `idle`;
+- the two direct follow-ups reported `woken`;
+- no silent respawn, fallback, extra worker, or unbounded `hub wait` occurred;
+- Task 2 reused the helper created in Task 1;
+- Task 3 correctly applied a new decision that superseded the earlier separator choice;
+- final independent verification passed with 3 tests;
+- total child tokens: 255,433;
+- end-to-end session wall time: about 3m24s;
+- tracked omp-kit working tree remained clean.
 
-- AutoDL skill-local suite: **60 passed**.
-- Skill Authoring suite: **6 passed**.
-- Installer dry-run, isolated copy install, idempotent reinstall, headless overlay, rollback, and doctor checks: passed.
-- `omp models cpa`: Astra, Sol, Terra and Luna recognized.
-- Non-interactive CPA/Luna request: passed with the expected sentinel response.
-- Native profile install at `~/.omp/profiles/harness-v2-test/agent`: passed.
-- Native profile custom `luna-code` task delegation and parent verification: passed.
-- An earlier two-arm coding experiment completed functionally but was invalid for worker-harness conclusions because the treatment used an arbitrary `PI_CODING_AGENT_DIR` path that did not expose custom task agents.
+One bounded edit-placement error in Task 1 was repaired by the worker after rereading the file and did not indicate a lifecycle or stale-context failure.
 
-The historical raw record is `docs/HARNESS_V2_LOCAL_TEST_REPORT.md`. Its older test counts describe the commit tested at that time and are retained for auditability.
+Important wording: this run proves **persistent same-session continuation and idle -> woken wakeup**. It did not separately prove a `parked -> revived` transition, and that stronger lifecycle claim is not required by the current merge gate.
+
+## Runtime Phase 4 — Notes-backed rollover/recovery
+
+**PASS, with one tooling anomaly recorded.** The Main session formed an explicit decision, persisted it in context notes, entered a new context window, recovered the decision from the automatically supplied notes-backed context, recovered exact pre-rollover evidence through `history://current/full`, and completed a decision-dependent task correctly.
+
+Pre-rollover accepted state:
+
+- implement `render_notice(label)`;
+- trim surrounding whitespace;
+- preserve original case;
+- return exactly `NOTICE | <label>`;
+- supersede the older `NOTE: <label>` behavior;
+- leave empty-label validation unresolved.
+
+Recovery evidence:
+
+- `new_context` successfully entered a fresh context window;
+- the new window automatically received accepted, superseded and open state from notes;
+- targeted search of `history://current/full` found marker `PHASE4-EVIDENCE-7C91-NOTICE-PIPE` at line 30138;
+- lines 30131-30138 recovered the exact pre-rollover decision text;
+- the resulting implementation was `return f"NOTICE | {label.strip()}"`;
+- `python -m unittest -v test_notice.py`: 2 tests passed;
+- direct behavior checks confirmed trimming, mixed-case preservation, exact prefix, absence of stale `NOTE:`, and no invented empty-label validation;
+- tracked omp-kit working tree remained clean.
+
+### Known runtime tooling defect: context_notes schema/documentation mismatch
+
+The exposed `context_notes` schema requires `text`, while its documentation says omitting `text` reads the notebook. Passing an empty string clears the notebook. The issue was submitted through `xd://report_issue`; the notebook was restored afterward.
+
+This defect did **not** invalidate the rollover gate because the post-rollover decision was already present in automatically injected notes-backed context and exact evidence remained recoverable from full history. Treat the empty-string behavior as a known non-blocking tooling defect and avoid using an empty-string call as a read operation.
+
+## Runtime gate status
+
+```text
+Phase 1  restricted luna-code viability        PASS
+Phase 2  real history://Main retrieval          PASS
+Phase 3  persistent same-session continuation   PASS
+Phase 4  Notes-backed rollover/recovery         PASS
+```
+
+The bounded runtime merge gates are satisfied. Multi-hour endurance/quota work is deferred optimization rather than a merge blocker.
 
 ## Architecture corrections established by testing/review
 
@@ -138,47 +161,26 @@ OMP 18.1.18 did not discover custom task agents from an arbitrary `PI_CODING_AGE
 
 ### Parent lifecycle and history barrier
 
-For context-transfer validation, a synthetic parent held open with `hub wait` is the wrong abstraction. Long waits measure lifecycle waiting and can interact with steering delivery. The safer runtime pattern is:
-
-```text
-agent completes turn
--> yield/park
--> later direct message revives it
-```
-
-When another worker depends on parent history, successful message delivery alone is not enough. Verify the intended transcript is actually readable from `history://<parent-id>` before dispatching the dependent worker.
+For context-transfer validation, a synthetic parent held open with `hub wait` is the wrong abstraction. Long waits measure lifecycle waiting and can interact with steering delivery. Downstream work that depends on parent history should verify the intended transcript is actually readable before dispatch rather than equating successful message delivery with durable transcript availability.
 
 ### OMP root and profile semantics
 
-The installer mirrors OMP's relevant path semantics rather than reusing omp-kit resource naming rules:
-
-- `PI_CONFIG_DIR` changes the home-relative native config root;
-- named profiles resolve below that root;
-- `default` selects the default native root;
-- profile names follow OMP's profile grammar and reserved-name restrictions;
-- a non-default active `OMP_PROFILE`/legacy `PI_PROFILE` is not silently ignored by a bare installer invocation.
+The installer mirrors OMP's relevant path semantics rather than reusing omp-kit resource naming rules: `PI_CONFIG_DIR` changes the home-relative native config root, named profiles resolve below it, `default` selects the default native root, profile names follow OMP grammar/reserved-name restrictions, and active `OMP_PROFILE`/legacy `PI_PROFILE` is not silently ignored.
 
 ### Prepared fingerprint typing
 
 The Pyright issue in `prepare()` was fixed by checking each prepared fingerprint before returning it, so the returned mapping cannot contain `None` for an expected install unit.
 
-## Next validation phase
+## Next work
 
-Phase 1 custom-worker viability and the Phase 2 single real-parent-history smoke gate are satisfied. Next:
-
-1. one three-step persistent `luna-code` workstream using park/revive continuation;
-2. one Notes-backed context rollover/recovery smoke;
-3. multi-hour real-work quota/endurance after the above behavior is stable.
-
-See `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` for the minimal protocol and merge gate.
+Stop runtime smoke expansion. The next design/review work is to simplify Main-session context policy, especially avoiding default full-history reads when targeted search/grep plus local reads are sufficient. After that policy is settled, perform a final branch review before deciding whether to merge `harness-v2-implementation` to `main`.
 
 ## Remaining scope limits
 
 Not yet proven:
 
-- repeated parent-history pull reliability or quota efficiency;
-- persistent worker park/revive/reuse behavior;
-- Notes-backed long rollover/recovery;
+- repeated parent-history pull reliability or Business-quota efficiency;
+- true `parked -> revived` worker lifecycle across longer inactivity/process boundaries;
 - native Windows/macOS installation;
 - browser relay and fresh-profile browser automation;
 - fresh-profile LSP behavior;
@@ -186,4 +188,4 @@ Not yet proven:
 - ChatGPT Business quota/accounting semantics;
 - default-root replacement after shutting down all live OMP sessions.
 
-Static checks and bounded runtime experiments do not establish those claims.
+These are not current bounded runtime merge-gate failures.
