@@ -8,12 +8,13 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from collections.abc import Iterable
 from datetime import datetime
 import json
 from pathlib import Path
 import re
 import sys
-from typing import Any, Iterable
+from typing import Any
 
 AUDIT_SCHEMA_VERSION = 1
 SUPPORTED_SESSION_VERSIONS = {3}
@@ -35,7 +36,11 @@ KNOWN_ENTRY_TYPES = {
     'session_init',
     'mode_change',
 }
-RANGE_SELECTOR = re.compile(r'^(?P<base>.+):(?P<start>\d+)-(?P<end>\d+)$')
+POSITIVE_INT = r'[1-9][0-9]*'
+BOUNDED_DASH_SELECTOR = re.compile(rf'^(?P<start>{POSITIVE_INT})-(?P<end>{POSITIVE_INT})$')
+BOUNDED_COUNT_SELECTOR = re.compile(rf'^(?P<start>{POSITIVE_INT})\+(?P<count>{POSITIVE_INT})$')
+OPEN_ENDED_SELECTOR = re.compile(rf'^(?P<start>{POSITIVE_INT})-?$')
+RELATIVE_BOUNDED_SELECTOR = re.compile(rf'^-(?P<count>{POSITIVE_INT})$')
 
 
 class AuditError(RuntimeError):
@@ -43,8 +48,9 @@ class AuditError(RuntimeError):
 
 
 def _iso_ms(value: str) -> int:
+    normalized = f'{value[:-1]}+00:00' if value.endswith('Z') else value
     try:
-        dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+        dt = datetime.fromisoformat(normalized)
     except (TypeError, ValueError) as exc:
         raise AuditError(f'invalid ISO timestamp: {value!r}') from exc
     return int(dt.timestamp() * 1000)
@@ -90,7 +96,7 @@ def _validate_linear(entries: list[dict[str, Any]]) -> None:
         if index == 0:
             if parent is not None:
                 raise AuditError(
-                    f'branched/non-linear session unsupported in audit schema v1: '
+                    'branched/non-linear session unsupported in audit schema v1: '
                     f'first entry {entry_id} has parent {parent!r}'
                 )
         elif parent != previous:
@@ -138,11 +144,13 @@ def _sum_usage(records: list[dict[str, Any]]) -> dict[str, Any]:
     return result
 
 
-def _tool_calls(entries: Iterable[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
+def _tool_calls(
+    entries: Iterable[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, dict[str, Any]]]:
     calls: list[dict[str, Any]] = []
     results: dict[str, dict[str, Any]] = {}
-    order = 0
-    for entry in entries:
+    call_order = 0
+    for entry_index, entry in enumerate(entries):
         if entry.get('type') != 'message':
             continue
         message = entry.get('message')
@@ -153,7 +161,7 @@ def _tool_calls(entries: Iterable[dict[str, Any]]) -> tuple[list[dict[str, Any]]
             content = message.get('content')
             if not isinstance(content, list):
                 continue
-            for block in content:
+            for content_index, block in enumerate(content):
                 if not isinstance(block, dict) or block.get('type') != 'toolCall':
                     continue
                 name = block.get('name')
@@ -163,19 +171,29 @@ def _tool_calls(entries: Iterable[dict[str, Any]]) -> tuple[list[dict[str, Any]]
                 if not isinstance(args, dict):
                     args = {}
                 call_id = block.get('id') or block.get('toolCallId')
-                calls.append({
-                    'order': order,
-                    'entry_id': entry.get('id'),
-                    'timestamp': entry.get('timestamp'),
-                    'id': call_id if isinstance(call_id, str) else None,
-                    'name': name,
-                    'arguments': args,
-                })
-                order += 1
+                calls.append(
+                    {
+                        'order': call_order,
+                        'entry_index': entry_index,
+                        'content_index': content_index,
+                        'entry_id': entry.get('id'),
+                        'timestamp': entry.get('timestamp'),
+                        'id': call_id if isinstance(call_id, str) else None,
+                        'name': name,
+                        'arguments': args,
+                    }
+                )
+                call_order += 1
         elif role == 'toolResult':
             call_id = message.get('toolCallId')
             if isinstance(call_id, str):
-                results[call_id] = message
+                results[call_id] = {
+                    'entry_index': entry_index,
+                    'entry_id': entry.get('id'),
+                    'timestamp': entry.get('timestamp'),
+                    'isError': message.get('isError') is True,
+                    'message': message,
+                }
     return calls, results
 
 
@@ -192,13 +210,90 @@ def _path_values(args: dict[str, Any]) -> list[str]:
     return values
 
 
-def _history_metrics(calls: list[dict[str, Any]], base: str, history_length: int | None) -> dict[str, Any]:
+def _classify_history_selector(path: str, base: str, history_length: int | None) -> dict[str, Any] | None:
+    if path == base:
+        return {'path': path, 'selector': None, 'kind': 'unbounded', 'interval': None}
+    prefix = f'{base}:'
+    if not path.startswith(prefix):
+        return None
+    selector = path[len(prefix) :]
+
+    match = BOUNDED_DASH_SELECTOR.fullmatch(selector)
+    if match:
+        start = int(match.group('start'))
+        end = int(match.group('end'))
+        if end < start:
+            return {'path': path, 'selector': selector, 'kind': 'unsupported_selector', 'interval': None}
+        return {
+            'path': path,
+            'selector': selector,
+            'kind': 'bounded_range',
+            'interval': (start, end),
+        }
+
+    match = BOUNDED_COUNT_SELECTOR.fullmatch(selector)
+    if match:
+        start = int(match.group('start'))
+        count = int(match.group('count'))
+        return {
+            'path': path,
+            'selector': selector,
+            'kind': 'bounded_count',
+            'interval': (start, start + count - 1),
+            'count': count,
+        }
+
+    match = RELATIVE_BOUNDED_SELECTOR.fullmatch(selector)
+    if match:
+        count = int(match.group('count'))
+        interval = None
+        if history_length is not None and history_length > 0:
+            interval = (max(1, history_length - count + 1), history_length)
+        return {
+            'path': path,
+            'selector': selector,
+            'kind': 'relative_bounded',
+            'interval': interval,
+            'count': count,
+        }
+
+    if OPEN_ENDED_SELECTOR.fullmatch(selector):
+        return {'path': path, 'selector': selector, 'kind': 'open_ended', 'interval': None}
+
+    return {'path': path, 'selector': selector, 'kind': 'unsupported_selector', 'interval': None}
+
+
+def _merge_intervals(intervals: Iterable[tuple[int, int]]) -> list[tuple[int, int]]:
+    ordered = sorted(intervals)
+    if not ordered:
+        return []
+    merged: list[tuple[int, int]] = []
+    current_start, current_end = ordered[0]
+    for start, end in ordered[1:]:
+        if start <= current_end + 1:
+            current_end = max(current_end, end)
+        else:
+            merged.append((current_start, current_end))
+            current_start, current_end = start, end
+    merged.append((current_start, current_end))
+    return merged
+
+
+def _interval_size(intervals: Iterable[tuple[int, int]]) -> int:
+    return sum(end - start + 1 for start, end in intervals)
+
+
+def _history_metrics(
+    calls: list[dict[str, Any]],
+    tool_results: dict[str, dict[str, Any]],
+    base: str,
+    history_length: int | None,
+) -> dict[str, Any]:
     grep_patterns: list[str] = []
-    read_selectors: list[str] = []
-    ranges: list[tuple[int, int]] = []
-    grep_orders: list[int] = []
-    read_orders: list[int] = []
-    unbounded = 0
+    grep_calls: list[dict[str, Any]] = []
+    successful_greps: list[dict[str, Any]] = []
+    read_details: list[dict[str, Any]] = []
+    intervals: list[tuple[int, int]] = []
 
     for call in calls:
         name = call['name']
@@ -206,51 +301,89 @@ def _history_metrics(calls: list[dict[str, Any]], base: str, history_length: int
         paths = _path_values(args)
         if name == 'grep' and base in paths:
             pattern = args.get('pattern')
-            grep_patterns.append(pattern if isinstance(pattern, str) else '')
-            grep_orders.append(call['order'])
+            pattern_value = pattern if isinstance(pattern, str) else ''
+            grep_patterns.append(pattern_value)
+            grep_calls.append(call)
+            call_id = call.get('id')
+            result = tool_results.get(call_id) if isinstance(call_id, str) else None
+            if (
+                isinstance(result, dict)
+                and result.get('isError') is False
+                and isinstance(result.get('entry_index'), int)
+                and result['entry_index'] > call['entry_index']
+            ):
+                successful_greps.append(
+                    {
+                        'call_entry_index': call['entry_index'],
+                        'result_entry_index': result['entry_index'],
+                        'call_id': call_id,
+                        'pattern': pattern_value,
+                    }
+                )
         if name != 'read':
             continue
         for path in paths:
-            if path == base:
-                unbounded += 1
-                read_selectors.append(path)
-                read_orders.append(call['order'])
+            classification = _classify_history_selector(path, base, history_length)
+            if classification is None:
                 continue
-            match = RANGE_SELECTOR.match(path)
-            if not match or match.group('base') != base:
-                continue
-            start = int(match.group('start'))
-            end = int(match.group('end'))
-            if start <= 0 or end < start:
-                continue
-            ranges.append((start, end))
-            read_selectors.append(path)
-            read_orders.append(call['order'])
+            detail = {
+                **classification,
+                'call_order': call['order'],
+                'call_entry_index': call['entry_index'],
+                'call_entry_id': call.get('entry_id'),
+            }
+            read_details.append(detail)
+            interval = classification.get('interval')
+            if isinstance(interval, tuple):
+                intervals.append(interval)
 
-    unique_lines: set[int] = set()
-    for start, end in ranges:
-        unique_lines.update(range(start, end + 1))
-    span = None if not ranges else [min(start for start, _ in ranges), max(end for _, end in ranges)]
+    merged = _merge_intervals(intervals)
+    span = None if not merged else [merged[0][0], merged[-1][1]]
+    requested_unique_lines = _interval_size(merged)
     coverage = None
     if history_length is not None and history_length > 0:
-        in_bounds = {line for line in unique_lines if 1 <= line <= history_length}
-        coverage = len(in_bounds) / history_length
+        clipped = []
+        for start, end in intervals:
+            clipped_start = max(1, start)
+            clipped_end = min(history_length, end)
+            if clipped_start <= clipped_end:
+                clipped.append((clipped_start, clipped_end))
+        coverage = _interval_size(_merge_intervals(clipped)) / history_length
 
-    first_grep = min(grep_orders) if grep_orders else None
-    reads_before_first_grep = 0
-    if first_grep is not None:
-        reads_before_first_grep = sum(order < first_grep for order in read_orders)
-    elif read_orders:
-        reads_before_first_grep = len(read_orders)
+    first_read_entry = min(
+        (detail['call_entry_index'] for detail in read_details),
+        default=None,
+    )
+    successful_grep_before_first_read = False
+    if first_read_entry is not None:
+        successful_grep_before_first_read = any(
+            grep['result_entry_index'] < first_read_entry for grep in successful_greps
+        )
+
+    kinds = Counter(detail['kind'] for detail in read_details)
+    bounded_kinds = {'bounded_range', 'bounded_count', 'relative_bounded'}
+    targeted_count = sum(kinds[kind] for kind in bounded_kinds)
+    disallowed_count = (
+        kinds['unbounded'] + kinds['open_ended'] + kinds['unsupported_selector']
+    )
 
     return {
         'history_grep_patterns': grep_patterns,
-        'history_read_selectors': read_selectors,
-        'history_grep_count': len(grep_orders),
-        'history_targeted_read_count': len(ranges),
-        'history_unbounded_read_count': unbounded,
-        'history_reads_before_first_grep': reads_before_first_grep,
-        'history_requested_unique_lines': len(unique_lines),
+        'history_grep_count': len(grep_calls),
+        'history_successful_grep_count': len(successful_greps),
+        'history_successful_greps': successful_greps,
+        'history_read_selectors': [detail['path'] for detail in read_details],
+        'history_read_selector_details': read_details,
+        'history_targeted_read_count': targeted_count,
+        'history_bounded_range_read_count': kinds['bounded_range'],
+        'history_bounded_count_read_count': kinds['bounded_count'],
+        'history_relative_bounded_read_count': kinds['relative_bounded'],
+        'history_open_ended_read_count': kinds['open_ended'],
+        'history_unsupported_selector_count': kinds['unsupported_selector'],
+        'history_unbounded_read_count': kinds['unbounded'],
+        'history_disallowed_read_count': disallowed_count,
+        'history_successful_grep_before_first_read': successful_grep_before_first_read,
+        'history_requested_unique_lines': requested_unique_lines,
         'history_requested_span': span,
         'history_coverage_ratio_when_length_known': coverage,
     }
@@ -266,13 +399,15 @@ def _coordination_metrics(calls: list[dict[str, Any]]) -> dict[str, Any]:
         args = call['arguments']
         op = args.get('op')
         if op == 'wait':
-            waits.append({
-                'order': call['order'],
-                'timeoutMs': args.get('timeoutMs'),
-                'from': args.get('from'),
-                'ids': args.get('ids'),
-                'name': args.get('name'),
-            })
+            waits.append(
+                {
+                    'order': call['order'],
+                    'timeoutMs': args.get('timeoutMs'),
+                    'from': args.get('from'),
+                    'ids': args.get('ids'),
+                    'name': args.get('name'),
+                }
+            )
         elif op == 'send':
             send_count += 1
         elif op == 'cancel':
@@ -299,59 +434,186 @@ def _last_result(calls: list[dict[str, Any]], entries: Iterable[dict[str, Any]])
         content = message.get('content')
         if not isinstance(content, list):
             continue
-        texts = [block.get('text') for block in content if isinstance(block, dict) and block.get('type') == 'text' and isinstance(block.get('text'), str)]
+        texts: list[str] = []
+        for block in content:
+            if not isinstance(block, dict) or block.get('type') != 'text':
+                continue
+            text = block.get('text')
+            if isinstance(text, str):
+                texts.append(text)
         if texts:
             return '\n'.join(texts)
     return None
 
 
-def audit_session(path: Path, *, history_base: str = 'history://Main', history_length: int | None = None) -> dict[str, Any]:
+def _model_identity(provider: Any, model: Any) -> str | None:
+    if not isinstance(model, str) or not model:
+        return None
+    if '/' in model:
+        return model
+    if isinstance(provider, str) and provider:
+        return f'{provider}/{model}'
+    return model
+
+
+def _model_metrics(entries: list[dict[str, Any]]) -> dict[str, Any]:
+    trajectory: list[dict[str, Any]] = []
+    task_request_events: list[dict[str, Any]] = []
+    auxiliary_usage_events: list[dict[str, Any]] = []
+    thinking_levels: list[str] = []
+
+    for entry_index, entry in enumerate(entries):
+        entry_type = entry.get('type')
+        if entry_type == 'session_init':
+            model = entry.get('resolvedModel')
+            if isinstance(model, str):
+                fallback_value = entry.get('resolvedModelIsFallback')
+                trajectory.append(
+                    {
+                        'source': 'session_init',
+                        'model': model,
+                        'role': entry.get('modelRole') if isinstance(entry.get('modelRole'), str) else None,
+                        'fallback': fallback_value if isinstance(fallback_value, bool) else None,
+                        'entry_id': entry.get('id'),
+                        'entry_index': entry_index,
+                        'timestamp': entry.get('timestamp'),
+                    }
+                )
+        elif entry_type == 'model_change':
+            model = entry.get('model')
+            if isinstance(model, str):
+                fallback_value = entry.get('resolvedModelIsFallback')
+                trajectory.append(
+                    {
+                        'source': 'model_change',
+                        'model': model,
+                        'role': entry.get('role') if isinstance(entry.get('role'), str) else None,
+                        'fallback': fallback_value if isinstance(fallback_value, bool) else None,
+                        'entry_id': entry.get('id'),
+                        'entry_index': entry_index,
+                        'timestamp': entry.get('timestamp'),
+                    }
+                )
+        elif entry_type == 'thinking_level_change':
+            level = entry.get('thinkingLevel')
+            if isinstance(level, str) and level not in thinking_levels:
+                thinking_levels.append(level)
+        elif entry_type == 'model_usage':
+            model = _model_identity(entry.get('provider'), entry.get('model'))
+            if model is not None:
+                auxiliary_usage_events.append(
+                    {
+                        'model': model,
+                        'purpose': entry.get('purpose') if isinstance(entry.get('purpose'), str) else None,
+                        'role': entry.get('role') if isinstance(entry.get('role'), str) else None,
+                        'entry_id': entry.get('id'),
+                        'entry_index': entry_index,
+                        'timestamp': entry.get('timestamp'),
+                    }
+                )
+        elif entry_type == 'message':
+            message = entry.get('message')
+            if not isinstance(message, dict) or message.get('role') != 'assistant':
+                continue
+            model = _model_identity(message.get('provider'), message.get('model'))
+            if model is not None:
+                task_request_events.append(
+                    {
+                        'model': model,
+                        'entry_id': entry.get('id'),
+                        'entry_index': entry_index,
+                        'timestamp': entry.get('timestamp'),
+                    }
+                )
+
+    task_models_seen: list[str] = []
+    for event in [*trajectory, *task_request_events]:
+        model = event.get('model')
+        if isinstance(model, str) and model not in task_models_seen:
+            task_models_seen.append(model)
+    auxiliary_models_seen: list[str] = []
+    for event in auxiliary_usage_events:
+        model = event.get('model')
+        if isinstance(model, str) and model not in auxiliary_models_seen:
+            auxiliary_models_seen.append(model)
+
+    fallback_values = [event.get('fallback') for event in trajectory]
+    fallback_observed = any(value is True for value in fallback_values)
+    model_change_events = [event for event in trajectory if event.get('source') == 'model_change']
+    explicit_fallback_values = [value for value in fallback_values if isinstance(value, bool)]
+    fallback_evidence_complete = (
+        bool(explicit_fallback_values)
+        and all(isinstance(event.get('fallback'), bool) for event in model_change_events)
+    )
+
+    ordered_task_events: list[dict[str, Any]] = []
+    for event in trajectory:
+        ordered_task_events.append({'source': event['source'], **event})
+    for event in task_request_events:
+        ordered_task_events.append({'source': 'assistant_request', **event})
+    ordered_task_events.sort(key=lambda event: int(event['entry_index']))
+    final_task_model = None
+    for event in reversed(ordered_task_events):
+        model = event.get('model')
+        if isinstance(model, str):
+            final_task_model = model
+            break
+
+    return {
+        'model_trajectory': trajectory,
+        'task_request_model_events': task_request_events,
+        'task_models_seen': task_models_seen,
+        'models_seen': task_models_seen,
+        'final_task_model': final_task_model,
+        'auxiliary_model_usage_events': auxiliary_usage_events,
+        'auxiliary_models_seen': auxiliary_models_seen,
+        'thinking_levels_seen': thinking_levels,
+        'fallback_observed': fallback_observed,
+        'fallback_evidence_complete': fallback_evidence_complete,
+    }
+
+
+def audit_session(
+    path: Path,
+    *,
+    history_base: str = 'history://Main',
+    history_length: int | None = None,
+) -> dict[str, Any]:
     header, entries = _load_jsonl(path)
     version = header.get('version')
     if version not in SUPPORTED_SESSION_VERSIONS:
-        raise AuditError(f'unsupported OMP session version: {version!r}; supported: {sorted(SUPPORTED_SESSION_VERSIONS)}')
+        raise AuditError(
+            f'unsupported OMP session version: {version!r}; '
+            f'supported: {sorted(SUPPORTED_SESSION_VERSIONS)}'
+        )
     _validate_linear(entries)
 
-    unknown = sorted({entry.get('type') for entry in entries if isinstance(entry.get('type'), str) and entry.get('type') not in KNOWN_ENTRY_TYPES})
+    unknown_values: set[str] = set()
+    for entry in entries:
+        entry_type = entry.get('type')
+        if isinstance(entry_type, str) and entry_type not in KNOWN_ENTRY_TYPES:
+            unknown_values.add(entry_type)
+    unknown = sorted(unknown_values)
+
     calls, tool_results = _tool_calls(entries)
     usage_records = _usage_records(entries)
     usage = _sum_usage(usage_records)
+    model_metrics = _model_metrics(entries)
 
     session_init = next((entry for entry in entries if entry.get('type') == 'session_init'), {})
     agent = session_init.get('agent') if isinstance(session_init.get('agent'), str) else None
     model_role = session_init.get('modelRole') if isinstance(session_init.get('modelRole'), str) else None
     initial_model = session_init.get('resolvedModel') if isinstance(session_init.get('resolvedModel'), str) else None
 
-    models_seen: list[str] = []
-    if initial_model:
-        models_seen.append(initial_model)
-    fallback_observed = False
-    thinking_levels: list[str] = []
+    timestamps: list[str] = []
     for entry in entries:
-        if entry.get('type') == 'model_change':
-            model = entry.get('model')
-            if isinstance(model, str) and model not in models_seen:
-                models_seen.append(model)
-            fallback_observed = fallback_observed or entry.get('resolvedModelIsFallback') is True
-        elif entry.get('type') == 'thinking_level_change':
-            level = entry.get('thinkingLevel')
-            if isinstance(level, str) and level not in thinking_levels:
-                thinking_levels.append(level)
-        elif entry.get('type') == 'message':
-            message = entry.get('message')
-            if isinstance(message, dict) and message.get('role') == 'assistant':
-                provider = message.get('provider')
-                model = message.get('model')
-                if isinstance(provider, str) and isinstance(model, str):
-                    identity = f'{provider}/{model}'
-                    if identity not in models_seen:
-                        models_seen.append(identity)
-
-    timestamps = [entry.get('timestamp') for entry in entries if isinstance(entry.get('timestamp'), str)]
+        timestamp = entry.get('timestamp')
+        if isinstance(timestamp, str):
+            timestamps.append(timestamp)
     first_entry_at = timestamps[0] if timestamps else None
     last_entry_at = timestamps[-1] if timestamps else None
     session_span_ms = None
-    if first_entry_at and last_entry_at:
+    if first_entry_at is not None and last_entry_at is not None:
         session_span_ms = max(0, _iso_ms(last_entry_at) - _iso_ms(first_entry_at))
 
     assistant_request_count = sum(
@@ -375,9 +637,7 @@ def audit_session(path: Path, *, history_base: str = 'history://Main', history_l
         'agent': agent,
         'model_role': model_role,
         'initial_model': initial_model,
-        'models_seen': models_seen,
-        'thinking_levels_seen': thinking_levels,
-        'fallback_observed': fallback_observed,
+        **model_metrics,
         'first_entry_at': first_entry_at,
         'last_entry_at': last_entry_at,
         'session_span_ms': session_span_ms,
@@ -399,7 +659,7 @@ def audit_session(path: Path, *, history_base: str = 'history://Main', history_l
         'unknown_entry_types': unknown,
         'final_result': _last_result(calls, entries),
     }
-    result.update(_history_metrics(calls, history_base, history_length))
+    result.update(_history_metrics(calls, tool_results, history_base, history_length))
     result.update(_coordination_metrics(calls))
     return result
 
@@ -408,18 +668,56 @@ def _policy_failures(result: dict[str, Any], args: argparse.Namespace) -> list[s
     failures: list[str] = []
     if args.expect_agent and result.get('agent') != args.expect_agent:
         failures.append(f"expected agent {args.expect_agent!r}, got {result.get('agent')!r}")
-    if args.expect_model and args.expect_model not in result.get('models_seen', []):
-        failures.append(f"expected model {args.expect_model!r}, got {result.get('models_seen')!r}")
+
+    expected_model = args.expect_only_task_model
+    if expected_model:
+        task_models = result.get('task_models_seen', [])
+        if not isinstance(task_models, list) or not task_models:
+            failures.append(f'cannot verify task model {expected_model!r}: no task-model evidence')
+        elif any(model != expected_model for model in task_models):
+            failures.append(f"expected only task model {expected_model!r}, got {task_models!r}")
+
+    if args.expect_final_task_model and result.get('final_task_model') != args.expect_final_task_model:
+        failures.append(
+            f"expected final task model {args.expect_final_task_model!r}, "
+            f"got {result.get('final_task_model')!r}"
+        )
+
     if args.expect_thinking and args.expect_thinking not in result.get('thinking_levels_seen', []):
-        failures.append(f"expected thinking level {args.expect_thinking!r}, got {result.get('thinking_levels_seen')!r}")
-    if args.forbid_fallback and result.get('fallback_observed'):
-        failures.append('runtime fallback was observed')
+        failures.append(
+            f"expected thinking level {args.expect_thinking!r}, "
+            f"got {result.get('thinking_levels_seen')!r}"
+        )
+
+    if args.forbid_fallback:
+        if result.get('fallback_observed'):
+            failures.append('runtime fallback was observed')
+        elif not result.get('fallback_evidence_complete'):
+            failures.append('cannot prove absence of runtime fallback: fallback evidence is incomplete')
+
     if args.require_history_grep and result.get('history_grep_count', 0) == 0:
         failures.append(f"no grep call targeted {args.require_history_grep!r}")
-    if args.forbid_unbounded_history_read and result.get('history_unbounded_read_count', 0) > 0:
-        failures.append(f"unbounded read targeted {args.forbid_unbounded_history_read!r}")
-    if args.require_grep_before_history_read and result.get('history_reads_before_first_grep', 0) > 0:
-        failures.append('history read occurred before the first matching grep')
+
+    if args.forbid_unbounded_history_read:
+        if result.get('history_unbounded_read_count', 0) > 0:
+            failures.append(f"unbounded read targeted {args.forbid_unbounded_history_read!r}")
+        if result.get('history_open_ended_read_count', 0) > 0:
+            failures.append(f"open-ended read targeted {args.forbid_unbounded_history_read!r}")
+        if result.get('history_unsupported_selector_count', 0) > 0:
+            failures.append(
+                f"unsupported history selector targeted {args.forbid_unbounded_history_read!r}"
+            )
+
+    if args.require_grep_before_history_read:
+        if result.get('history_grep_count', 0) == 0:
+            failures.append('no matching history grep was observed before history reads')
+        elif result.get('history_successful_grep_count', 0) == 0:
+            failures.append('no successful matching history grep result was observed')
+        elif result.get('history_read_selectors') and not result.get(
+            'history_successful_grep_before_first_read'
+        ):
+            failures.append('first history read did not occur after a successful matching grep result')
+
     if args.forbid_unbounded_hub_wait and result.get('hub_unbounded_wait_count', 0) > 0:
         failures.append('explicit hub wait with timeoutMs=0 was observed')
     return failures
@@ -431,7 +729,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--history-base', default='history://Main')
     parser.add_argument('--history-length', type=int)
     parser.add_argument('--expect-agent')
-    parser.add_argument('--expect-model')
+    parser.add_argument(
+        '--expect-model',
+        '--expect-only-task-model',
+        dest='expect_only_task_model',
+        help='require all observed task-model evidence to use exactly this model',
+    )
+    parser.add_argument('--expect-final-task-model')
     parser.add_argument('--expect-thinking')
     parser.add_argument('--forbid-fallback', action='store_true')
     parser.add_argument('--require-history-grep', metavar='URI')
@@ -449,10 +753,16 @@ def main(argv: list[str] | None = None) -> int:
         history_base = args.require_history_grep
     if args.forbid_unbounded_history_read:
         if history_base != args.forbid_unbounded_history_read and args.require_history_grep:
-            parser.error('--require-history-grep and --forbid-unbounded-history-read must target the same URI')
+            parser.error(
+                '--require-history-grep and --forbid-unbounded-history-read must target the same URI'
+            )
         history_base = args.forbid_unbounded_history_read
     try:
-        result = audit_session(args.session, history_base=history_base, history_length=args.history_length)
+        result = audit_session(
+            args.session,
+            history_base=history_base,
+            history_length=args.history_length,
+        )
     except AuditError as exc:
         print(f'error: {exc}', file=sys.stderr)
         return 2
