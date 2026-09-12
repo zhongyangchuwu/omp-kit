@@ -44,6 +44,14 @@ promote-skill path *args:
 test:
     uv run python -m pytest tests
 
+# Final deterministic local gate. Live OMP/provider smokes are intentionally excluded.
+verify:
+    just test
+    just validate-harness
+    just check-registry
+    just validate-registry
+    git diff --check HEAD
+
 pull-references:
     uv run python scripts/git_pull_references.py
 
