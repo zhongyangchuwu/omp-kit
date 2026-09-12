@@ -169,17 +169,21 @@ again inside `verify`.
 Read exactly one explicit JSONL path and emit stable JSON by default:
 
 ```bash
-uv run python scripts/inspect_omp_session.py path/to/child.jsonl
 uv run python scripts/inspect_omp_session.py path/to/child.jsonl \
   --expect-agent luna-code \
-  --expect-model cpa/gpt-5.6-luna \
+  --expect-only-task-model cpa/gpt-5.6-luna \
   --expect-thinking high \
   --forbid-fallback \
   --require-history-grep history://Main \
-  --forbid-unbounded-history-read history://Main
+  --forbid-unbounded-history-read history://Main \
+  --require-grep-before-history-read
 ```
 
-Suggested stable output:
+`--expect-model` remains a compatibility alias for `--expect-only-task-model`; its
+meaning is strict trajectory validation, not "the model appeared at least once".
+Use `--expect-final-task-model` only when final-state validation is explicitly desired.
+
+Suggested stable output includes:
 
 ```text
 audit_schema_version
@@ -188,9 +192,14 @@ session_id
 agent
 model_role
 initial_model
-models_seen
+model_trajectory
+task_request_model_events
+task_models_seen
+final_task_model
+auxiliary_model_usage_events
 thinking_levels_seen
 fallback_observed
+fallback_evidence_complete
 first_entry_at
 last_entry_at
 session_span_ms
@@ -198,9 +207,12 @@ assistant_request_count
 tool_calls_by_name
 tool_error_count
 history_grep_patterns
+history_successful_grep_count
 history_read_selectors
-history_grep_count
+history_read_selector_details
 history_targeted_read_count
+history_open_ended_read_count
+history_unsupported_selector_count
 history_unbounded_read_count
 history_requested_unique_lines
 history_requested_span
@@ -223,10 +235,10 @@ final_result
 
 OMP session persistence is append-only JSONL whose entries form a tree through
 `id`/`parentId`. A naïve scan can double-count discarded branches. Parser v1 should
-support a linear child session only: reconstruct the path to the final leaf and fail
-explicitly if the file contains a branch that would make the audited path ambiguous.
-Do not silently sum every line in a branched file. A later version may implement
-explicit leaf selection when real experiments require it.
+support a linear child session only and fail explicitly if the file contains a branch
+that would make the audited path ambiguous. Do not silently sum every line in a
+branched file. A later version may implement explicit leaf selection when real
+experiments require it.
 
 #### Version and unknown-entry rule
 
@@ -236,12 +248,19 @@ for a requested assertion. Unknown irrelevant entry types should be reported in
 `unknown_entry_types` and otherwise ignored; they must not be converted to zero-valued
 metrics or make the parser unusably brittle across harmless OMP additions.
 
-#### Model trajectory
+#### Model trajectory and fallback evidence
 
-Do not collapse runtime identity to one scalar. Report the initial resolved model,
-model transitions observed on the audited branch, thinking-level transitions and
-whether any fallback was observed. A run that starts on Luna and later falls back must
-not be reported simply as `model=Luna, fallback=false`.
+Do not collapse runtime identity to one scalar. Keep ordered task-model evidence from
+`session_init`, `model_change`, and assistant requests. Keep auxiliary `model_usage`
+(title/tiny/etc.) separate so those calls cannot change task-model assertions.
+
+A strict task-model assertion means every observed task model must equal the expected
+model. A Luna-to-Sol transition must fail an "only Luna" assertion even when neither
+transition is a fallback.
+
+`--forbid-fallback` is evidence-based: an observed fallback fails, but missing fallback
+metadata also fails the assertion because the tool cannot prove absence of fallback.
+Do not convert absent metadata into `false`.
 
 #### Usage semantics
 
@@ -266,9 +285,28 @@ sufficient evidence.
 
 #### Tool/history/coordination audit
 
-Preserve call order. This allows policies such as grep-before-read to be evaluated.
-Report explicit line selectors and the union of requested ranges. Coverage ratio is
-emitted only when total transcript length is observable from retained evidence.
+Preserve assistant-entry and tool-result order, not just tool-call order within one
+assistant message. `grep-before-read` is causal: at least one matching grep must finish
+successfully before the assistant entry that issues the first history read. A parallel
+same-message `grep` + `read` is therefore not compliant.
+
+Every `read` path equal to the history base or starting with `history-base + ':'` must
+be classified. Supported bounded selectors are:
+
+```text
+:start-end
+:start+count
+:-count
+```
+
+Bare history reads are unbounded. `:start` and `:start-` are open-ended. Unknown forms
+such as `:raw:...` are unsupported selectors. Search-first policy must not silently
+ignore open-ended or unsupported selectors.
+
+Range coverage must use interval merge rather than materializing every line number, so
+malformed or model-generated huge ranges cannot exhaust memory. Coverage is clipped to
+the known resource length only for ratio calculation; the raw requested span remains
+observable.
 
 The same generic parser should recognize `hub` operations when they occur in the
 session being inspected. An explicit `timeoutMs: 0` coordination wait is always
@@ -340,11 +378,12 @@ Never guess the newest session when several OMP sessions may be active.
 
 Require:
 
-- expected agent/model/thinking trajectory;
-- no fallback;
+- expected agent/task-model/thinking trajectory;
+- complete fallback evidence and no fallback;
 - at least one `grep` whose path is exactly `history://Main`;
-- no unbounded `read` of `history://Main`;
-- any history read uses an explicit line selector and occurs after relevant search;
+- at least one successful matching grep result before the first history read;
+- no bare, open-ended, or unsupported `read` selector for `history://Main`;
+- any allowed history read uses a supported bounded selector;
 - independent scorer passes;
 - worker does not access the separated oracle or forbidden answer-bearing docs;
 - tracked omp-kit files remain unchanged.
@@ -383,12 +422,18 @@ Use synthetic offline JSONL fixtures covering:
 
 - supported header/session version;
 - a linear branch and a deliberately branched file that must fail v1 audit;
-- initial model plus a model transition/fallback;
+- initial model plus model transition/fallback;
+- strict task-model trajectory checks and final-task-model checks;
+- missing fallback metadata under `--forbid-fallback`;
+- auxiliary title/tiny `model_usage` excluded from task-model assertions;
 - thinking-level transitions;
 - assistant usage plus `model_usage` aggregation;
 - `reasoningTokens` remaining a subset of output;
-- grep-before-read ordering;
-- bounded and unbounded history reads;
+- same-message grep+read failing causal ordering;
+- successful grep-result then later read passing;
+- failed grep-result then read failing;
+- `:start-end`, `:start+count`, `:start-`, `:start`, `:-count`, `:raw:...`, and unknown selectors;
+- huge ranges using interval merge rather than line-by-line expansion;
 - overlapping ranges and unique-line calculation;
 - out-of-range reads;
 - hub bounded wait and explicit `timeoutMs: 0`;
@@ -436,9 +481,12 @@ coordination behavior are under test.
 1. Add `just verify`.
 2. Add `scripts/inspect_omp_session.py` with audit schema version 1 and linear-session
    protection.
-3. Add synthetic parser tests.
+3. Add synthetic parser tests, including explicit false-PASS regressions.
 4. Validate locally against retained Phase 2/search-first records without committing
    those records.
+
+Stage 1 is merge evidence only after both the synthetic policy tests and real retained
+record audit pass with the stricter evidence rules.
 
 ### Stage 2 — durable fixture lifecycle
 
@@ -467,7 +515,10 @@ The automation batch is useful when:
 - one deterministic command covers required repository checks;
 - session metrics/history policy are derived without manual arithmetic;
 - branched/unsupported sessions cannot silently corrupt metrics;
-- model/fallback trajectories are represented accurately;
+- grep-before-read proves a successful search result preceded the first read;
+- every history selector is classified and policy-relevant unknowns cannot disappear;
+- model/fallback trajectories are represented accurately and missing fallback evidence fails strict assertions;
+- huge history ranges cannot cause line-set memory blowups;
 - worker-visible fixture and hidden oracle are isolated;
 - a fresh runtime fixture no longer depends on retained `/tmp/omp-kit-phase2/` state;
 - one explicit child record can be scored/audited into JSON and Markdown;
