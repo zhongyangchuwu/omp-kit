@@ -131,8 +131,11 @@ Detailed orchestration belongs to `omp-workflow`, not a large global system prom
 
 Start with [installation](docs/omp-installation.md), [configuration](docs/omp-configuration.md),
 and the [migration record](docs/config-migration-2026-09-12.md).
-The [guide](docs/HARNESS_V2_GUIDE.md) describes current policy; the
-[handoff](docs/HARNESS_V2_HANDOFF.md) records remaining runtime validation.
+The [guide](docs/HARNESS_V2_GUIDE.md) describes current policy, the
+[runtime experiment plan](docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md) defines the next
+measurement phase, and [validation](docs/VALIDATION.md) records what has actually
+been tested. The [handoff](docs/HARNESS_V2_HANDOFF.md) is the current continuation
+entry point for another agent.
 
 ## Maintenance
 
