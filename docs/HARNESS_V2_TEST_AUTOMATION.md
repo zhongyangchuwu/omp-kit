@@ -2,133 +2,176 @@
 
 ## Purpose
 
-Harness v2 validation currently mixes three different kinds of evidence:
+Harness v2 validation mixes three kinds of evidence:
 
 1. deterministic repository checks;
 2. isolated installer/filesystem behavior;
 3. live OMP/provider/session experiments.
 
-The first two should become one boring, repeatable local command. The third should remain explicit and opt-in because it uses real profiles, credentials, provider requests and session state. Automation should remove fixture copying, JSONL inspection, token arithmetic and report transcription without pretending that a live model experiment is a deterministic unit test.
+The first two should become boring, repeatable local commands. The third stays
+explicit and opt-in because it uses real profiles, credentials, provider requests and
+session state. Automation should remove fixture copying, JSONL inspection, token
+arithmetic, timeout bookkeeping and report transcription without pretending that a
+live model experiment is a deterministic unit test.
 
-This document records the reusable lessons from the Harness v2 validation work and proposes the smallest useful automation surface. It is a plan, not evidence that the proposed scripts already exist, and it does not make new tooling a Harness v2 merge gate. Implement it as a separate maintenance batch when repeated validation work resumes.
-
-## Repeated work observed
-
-### Repository validation
-
-The same command sequence has been run after coherent installer/config changes:
-
-```bash
-uv run python -m pytest -q tests/test_install_harness.py
-just test
-just validate-harness
-just check-registry
-just validate-registry
-git diff --check
-```
-
-The individual commands are useful during development, but final verification should not depend on remembering their order or manually copying their output.
-
-### Runtime fixture handling
-
-The runtime experiments repeatedly required:
-
-- locating a pristine fixture and independent scorer;
-- copying the fixture into a fresh `/tmp` run directory;
-- proving that earlier evidence was not modified;
-- dispatching a worker against only the fresh copy;
-- running the worker's focused test;
-- running an independent scorer;
-- confirming the tracked repository stayed clean.
-
-The Phase 2 cache fixture and scorer were reusable, but they existed only under `/tmp/omp-kit-phase2/`. That made reuse dependent on one workstation's retained temporary files.
-
-### Session-record inspection
-
-Each worker experiment required manual inspection of OMP JSONL records to recover:
-
-- child session id;
-- actual model and thinking level;
-- `resolvedModelIsFallback`;
-- tool names and arguments;
-- history grep patterns and read selectors;
-- input/cache/output/reasoning/total tokens;
-- timestamps and wall time;
-- the final structured worker result.
-
-The search-first smoke demonstrated why this needs semantic checks rather than a simple call count. It passed the formal requirement of no unbounded `read history://Main`, but five ranged reads collectively covered most of the 188-line transcript. It also consumed 642,661 total child tokens, compared descriptively with 200,731 in the earlier whole-history smoke. A future audit should therefore report unique history lines requested and approximate coverage, not only whether a selector was present.
-
-### Reporting
-
-Runtime reports were assembled by hand from command output, session JSONL, worker summaries and independent scorer results. This is error-prone because provider usage fields use exact names such as `reasoningTokens`, while prose reports use friendlier labels. Generated evidence should be machine-readable first and rendered to Markdown second.
+This document is a maintenance plan, not evidence that every proposed script already
+exists, and the tooling is not a Harness v2 merge gate. Implement the smallest pieces
+that remove repeated manual work.
 
 ## Automation boundaries
 
 ### Automate fully
 
-These operations are deterministic and safe to run repeatedly:
+These operations are deterministic and safe to repeat:
 
 - repository tests and static validation;
 - isolated installer tests using temporary roots;
-- fixture creation from a checked-in pristine source;
-- checksums proving source fixtures and prior evidence were not changed;
+- fixture creation from checked-in pristine sources;
+- checksums proving fixture/oracle sources were not changed;
 - independent fixture scoring;
-- OMP session JSONL parsing;
-- model/fallback/tool-call policy assertions;
-- token and timestamp aggregation;
+- read-only OMP session JSONL parsing;
+- model/fallback/tool-call and history-access assertions;
+- token, request-count and session-span aggregation;
+- coordination/wait audit when an explicit parent session is supplied;
 - tracked-working-tree checks;
-- Markdown report rendering from structured results.
+- stable JSON evidence and Markdown rendering.
 
 ### Keep explicit and opt-in
 
 These operations have real external or stateful effects:
 
-- provider/model requests;
-- use of CPA credentials;
+- provider/model requests and CPA credentials;
 - installation into a native OMP profile;
 - reading a live `history://Main` route;
-- spawning custom workers;
-- rollover, continuation and lifecycle experiments;
-- browser relay or other authenticated integrations.
+- spawning, messaging, cancelling or reviving custom workers;
+- rollover and lifecycle experiments;
+- browser relay or authenticated integrations.
 
-They must require an explicit profile and an explicit live-test flag. They must never run from `just test` or ordinary CI.
+They must never run from `just test`, `just verify` or ordinary CI.
 
 ### Do not automate into false confidence
 
-Avoid a large benchmark framework or a script that silently decides runtime success from worker self-report. In particular:
+- Do not create synthetic parent conversations when the question concerns a real Main
+  session.
+- Do not infer custom-agent discovery from YAML/filesystem layout alone.
+- Do not decide runtime success from worker self-report when an independent scorer is
+  available.
+- Do not treat configured API-equivalent cost or raw tokens as ChatGPT quota usage.
+- Do not treat a ranged history read as selective without reporting its aggregate span.
+- Do not commit raw sessions, credentials, auth state or account-specific paths.
+- Do not tune prompts/models automatically after a failed smoke.
+- Do not turn one slow run into a global timeout/request-budget change.
 
-- do not create synthetic parent conversations when the question concerns the real Main session;
-- do not infer custom-agent discovery from YAML or filesystem layout alone;
-- do not treat configured API-equivalent cost as account quota usage;
-- do not treat a ranged history read as selective without measuring its span;
-- do not commit raw sessions, credentials, auth state or account-specific paths;
-- do not tune prompts/models automatically after a failed smoke; preserve one-run diagnostic value.
+## Repeated work worth removing
+
+### Repository validation
+
+The final local check repeatedly runs:
+
+```bash
+just test
+just validate-harness
+just check-registry
+just validate-registry
+git diff --check HEAD
+```
+
+Keep the individual recipes for narrow development loops, but expose one `just verify`
+entry point for the combined deterministic gate.
+
+### Runtime fixtures and oracle
+
+Runtime experiments repeatedly need a fresh fixture, an independent scorer, proof that
+old evidence was not modified, and a final tracked-tree cleanliness check. The Phase 2
+cache fixture is reusable but must no longer depend on retained `/tmp` state.
+
+Worker-visible inputs and the independent oracle must be physically separated. A worker
+must not be able to discover the scoring contract merely by listing its fixture
+working directory.
+
+Recommended layout:
+
+```text
+tests/fixtures/harness_runtime/cache/
+  worker/
+    cache.py
+    test_cache.py
+  oracle/
+    score.py
+```
+
+A prepared run mirrors that separation:
+
+```text
+/tmp/omp-kit-runtime-smoke-<id>/
+  fixture/       # the only path given to the worker
+  oracle/        # director/finalizer only
+  manifest.json
+  result.json    # written at finish
+  report.md      # written at finish
+```
+
+Do not import old raw run directories, JSONL sessions or historical metrics.
+
+### Session-record inspection
+
+Manual experiments repeatedly recover:
+
+- child session/agent identity;
+- model role, resolved model, thinking level and fallback behavior;
+- tool names/arguments and errors;
+- history grep patterns/read selectors;
+- usage buckets and assistant request counts;
+- timestamps/session span;
+- final structured result.
+
+The search-first smoke also showed that `bounded read` is not the same as `small
+context`: several ranged reads may cover nearly the whole resource. The audit must
+report unique requested lines and approximate coverage when the resource length can be
+established; selector presence alone is insufficient.
+
+### Time and supervision bookkeeping
+
+The earlier synthetic-parent experiment also showed that long `hub wait` periods can
+dominate elapsed time without representing useful model work. Future evidence should
+separate:
+
+- child session span;
+- assistant request count;
+- worker task/result timing when available;
+- parent `hub wait` arguments/results when an explicit parent JSONL is supplied;
+- explicit indefinite waits (`timeoutMs: 0`);
+- repeated coordination waits/polls;
+- direct sends and job cancellation/intervention.
+
+These fields support supervision policy; they are not a license to infer model latency
+from one timestamp difference.
 
 ## Proposed command surface
 
 ### `just verify`
 
-Add one final deterministic gate that invokes the existing canonical commands:
+One deterministic final gate:
 
 ```text
 just test
 just validate-harness
 just check-registry
 just validate-registry
-git diff --check
+git diff --check HEAD
 ```
 
-The target should fail fast and preserve each underlying command's output. Keep `test`, `validate-harness`, `check-registry` and `validate-registry` available for narrow development loops.
-
-Do not run the installer-focused test suite separately inside `just verify` because `just test` already includes it. The focused command remains useful when changing `scripts/install_harness.py`.
+`just test` already includes installer tests, so do not run the installer-focused suite
+again inside `verify`.
 
 ### `scripts/inspect_omp_session.py`
 
-Add a read-only parser for one child JSONL record. Suggested interface:
+Read exactly one explicit JSONL path and emit stable JSON by default:
 
 ```bash
 uv run python scripts/inspect_omp_session.py path/to/child.jsonl
 uv run python scripts/inspect_omp_session.py path/to/child.jsonl \
+  --expect-agent luna-code \
   --expect-model cpa/gpt-5.6-luna \
   --expect-thinking high \
   --forbid-fallback \
@@ -136,17 +179,24 @@ uv run python scripts/inspect_omp_session.py path/to/child.jsonl \
   --forbid-unbounded-history-read history://Main
 ```
 
-It should emit stable JSON by default and optionally render Markdown. Required fields:
+Suggested stable output:
 
 ```text
+audit_schema_version
+omp_session_version
 session_id
-model
-thinking_level
-resolved_model_is_fallback
-started_at
-finished_at
-wall_time_ms
+agent
+model_role
+initial_model
+models_seen
+thinking_levels_seen
+fallback_observed
+first_entry_at
+last_entry_at
+session_span_ms
+assistant_request_count
 tool_calls_by_name
+tool_error_count
 history_grep_patterns
 history_read_selectors
 history_grep_count
@@ -155,194 +205,291 @@ history_unbounded_read_count
 history_requested_unique_lines
 history_requested_span
 history_coverage_ratio_when_length_known
+hub_wait_count
+hub_unbounded_wait_count
+hub_send_count
+hub_cancel_count
 input_tokens
 cache_read_tokens
 cache_write_tokens
 output_tokens
 reasoning_tokens
 total_tokens
+unknown_entry_types
 final_result
 ```
 
-Policy failures should produce a non-zero exit code with an exact reason. Unknown or changed JSONL event shapes should fail explicitly rather than producing zero-valued metrics.
+#### Session-tree rule
 
-### Durable runtime fixture
+OMP session persistence is append-only JSONL whose entries form a tree through
+`id`/`parentId`. A naïve scan can double-count discarded branches. Parser v1 should
+support a linear child session only: reconstruct the path to the final leaf and fail
+explicitly if the file contains a branch that would make the audited path ambiguous.
+Do not silently sum every line in a branched file. A later version may implement
+explicit leaf selection when real experiments require it.
 
-Promote only the reusable Phase 2 cache fixture and independent oracle into a small checked-in test-data directory, for example:
+#### Version and unknown-entry rule
 
-```text
-tests/fixtures/harness_runtime/cache/
-  cache.py
-  test_cache.py
-  score.py
-```
+Include both `audit_schema_version` and the OMP session header version. Fail on an
+unsupported session version, malformed recognized entry, or missing evidence required
+for a requested assertion. Unknown irrelevant entry types should be reported in
+`unknown_entry_types` and otherwise ignored; they must not be converted to zero-valued
+metrics or make the parser unusably brittle across harmless OMP additions.
 
-The fixture should remain intentionally incomplete: it exists to test whether a worker recovers accepted decisions without implementing rejected or unresolved behavior. The scorer is the contract; the worker-visible test remains narrower.
+#### Model trajectory
 
-Do not import the old raw Phase 2 run directory, session records, generated copies or metrics.
+Do not collapse runtime identity to one scalar. Report the initial resolved model,
+model transitions observed on the audited branch, thinking-level transitions and
+whether any fallback was observed. A run that starts on Luna and later falls back must
+not be reported simply as `model=Luna, fallback=false`.
+
+#### Usage semantics
+
+Aggregate persisted usage without double-counting:
+
+- sum conversation assistant usage on the audited branch;
+- include `model_usage` entries for model calls that are stored outside the normal
+  conversation transcript;
+- keep `reasoningTokens` as a reported subset of output, not an extra component added
+  to total;
+- prefer persisted `totalTokens` rather than reconstructing a different accounting
+  formula when it is present.
+
+Unknown usage fields remain unknown rather than being guessed.
+
+#### Timing semantics
+
+Use `session_span_ms` for first-to-last persisted entry. Do not call that value active
+wall time: an idle persistent worker can have a long session span with little active
+work. Report more precise task/lifecycle timing only when the JSONL actually provides
+sufficient evidence.
+
+#### Tool/history/coordination audit
+
+Preserve call order. This allows policies such as grep-before-read to be evaluated.
+Report explicit line selectors and the union of requested ranges. Coverage ratio is
+emitted only when total transcript length is observable from retained evidence.
+
+The same generic parser should recognize `hub` operations when they occur in the
+session being inspected. An explicit `timeoutMs: 0` coordination wait is always
+reported separately. Repeated short waits may be useful diagnostics but should not be
+a hard failure without a policy that defines the context.
+
+Policy failures return non-zero with exact reasons.
+
+## Runtime fixture lifecycle
 
 ### `scripts/prepare_runtime_smoke.py`
 
-Add a filesystem-only preparation command:
+Example:
 
 ```bash
-uv run python scripts/prepare_runtime_smoke.py cache \
-  --output /tmp/omp-kit-runtime-smoke
+uv run python scripts/prepare_runtime_smoke.py cache
 ```
+
+Default to creating a unique run directory under the platform temporary directory and
+print it. If `--output` is supported, require the destination to be absent or empty.
+Do not offer a generic recursive `--force` that can wipe an arbitrary non-empty path.
+A future replacement option may overwrite only a directory carrying a valid
+omp-kit-owned runtime-smoke manifest.
 
 Responsibilities:
 
-- refuse a non-empty destination unless `--force` is explicitly supplied;
-- copy the pristine fixture and scorer;
-- write a manifest containing source commit, source checksums and creation time;
-- record the initial tracked-tree status;
-- print the fresh fixture path and scorer command;
+- copy only `worker/` into the worker-visible `fixture/` directory;
+- copy the oracle separately;
+- write source commit, fixture/oracle checksums and creation time into `manifest.json`;
+- record initial tracked-tree status;
+- print fixture path and scorer command;
 - never invoke OMP or read credentials.
 
 ### `scripts/finish_runtime_smoke.py`
 
-Add an evidence collector that consumes the prepared manifest and one explicit child session record:
+Example:
 
 ```bash
 uv run python scripts/finish_runtime_smoke.py \
-  --run-dir /tmp/omp-kit-runtime-smoke \
+  --run-dir /tmp/omp-kit-runtime-smoke-... \
   --session path/to/child.jsonl \
   --policy search-first-main-history
 ```
 
+Optional future supervision audit:
+
+```bash
+  --parent-session path/to/main.jsonl \
+  --coordination-policy bounded-supervision
+```
+
 Responsibilities:
 
-1. verify the source and pristine fixture checksums;
-2. run the independent scorer and focused fixture test;
-3. call the session-record parser;
-4. apply the selected policy assertions;
-5. compare current tracked-tree state with the manifest;
-6. write `result.json` and `report.md` in the run directory;
-7. return non-zero on any failed acceptance condition.
+1. validate the owned manifest and source/pristine checksums;
+2. run the independent oracle and worker-visible focused test;
+3. inspect the explicit child session;
+4. apply the selected child policy assertions;
+5. when explicitly supplied, inspect the parent session for coordination/wait evidence;
+6. verify worker tool paths did not read the oracle or forbidden tracked docs;
+7. compare current tracked-tree state with the manifest;
+8. write stable `result.json` first and render `report.md` from it;
+9. return non-zero on failed acceptance conditions.
 
-The command must consume an explicit session path. Guessing "the newest session" is unsafe when several OMP sessions are active.
+Never guess the newest session when several OMP sessions may be active.
 
-## Search-first policy checks
+## Reusable policies
 
-The reusable `search-first-main-history` policy should require:
+### `search-first-main-history`
 
-- actual child model matches the expected role resolution;
-- thinking level matches configuration;
+Require:
+
+- expected agent/model/thinking trajectory;
 - no fallback;
-- at least one `grep` call whose path is exactly `history://Main`;
-- no `read` call whose path is exactly `history://Main`;
-- every history read uses an explicit line selector;
-- every targeted read occurs after the first matching grep;
+- at least one `grep` whose path is exactly `history://Main`;
+- no unbounded `read` of `history://Main`;
+- any history read uses an explicit line selector and occurs after relevant search;
 - independent scorer passes;
-- tracked omp-kit files are unchanged.
+- worker does not access the separated oracle or forbidden answer-bearing docs;
+- tracked omp-kit files remain unchanged.
 
-It should additionally report, but initially not fail solely on:
+Report without initially failing solely on:
 
 - overlapping ranges;
-- reads beyond the transcript end;
-- number of unique lines requested;
-- percentage of the transcript requested when total length is observable;
-- total tokens compared with a user-supplied historical reference.
+- reads beyond transcript end;
+- unique lines requested and coverage ratio;
+- total tokens versus a user-supplied historical reference.
 
-After several real runs establish a reasonable baseline, a coverage threshold may become a policy failure. Setting one from the single 188-line smoke would overfit the experiment.
+Do not invent a coverage threshold from the single 188-line smoke.
 
-## Test strategy for the automation
+### `bounded-supervision`
+
+This policy is evaluated only when the operator supplies the exact parent session. It
+should initially require only evidence that no explicit indefinite worker-watching wait
+(`timeoutMs: 0`) was used. Report:
+
+- task spawn time/agent id when observable;
+- `hub wait` requested timeout values and order;
+- job/list status checks;
+- direct sends/checkpoint interventions;
+- cancellations;
+- parent session span.
+
+Do not fail merely because a worker exceeded an estimated checkpoint window: estimates
+are control-plane hints, and the parent JSONL may not contain enough evidence to prove
+whether a longer wait was justified. Tighten this policy only after several real runs.
+
+## Test strategy
 
 ### Parser tests
 
-Use small synthetic JSONL fixtures covering:
+Use synthetic offline JSONL fixtures covering:
 
-- expected model/thinking/fallback events;
-- multiple assistant usage records summed correctly;
-- `reasoningTokens` mapped correctly;
+- supported header/session version;
+- a linear branch and a deliberately branched file that must fail v1 audit;
+- initial model plus a model transition/fallback;
+- thinking-level transitions;
+- assistant usage plus `model_usage` aggregation;
+- `reasoningTokens` remaining a subset of output;
 - grep-before-read ordering;
 - bounded and unbounded history reads;
 - overlapping ranges and unique-line calculation;
-- an out-of-range read result;
-- malformed JSON and missing required events;
-- a changed/unknown event shape producing an explicit error.
+- out-of-range reads;
+- hub bounded wait and explicit `timeoutMs: 0`;
+- malformed JSON and missing required evidence;
+- unknown harmless entry type reported as a warning rather than a zero metric.
 
-These tests should not invoke OMP or a provider.
+These tests must not invoke OMP or a provider.
 
 ### Preparation/finalization tests
 
 Use isolated temporary directories and verify:
 
-- destination collision refusal;
+- unique directory creation and explicit-output collision refusal;
+- worker/oracle physical separation;
 - manifest/checksum generation;
 - pristine source remains unchanged;
-- scorer pass and failure propagation;
+- scorer pass/failure propagation;
 - explicit session path requirement;
-- dirty tracked-state detection through an injected repository-status value rather than mutating the developer's checkout;
-- reports contain only declared stable fields.
+- oracle/forbidden-path access detection from session tool calls;
+- dirty tracked-state detection through an injected repository-status value rather than
+  mutating the developer checkout;
+- `result.json` is the source for the Markdown report.
 
 ### Live smoke
 
-A live smoke remains a documented manual dispatch surrounded by automated preparation and finalization:
+A live smoke remains a manual dispatch surrounded by automated preparation/finalization:
 
 ```text
 prepare fixture
-→ Main verifies history route
-→ Main dispatches exactly one worker
-→ worker completes
-→ operator supplies exact child JSONL path
-→ finish command scores and audits
+-> Main verifies history route
+-> Main dispatches exactly one worker and chooses a rough checkpoint window
+-> Main uses bounded coordination waits/status/checkpoint intervention as needed
+-> worker completes or yields a blocker checkpoint
+-> operator supplies exact child JSONL (and parent JSONL only when supervision is audited)
+-> finish command scores and audits
 ```
 
-This preserves the same-session `history://Main` property. A standalone shell process cannot replace the parent conversation whose retrieval policy is being tested.
+A standalone script cannot replace the real parent conversation whose history and
+coordination behavior are under test.
 
 ## Implementation order
 
 ### Stage 1 — deterministic gate and parser
 
 1. Add `just verify`.
-2. Add `scripts/inspect_omp_session.py`.
+2. Add `scripts/inspect_omp_session.py` with audit schema version 1 and linear-session
+   protection.
 3. Add synthetic parser tests.
-4. Validate the parser against retained Phase 2 and search-first session records locally without checking those records into Git.
-
-This stage removes the most repeated manual work and has no provider side effects.
+4. Validate locally against retained Phase 2/search-first records without committing
+   those records.
 
 ### Stage 2 — durable fixture lifecycle
 
-1. Promote the cache fixture and scorer into `tests/fixtures/harness_runtime/`.
-2. Add preparation and finalization scripts.
+1. Promote the cache worker fixture and oracle into separated checked-in directories.
+2. Add preparation/finalization scripts.
 3. Add isolated filesystem tests.
-4. Reproduce the existing cache scorer result from a fresh temporary run directory.
+4. Reproduce the existing scorer result from a fresh run directory.
 
-### Stage 3 — opt-in runtime recipes
+### Stage 3 — opt-in runtime recipes and supervision evidence
 
-Add `just` recipes only as thin, explicit entry points, for example:
+Add only thin explicit recipes such as:
 
 ```text
 runtime-smoke-prepare
-runtime-smoke-finish SESSION=...
+runtime-smoke-finish SESSION=... [PARENT_SESSION=...]
 ```
 
-Do not add a default recipe that launches paid/authenticated model traffic. If OMP later exposes a stable API for selecting a live parent session and returning child record paths, reassess whether dispatch can be automated safely.
+Do not add a default recipe that launches paid/authenticated model traffic. Accumulate
+request-count/session-span/wait evidence before changing global `task.softRequestBudget`
+or `task.maxRuntimeMs` from their validated defaults/current configuration.
 
 ## Acceptance criteria
 
-The automation plan is complete when:
+The automation batch is useful when:
 
-- one deterministic command covers the repository's required combined checks;
-- session metrics and history-access policy are derived from JSONL without manual arithmetic;
-- a fresh runtime fixture can be prepared without relying on retained `/tmp/omp-kit-phase2/` artifacts;
-- one explicit child record can be independently scored and audited into JSON and Markdown;
-- failures are non-zero and name the violated condition;
-- ordinary tests remain offline, credential-free and isolated;
-- live runtime requests remain explicit and profile-scoped;
+- one deterministic command covers required repository checks;
+- session metrics/history policy are derived without manual arithmetic;
+- branched/unsupported sessions cannot silently corrupt metrics;
+- model/fallback trajectories are represented accurately;
+- worker-visible fixture and hidden oracle are isolated;
+- a fresh runtime fixture no longer depends on retained `/tmp/omp-kit-phase2/` state;
+- one explicit child record can be scored/audited into JSON and Markdown;
+- optional parent evidence can expose indefinite waits and intervention history;
+- failures are non-zero and identify violated conditions;
+- ordinary tests remain offline and credential-free;
+- live requests remain explicit/profile-scoped;
 - raw account/session evidence remains untracked.
 
 ## Deferred ideas
 
-Do not add these without repeated need:
+Do not add without repeated need:
 
 - a general benchmark database;
 - automatic prompt tuning;
-- a session daemon or custom scheduler;
-- automatic discovery of the latest child record;
+- a session daemon/custom scheduler;
+- automatic newest-session discovery;
 - CI provider calls;
-- quota or billing inference;
+- automatic cancellation based only on elapsed time;
+- quota/billing inference;
 - a second context subsystem.
 
-The immediate value is a small parser, one reusable fixture lifecycle and one combined deterministic verification command.
+The immediate value is a combined deterministic gate, one trustworthy session auditor,
+one reusable isolated fixture/oracle lifecycle, and enough timing evidence to make future
+time-budget tuning empirical rather than speculative.
