@@ -1,46 +1,59 @@
 set dotenv-load := false
 
-# Install each ./skills/* directory into ~/.omp/agent/skills.
+# Portable installer uses its own small dependency environment.
 install *args:
+    uv run --script scripts/install_harness.py {{args}}
+
+install-force:
+    uv run --script scripts/install_harness.py --force
+
+install-preview *args:
+    uv run --script scripts/install_harness.py --dry-run {{args}}
+
+validate-harness:
+    uv run --script scripts/install_harness.py --validate
+
+doctor:
+    uv run --script scripts/install_harness.py --doctor
+
+rollback:
+    uv run --script scripts/install_harness.py --rollback
+
+# Explicit legacy helper; not the normal managed-copy installation.
+install-skills *args:
     uv run python scripts/link_skills.py {{args}}
 
-# Replace stale per-skill symlinks under ~/.omp/agent/skills.
-install-force:
-    uv run python scripts/link_skills.py --force --prune
-
-# Generate registry.yaml from resource.yaml files.
 build-registry:
     uv run python scripts/build_registry.py
 
-# Fail if registry.yaml differs from resource.yaml files.
 check-registry:
     uv run python scripts/build_registry.py --check
 
-# Validate registry.yaml and referenced resource paths.
 validate-registry:
     uv run python scripts/validate_registry.py
 
-# Print registry.yaml as a compact human-readable index.
 build-index:
     uv run python scripts/build_index.py
 
-# Scan a path for risky files and command patterns.
 scan-risk path:
     uv run python scripts/scan_risk.py {{path}}
 
-
-# Promote a draft skill into skills/ and update generated registry.yaml.
 promote-skill path *args:
     uv run python scripts/promote_skill.py {{path}} {{args}}
 
-# Run all repository tests (fast gate).
 test:
     uv run python -m pytest tests
 
-# Pull all standalone git repos under references/ and print a summary.
+# Final deterministic local gate. Live OMP/provider smokes are intentionally excluded.
+verify:
+    just test
+    just validate-harness
+    just check-registry
+    just validate-registry
+    git diff --check HEAD
+
 pull-references:
     uv run python scripts/git_pull_references.py
 
-# Generate skeleton docs for reference repos that lack them.
 init-reference-docs:
     uv run python scripts/init_reference_docs.py

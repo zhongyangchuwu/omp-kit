@@ -1,30 +1,39 @@
-# Execution Cadence
+# Execution cadence
 
-## Execution inputs
+Begin with the immediate objective, constraints and required evidence. Inspect the
+relevant existing conventions, then make the smallest complete in-scope change.
+Add behavior-focused tests for changed behavior; run targeted verification and
+report observed results, not inferred success.
 
-Begin execution with the current goal, constraints, plan, relevant files, and verification expectations. Read existing conventions before writing new code.
+For coordinated work, load `delegation.md` and `subagent-context.md`. Delegate
+coherent workstreams, reuse their owner when possible, and avoid rewriting a long
+parent discussion as an expensive new brief. Workers verify their own scope.
 
-## Implementation cadence
+The integrating director owns final verification but may delegate its execution.
+Run broad build/test/lint gates once when the integrated risk or acceptance calls
+for them, not by default in every worker. Documentation-only workers without an
+execution tool report that limit and request a suitable verifier.
 
-1. Confirm the next bounded task.
-2. Inspect the exact files and symbols involved.
-3. Make the smallest complete change that satisfies the task.
-4. Add or update behavior-focused tests when behavior changes.
-5. Run the focused check that proves the task.
-6. Record deviations and evidence for the summary.
-7. When using TDD, state expected behavior, observe a failing focused check, implement the smallest working change, and refactor while the check remains passing.
+Use the bounded-executor repair and stop contract for implementation. A blocked
+worker should return evidence, attempted approaches and its best diagnosis.
+Do not spend more autonomous turns repeating failed variants without new evidence.
+A repeated command timeout is not new evidence by itself: change the diagnostic
+approach, narrow the command, or escalate instead of simply increasing the wait.
 
+For tests, builds or commands that are expected to take noticeable time, use an
+observed baseline when one exists. Prefer the narrowest check that can answer the
+current question, and use a bounded timeout/readiness condition when the available
+tool supports one. Distinguish these outcomes explicitly:
 
-## Subagent coordination
+- the command failed;
+- the command timed out before a result;
+- the command is intentionally long-running and reached an expected readiness signal.
 
-Use subagents for independent work units with explicit files, constraints, outputs, and acceptance criteria. Keep shared context lean and written. The controller integrates results and runs final verification.
-Subagents do not run project-wide build, test, lint, or formatting gates. They report scoped evidence; the controller verifies the integrated result.
+Do not convert a timeout into a pass or automatically rerun it with a much larger
+limit. One justified extension is reasonable when there is concrete progress or a
+known slow baseline; repeated extensions without new evidence should escalate.
 
-## Long-lived processes
-
-When execution starts a server, watcher, job, browser, worker, tunnel, or other long-lived process, record ownership, target identity, readiness signal, logs or health check, and cleanup before trusting end-to-end evidence.
-
-
-## Execution summary
-
-Record the files changed, behavior changed, tests or checks run, deviations from plan, and unresolved risks. The summary must support review and verification without relying on conversation memory.
+For a server, watcher, tunnel or other long-lived process, record ownership,
+readiness signal, logs/health check and cleanup. Do not claim end-to-end readiness
+before those dependencies are actually checked, and do not wait indefinitely for a
+readiness event that has no bounded timeout.
