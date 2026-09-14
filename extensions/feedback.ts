@@ -33,6 +33,8 @@ export interface FeedbackInput {
 
 export interface FeedbackContext {
 	cwd: string;
+	sessionId?: string;
+	sessionFile?: string;
 }
 
 export interface FeedbackRecord extends FeedbackInput {
@@ -40,7 +42,14 @@ export interface FeedbackRecord extends FeedbackInput {
 	id: string;
 	timestamp: string;
 	cwd: string;
+	sessionId?: string;
+	sessionFile?: string;
 }
+
+type SessionProvenance = {
+	getSessionId?: () => string;
+	getSessionFile?: () => string | undefined;
+};
 
 export function createFeedbackSchema(zod: ExtensionAPI["zod"]) {
 	const boundedText = (max: number) => zod.string().min(1).max(max).refine(value => value.trim().length > 0, "must be non-empty");
@@ -62,11 +71,23 @@ export function buildFeedbackRecord(input: FeedbackInput, context: FeedbackConte
 		id: randomUUID(),
 		timestamp: new Date().toISOString(),
 		cwd: context.cwd,
+		...(context.sessionId === undefined ? {} : { sessionId: context.sessionId }),
+		...(context.sessionFile === undefined ? {} : { sessionFile: context.sessionFile }),
 		category: input.category,
 		severity: input.severity,
 		summary: input.summary,
 		...(input.evidence === undefined ? {} : { evidence: input.evidence }),
 		...(input.suggestedDirection === undefined ? {} : { suggestedDirection: input.suggestedDirection }),
+	};
+}
+
+export function feedbackContextFromRuntime(cwd: string, sessionManager: SessionProvenance): FeedbackContext {
+	const sessionId = sessionManager.getSessionId?.();
+	const sessionFile = sessionManager.getSessionFile?.();
+	return {
+		cwd,
+		...(sessionId ? { sessionId } : {}),
+		...(sessionFile ? { sessionFile } : {}),
 	};
 }
 
@@ -79,11 +100,12 @@ export default function feedbackExtension(pi: ExtensionAPI): void {
 	pi.registerTool({
 		name: "omp_kit_feedback",
 		label: "OMP Kit Feedback",
-		description: "Record a concise, evidence-backed omp-kit workflow finding for later review.",
+		description:
+			"Record a concise, evidence-backed omp-kit workflow finding for later review. This records evidence only; it does not authorize repository, policy, or Harness changes.",
 		approval: "write",
 		parameters: createFeedbackSchema(pi.zod),
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-			const record = buildFeedbackRecord(params, { cwd: ctx.cwd });
+			const record = buildFeedbackRecord(params, feedbackContextFromRuntime(ctx.cwd, ctx.sessionManager));
 			const filePath = join(getAgentDir(), "omp-kit", "feedback.jsonl");
 
 			await appendFeedbackRecord(filePath, record);
@@ -91,14 +113,14 @@ export default function feedbackExtension(pi: ExtensionAPI): void {
 			try {
 				await pi.appendEntry("omp-kit-feedback", record);
 			} catch (error) {
-				pi.logger.warn("omp-kit feedback provenance append failed", {
+				pi.logger.warn("omp-kit feedback session provenance append failed", {
 					id: record.id,
 					error: error instanceof Error ? error.message : String(error),
 				});
 			}
 
 			return {
-				content: [{ type: "text", text: "Feedback recorded." }],
+				content: [{ type: "text", text: "Feedback recorded as evidence." }],
 				details: record,
 			};
 		},
