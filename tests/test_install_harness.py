@@ -214,6 +214,24 @@ def test_missing_agent_skill_or_role_rejected(dirs):
         install(dirs)
 
 
+def test_model_neutral_agent_is_accepted(dirs):
+    path = dirs[0] / 'agents/worker.md'
+    path.write_text(path.read_text().replace('model: "@fast_worker"\n', ''))
+
+    install(dirs)
+
+    installed = (dirs[1] / 'agents/worker.md').read_text()
+    assert 'model:' not in installed
+
+
+def test_invalid_explicit_agent_model_role_is_rejected(dirs):
+    path = dirs[0] / 'agents/worker.md'
+    path.write_text(path.read_text().replace('@fast_worker', '@missing'))
+
+    with pytest.raises(ConfigError, match='model must reference a configured role'):
+        install(dirs)
+
+
 def test_missing_model_rejected(dirs):
     p = dirs[0] / 'config/config.yml'
     p.write_text(p.read_text().replace('cpa/luna', 'cpa/missing'))

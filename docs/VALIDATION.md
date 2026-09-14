@@ -1,251 +1,216 @@
-# Validation record
+# Validation summary
 
-Date: 2026-09-13
+Date: 2026-09-14
 
-## Current branch validation
+This file records **current accepted validation evidence and its boundaries**. Detailed experiment transcripts and older version-specific evidence belong in the owning Issues, `evidence/`, and `docs/archive/`.
 
-Final-review implementation commit:
-
-```text
-branch: harness-v2-implementation
-head:   d4467c5
-```
-
-Environment: Linux/WSL2, Python 3.12.12, OMP 18.1.18.
-
-Current regression evidence:
-
-- `uv run python -m pytest -q tests/test_install_harness.py`: **53 passed**.
-- `uv run python -m pytest -q tests/test_inspect_omp_session.py`: **28 passed**.
-- `just test`: **119 passed**.
-- `just verify`: passed, including source validation, registry checks and
-  `git diff --check HEAD`.
-- Pyright/LSP diagnostics: no errors in `scripts/install_harness.py` or
-  `scripts/inspect_omp_session.py`; the installer retains pre-existing style warnings.
-
-The retained SearchFirst child record was re-audited with the same strict policy. Agent,
-task-model, thinking and causal history assertions still pass, but `--forbid-fallback`
-now fails because `session_init.resolvedModelIsFallback` is missing. The trajectory has
-no observed fallback; the stricter rule correctly reports that absence cannot be proven.
-The old Phase 2 child remains descriptively readable and has the same incomplete
-session-init fallback metadata. These current re-audits do not rewrite the historical
-runtime reports below.
-
-This validates deterministic source-only `--validate`, explicit local-overlay handling,
-complete fallback evidence requirements, strict thinking trajectory assertions and the
-associated documentation corrections.
-
-## Runtime Phase 1 — bundled sonic vs custom luna-code
-
-Phase 1 ran on omp-kit commit `eebeb1ac1b992cf754930cf50b1a29c547867187` with OMP 18.1.18 inside the same native profile (`harness-v2-test`). The parent was `cpa/gpt-5.6-sol:medium`; both worker arms resolved through `@fast_worker` to `cpa/gpt-5.6-luna:high`.
-
-Five deterministic Python fixtures were run in alternating A/B order with pristine copies and independent verification after every run.
-
-| Metric | bundled `sonic` | custom `luna-code` |
-| --- | ---: | ---: |
-| Runs / independent passes | 5 / 5 | 5 / 5 |
-| Provider requests | 35 | 35 |
-| Input tokens | 144,582 | 145,424 |
-| Cache-read tokens | 482,816 | 302,080 |
-| Output tokens | 7,310 | 7,134 |
-| Reasoning tokens | 3,493 | 3,639 |
-| Total tokens | 634,708 | 454,638 |
-| Mean wall time | 54.65 s | 48.13 s |
-| Effective session-init tools | 16 | 10 |
-| Mean session-init system prompt | 26,808.8 chars | 17,245 chars |
-| Total observed tool calls | 54 | 44 |
-| `read` calls | 31 | 19 |
-
-Decision: **keep `luna-code` unchanged**. It matched `sonic` on independent correctness in this sample while showing lower descriptive total-token/tool/wall-time activity. The token reduction was dominated by cache-read tokens, so it is not a direct Business-quota claim.
-
-## Runtime Phase 2 — real history://Main smoke
-
-The initial synthetic-parent approach was discarded because long `hub wait` intervals measured coordination waiting rather than model inference and did not cleanly guarantee durable transcript state.
-
-The valid topology was:
+## Current runtime baseline
 
 ```text
-real Main session
--> history://Main preflight/barrier
--> one luna-code worker
--> independent scorer
+branch:            omp-native-foundation
+normal runtime:    OMP 18.1.20
+Phase 1.5 impl:    a92d25e28f96851b916b285f01dbb5991f666ad7
+capability audit:  7bf2f93ca87fff81d6cca8a65c3102cc62100b4f
+Phase A preview:   f5bcee2e82a754d2190d8ddb8aee73b5d237dffb
 ```
 
-The worker received only the objective, temporary fixture path, and `history://Main`; it did not receive a rewritten final requirements brief.
+The installed runtime was observed as OMP 18.1.20 before and after the latest accepted deterministic gate. A newer release must not be assumed to contain preview-only behavior; compatibility claims require the relevant implementation in that released runtime and, where needed, a released-runtime smoke.
 
-Observed child evidence:
+## Latest accepted deterministic repository verification
 
-- actual agent: `luna-code`;
-- model: `cpa/gpt-5.6-luna`, thinking level `high`;
-- `resolvedModelIsFallback: false`;
-- history reads: 1;
-- wall time: about 85 seconds;
-- total child tokens: 200,731;
-- edits confined to the temporary fixture;
-- focused worker test: 3 passed.
-
-Independent scorer:
+The latest locally verified repository HEAD is:
 
 ```text
-accepted_correct: 3/3
-superseded_incorrect: 0
-rejected_tentative_incorrect: 0
-unresolved_incorrect: 0
-repository_facts_correct: 1/1
-behavioral_pass: true
+312598bc3261808ed31e30bcb2adacf2f2daa852
 ```
 
-This satisfies the one-shot parent-history merge gate. It does not establish repeated reliability or quota efficiency. The 200,731-token child total is a practical signal that reading a long Main transcript can be context-heavy.
-
-## Runtime Phase 3 — persistent same-session continuation
-
-**PASS.** One `luna-code` worker handled three related tasks in one session across two direct-message wakeups.
-
-Observed evidence:
-
-- agent: `luna-code`;
-- model: `cpa/gpt-5.6-luna`, thinking level `high`;
-- `resolvedModelIsFallback: false`;
-- one session id handled Task 1, Task 2 and Task 3;
-- status after each task was `idle`;
-- the two direct follow-ups reported `woken`;
-- no silent respawn, fallback, extra worker, or unbounded `hub wait` occurred;
-- Task 2 reused the helper created in Task 1;
-- Task 3 correctly applied a new decision that superseded the earlier separator choice;
-- final independent verification passed with 3 tests;
-- total child tokens: 255,433;
-- end-to-end session wall time: about 3m24s;
-- tracked omp-kit working tree remained clean.
-
-One bounded edit-placement error in Task 1 was repaired by the worker after rereading the file and did not indicate a lifecycle or stale-context failure.
-
-Important wording: this run proves **persistent same-session continuation and idle -> woken wakeup**. It did not separately prove a `parked -> revived` transition, and that stronger lifecycle claim is not required by the current merge gate.
-
-## Runtime Phase 4 — Notes-backed rollover/recovery
-
-**PASS, with one tooling anomaly recorded.** The Main session formed an explicit decision, persisted it in context notes, entered a new context window, recovered the decision from the automatically supplied notes-backed context, recovered exact pre-rollover evidence through `history://current/full`, and completed a decision-dependent task correctly.
-
-Pre-rollover accepted state:
-
-- implement `render_notice(label)`;
-- trim surrounding whitespace;
-- preserve original case;
-- return exactly `NOTICE | <label>`;
-- supersede the older `NOTE: <label>` behavior;
-- leave empty-label validation unresolved.
-
-Recovery evidence:
-
-- `new_context` successfully entered a fresh context window;
-- the new window automatically received accepted, superseded and open state from notes;
-- targeted search of `history://current/full` found marker `PHASE4-EVIDENCE-7C91-NOTICE-PIPE` at line 30138;
-- lines 30131-30138 recovered the exact pre-rollover decision text;
-- the resulting implementation was `return f"NOTICE | {label.strip()}"`;
-- `python -m unittest -v test_notice.py`: 2 tests passed;
-- direct behavior checks confirmed trimming, mixed-case preservation, exact prefix, absence of stale `NOTE:`, and no invented empty-label validation;
-- tracked omp-kit working tree remained clean.
-
-### Known runtime tooling defect: context_notes schema/documentation mismatch
-
-The exposed `context_notes` schema requires `text`, while its documentation says omitting `text` reads the notebook. Passing an empty string clears the notebook. The issue was submitted through `xd://report_issue`; the notebook was restored afterward.
-
-This defect did **not** invalidate the rollover gate because the post-rollover decision was already present in automatically injected notes-backed context and exact evidence remained recoverable from full history. Treat the empty-string behavior as a known non-blocking tooling defect and avoid using an empty-string call as a read operation.
-
-## Search-first parent-history policy smoke
-
-**PASS for correctness and retrieval policy; not evidence of context/token reduction.** One `luna-code` worker searched the real `history://Main` transcript instead of receiving a rewritten requirements brief or issuing an unbounded whole-history read.
-
-Worker identity:
-
-- session id: `01a096a9-d277-77b5-9862-3af0c19b59c4`;
-- agent: `luna-code`;
-- model: `cpa/gpt-5.6-luna`, thinking level `high`;
-- fallback: false.
-
-History retrieval:
-
-- 3 `grep` calls against `history://Main`;
-- 5 bounded line-range reads;
-- no unbounded `read history://Main`;
-- successful bounded ranges collectively covered nearly all of the then-188-line concise transcript, with one final out-of-range read returning no content.
-
-Independent scorer:
+The worktree was clean and synchronized with `origin/omp-native-foundation`. `just verify` ran exactly once and passed without repair or rerun:
 
 ```text
-accepted_correct: 3/3
-superseded_incorrect: 0
-rejected_tentative_incorrect: 0
-unresolved_incorrect: 0
-repository_facts_correct: 1/1
-behavioral_pass: true
+98 Python tests passed
+11 Bun tests passed
+57 Bun assertions / expect() calls
+TypeScript typecheck passed
+harness validation passed
+registry check/validation passed
+git diff --check passed
 ```
 
-Worker focused test and independent reruns passed. Tracked omp-kit files remained unchanged and old Phase 2 evidence was not modified.
-
-Usage observed:
+Runtime/profile integrity:
 
 ```text
-total child tokens: 642,661
-input:               68,928
-cache read:         570,880
-output:                2,853
-reasoning:             1,611
-wall time:            ~1m42s
+omp --version before: omp/18.1.20
+omp --version after:  omp/18.1.20
+real config/MCP/plugin/marketplace fingerprints: unchanged
 ```
 
-The earlier Phase 2 whole-history smoke observed 200,731 total child tokens, but the Main history/runtime state differed, so this is not a controlled cost or quota comparison. The result proves that direct worker search of the parent's automatic transcript can recover the correct requirements without Main rewriting a detailed brief. It does **not** prove that search-first automatically reduces model context or total token traffic.
+The verifier made no repository edits, commits, Issue updates, child-agent launches, provider/model calls, web search, LSP/AST/debug calls, capability experiments, fresh-session experiments, or telemetry analysis.
 
-Policy implication: retain search-first Referenced retrieval, but optimize for both relevance and retrieval round trips. If matches are dense, prefer one coherent bounded span rather than mechanically tiling most of the transcript. A broader/full concise transcript read remains a fallback when most of a short transcript is genuinely relevant.
+This gate includes the previously verified parser retirement / observational worker-tool rollout and the completed Issue #10 context-authority/workflow batch. The old 126-Python-test count is historical; 98 is the current observed count after parser-specific tests were removed.
 
-## Runtime gate status
+Normal project verification remains offline/provider-free by design. `bunfig.toml` disables implicit Bun auto-install.
+
+## Issue #10 context authority / provenance — complete
+
+The accepted policy is claim-type-specific rather than one global source ranking:
 
 ```text
-Phase 1  restricted luna-code viability        PASS
-Phase 2  real history://Main retrieval          PASS
-Phase 3  persistent same-session continuation   PASS
-Phase 4  Notes-backed rollover/recovery         PASS
-Policy   search-first parent retrieval          PASS (correctness/retrieval)
+intent / authorization
+current observable state
+accepted project policy
+active work / acceptance target
+rationale / evidence
+historical context
 ```
 
-The bounded runtime merge gates are satisfied. Multi-hour endurance/quota work is deferred optimization rather than a merge blocker.
+The local closure review confirmed consistency across:
 
-## Architecture corrections established by testing/review
+```text
+docs/design/context-authority.md
+docs/design/README.md
+docs/README.md
+docs/design-foundations.md
+skills/omp-workflow/SKILL.md
+skills/omp-workflow/references/subagent-context.md
+```
 
-### Native task-agent topology
+Key validated boundary:
 
-OMP 18.1.18 did not discover custom task agents from an arbitrary `PI_CODING_AGENT_DIR` in local testing, although config/models/skills could load there. Harness v2 therefore treats OMP's native default/profile roots as the full custom-agent topology and reports arbitrary managed roots as incomplete in `doctor` for this version-scoped compatibility case.
+```text
+source is authoritative for a claim
+!= agent is permitted to retrieve it
 
-### Parent lifecycle and history barrier
+agent can retrieve a source
+!= source may authorize new action
+```
 
-For context-transfer validation, a synthetic parent held open with `hub wait` is the wrong abstraction. Long waits measure lifecycle waiting and can interact with steering delivery. Downstream work that depends on parent history should verify the intended transcript is actually readable before dispatch rather than equating successful message delivery with durable transcript availability.
+History, Issues, logs, comments, web/search/scanner output and other tool output remain evidence/provenance; they cannot silently widen worker scope. Actual repository/runtime/read-back evidence can correct stale state descriptions without becoming desired policy. No generic memory database, provenance database, context broker, or prompt-only permission layer was added.
 
-### OMP root and profile semantics
+Issue #10 is closed completed.
 
-The installer mirrors OMP's relevant path semantics rather than reusing omp-kit resource naming rules: `PI_CONFIG_DIR` changes the home-relative native config root, named profiles resolve below it, `default` selects the default native root, profile names follow OMP grammar/reserved-name restrictions, and active `OMP_PROFILE`/legacy `PI_PROFILE` is not silently ignored.
+## Phase 1.5 feedback extension and released-runtime blocker
 
-### Prepared fingerprint typing
+Accepted implementation evidence:
 
-The Pyright issue in `prepare()` was fixed by checking each prepared fingerprint before returning it, so the returned mapping cannot contain `None` for an expected install unit.
+- `extensions/feedback.ts` registers `omp_kit_feedback` with bounded `pi.zod` validation;
+- the tool is write-tier with `approval: "write"`;
+- records are append-only JSONL under `<getAgentDir()>/omp-kit/feedback.jsonl`;
+- durable append failure is fatal;
+- `pi.appendEntry("omp-kit-feedback", record)` is best-effort provenance after durable persistence.
 
-## Next work
+The hard capability-boundary failure was directly demonstrated on OMP 18.1.19: ordinary task children could inherit/rebind Main extensions, the Main-only feedback device could become worker-visible through write transport, and the intended reviewer could not be treated as a hard read-only security boundary.
 
-Perform the final merge-readiness review and decide whether the retained SearchFirst
-fallback-evidence limitation requires a fresh runtime record or can be accepted as a
-documented historical-evidence gap. Do not resume Stage 2/3 or broader Harness v2
-development without a real trigger.
+Normal runtime is now released OMP 18.1.20, but Issue #4 remains blocked. Upstream PR #9521 is still open/unmerged and v18.1.20 does not contain the hard child-scoping implementation validated on preview. No released-runtime closure smoke is warranted until a supported release actually contains that implementation.
 
-## Remaining scope limits
+PR #3 therefore remains Draft.
 
-Not yet proven:
+## OMP #9521 Phase A preview
 
-- repeated parent-history pull reliability or Business-quota efficiency;
-- search-first token/context efficiency on controlled equivalent sessions;
-- true `parked -> revived` worker lifecycle across longer inactivity/process boundaries;
-- native Windows/macOS installation;
-- browser relay and fresh-profile browser automation;
-- fresh-profile LSP behavior;
-- all provider/model live routes;
-- ChatGPT Business quota/accounting semantics;
-- default-root replacement after shutting down all live OMP sessions.
+Exact preview commit:
 
-These are not current bounded runtime merge-gate failures.
+```text
+f5bcee2e82a754d2190d8ddb8aee73b5d237dffb
+```
+
+Provider-free Phase A established for that preview only:
+
+- unlisted extension/custom/MCP tools stayed outside enabled/active/callable/`xd://` worker surfaces;
+- the intended reviewer did not regain `write`, `edit`, or `bash`;
+- late registration, MCP refresh and broad active-set mutation did not widen the scoped child;
+- hidden `yield` still completed protocol;
+- real profile/config/plugin fingerprints remained unchanged.
+
+This remains preview evidence, not released-runtime compatibility. Compact evidence is under `evidence/experiments/2026-09-14-omp-9521-phase-a/`.
+
+## OMP-native telemetry boundary
+
+Closed Issue #13 validated OMP-native telemetry on retained real sessions using installed OMP 18.1.19.
+
+`/api/sessions` + `/api/session/trace` reproduced decision-critical request counts, tool calls/errors, total tokens and cost; selective `/api/session/entry` supplied usage detail not split by the trace summary. The accepted ownership is:
+
+```text
+OMP:
+  session ingestion
+  trace/span reconstruction
+  tool timing/errors
+  token/cost normalization
+  generic stats/session/RPC
+
+omp-kit:
+  experiment/task/arm identity
+  acceptance judgment
+  human intervention/repair semantics
+  durable project decision
+```
+
+Do not restore a local session parser, direct `stats.db` dependency, trace builder, pricing layer, or generic full-event collector without a new demonstrated requirement that survives this ownership check.
+
+The telemetry API behavior itself was not re-probed on 18.1.20 because there is no current decision need to spend extra work on a bespoke experiment.
+
+## Observational worker-tool rollout — mechanically verified
+
+Current broad dogfood surfaces:
+
+```text
+luna-code / luna-deep:
+  read grep glob edit write bash
+  web_search lsp ast_grep ast_edit debug eval security_scan todo
+
+luna-doc:
+  read grep glob edit write
+  web_search lsp ast_grep todo
+
+sol-review:
+  read grep glob web_search ast_grep security_scan
+```
+
+These are observational exposures, not permanent capability claims. Workers must not invoke tools merely to demonstrate availability. OMP normal session/stats persistence is the recorder.
+
+OMP's combined `github` built-in remains excluded from workers because the same tool includes remote-mutating PR create/push/checkout operations; external repository mutation remains Main-owned. The hard ambient child boundary still depends on #9521 / Issue #4.
+
+Historical controlled comparisons remain valid only for their exact conditions: one `web_search` pair showed useful discovery behavior but was insufficient for a permanent decision; one full-LSP pair made zero LSP calls and supported only a scoped reject under the former promotion policy. Current policy prefers real omp-kit development plus passive telemetry over one-tool-at-a-time benchmarks.
+
+## Issue #14 parser retirement — complete
+
+Removed:
+
+```text
+scripts/inspect_omp_session.py
+tests/test_inspect_omp_session.py
+```
+
+No current executable/import/callsite remains outside historical/archive material. Generic telemetry belongs to OMP-native surfaces; history search-first behavior is guidance rather than a raw-journal gate; hub wait semantics remain an OMP-owned coordination concern. Issue #14 is closed completed.
+
+## Issue #9 current-generation harness ablation — local gate pending
+
+Commits after the accepted `312598bc...` gate include a web-authored Issue #9 simplification batch:
+
+- `docs/design/harness-boundary.md` now inventories current model-compensation/runtime/evidence mechanisms;
+- `skills/omp-workflow/SKILL.md` no longer requires a generic end-of-task self-improvement reflection pass;
+- `skills/omp-workflow/references/self-improvement.md` makes feedback event-triggered by reusable friction already observed during real work.
+
+New default:
+
+```text
+observed reusable friction
+-> optionally record minimal evidence-backed feedback
+
+no observed friction
+-> no reflection/feedback phase
+```
+
+The feedback sink and `report != self-modify` boundary remain unchanged. `.planning/` support is not removed; Issue #11 still owns its broader coexistence/replacement decision.
+
+This #9 batch is **not yet locally verified** and must not be described as mechanically accepted until one provider-free `just verify` gate passes on its final HEAD. No provider/model or capability experiment is required.
+
+## Evidence discipline
+
+For future validation updates:
+
+- distinguish source inspection, provider-free runtime probes, observational real-development telemetry, and controlled provider/model experiments;
+- record exact OMP/runtime versions or upstream commits for runtime claims;
+- do not convert preview evidence into released-runtime compatibility;
+- spend live-model quota on development unless a specific ambiguity genuinely requires a controlled experiment;
+- keep ordinary OMP sessions in native session/stats storage and freeze only decision-critical evidence;
+- record deterministic checks separately from live integration evidence;
+- preserve historical evidence rather than rewriting it when policy evolves.

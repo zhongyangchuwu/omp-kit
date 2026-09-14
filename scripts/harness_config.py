@@ -190,9 +190,11 @@ def validate(config: dict, models: dict, repo: Path) -> None:
         fm = frontmatter(path)
         if fm['name'] != path.stem:
             raise ConfigError(f'Agent name mismatch: {path.name}')
-        alias = fm.get('model', '')
-        if not isinstance(alias, str) or not alias.startswith('@') or alias[1:] not in roles:
-            raise ConfigError(f'{path.name}: model must reference a configured role')
+        alias = fm.get('model')
+        if alias is not None and (
+            not isinstance(alias, str) or not alias.startswith('@') or alias[1:] not in roles
+        ):
+            raise ConfigError(f'{path.name}: model must reference a configured role when set')
         tools = fm.get('tools')
         if not isinstance(tools, list) or not tools or not all(isinstance(t, str) for t in tools):
             raise ConfigError(f'{path.name}: explicit non-empty tool list required')

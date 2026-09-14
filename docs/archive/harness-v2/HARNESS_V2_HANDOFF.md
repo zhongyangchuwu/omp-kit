@@ -1,21 +1,23 @@
-# Harness v2 implementation handoff
+# Harness v2 baseline and OMP Native Foundation handoff
 
 ## Current state
 
-Harness v2 has completed the bounded runtime-validation sequence and the search-first
-parent-history policy smoke on the current Linux/WSL2 + OMP 18.1.18 path. The historical
-runtime gates remain valid for the behavior they observed. The final-review auditor now
-uses stricter proof rules, which expose one retained-record evidence gap described below.
+Harness v2 remains the validated legacy migration baseline. OMP Native Foundation
+Phase 1 now adds a resource-only plugin package while preserving the legacy installer,
+configuration snapshot and established agent identities.
 
-Final-review validation for implementation commit `d4467c5`:
+Phase 1 validation for the working tree based on `2f1d255`:
 
 ```text
-installer tests: 53 passed
-auditor tests:   28 passed
-root tests:     119 passed
-just verify:     passed
+native plugin tests:  4 passed
+installer tests:     55 passed
+root tests:         125 passed
+just verify:          passed
+isolated plugin link/discovery/unlink smoke: passed
 ```
 
+The smoke used OMP 18.1.18 without provider traffic. It discovered all four model-neutral
+agents, 15 active skills, the Main-only rule, and no copied agent-root resources.
 
 Runtime/policy gates:
 
@@ -37,26 +39,31 @@ Maintain a portable personal OMP harness that uses strong models for high-levera
 
 For current behavior, prefer:
 
-1. current `config/`, `agents/`, and `skills/` — executable/runtime policy;
-2. `docs/VALIDATION.md` — what has actually been tested;
-3. `docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md` — completed gates and experiment limits;
-4. `README.md`, `docs/omp-installation.md`, `docs/omp-configuration.md` — operational use;
-5. `docs/HARNESS_V2_GUIDE.md` — architecture rationale.
+1. `package.json`, `agents/`, `skills/`, and `rules/` — native plugin surface;
+2. `config/` and the Python installer — legacy Harness v2 migration/compatibility path;
+3. `docs/VALIDATION.md` — what has actually been tested;
+4. `docs/OMP_NATIVE_CONFIG_AUDIT.md` and `docs/omp-roadmap.md` — ownership and migration direction;
+5. runtime experiment records — historical gates and their limits.
 
-Earlier chat snippets and historical reports are design evidence, not current instructions. A new OMP session cannot assume that a separate prior session is available through its own `history://Main`.
+Earlier chat snippets and historical reports are design evidence, not current
+instructions. A new OMP session cannot assume that a separate prior session is
+available through its own `history://Main`.
 
 ## Stable implementation surface
 
-- Canonical user-derived config/models using CPA `/v1`, `openai-responses`, and `CPA_API_KEY`.
-- Sol control-plane / Luna workforce role mapping.
-- Four role-backed restricted workers, including `luna-code` and `luna-deep`.
-- `bounded-executor` for scope/repair/stop discipline, now including stagnation/time signals.
-- `omp-workflow` delegation, bounded supervision and subagent-context policy.
-- Portable copy installer with dry-run, drift detection, backups, rollback, profiles, local overlays and offline doctor.
-- Native OMP root/profile handling aligned with current OMP path/profile semantics.
-- Notes-backed context enabled in the canonical default configuration, with legacy-context overlay available.
+- Native `omp plugin link` package exposing model-neutral established agents, active
+  skills, and a Main-only workflow rule without modifying OMP settings.
+- Native `/agents` model overrides and normal task/session fallback own concrete worker
+  model selection.
+- Canonical Harness v2 config/models, CPA transport and Sol/Luna mapping remain the
+  legacy migration baseline, not native plugin requirements.
+- `bounded-executor` and `omp-workflow` retain scope, repair, supervision and context
+  authority rules.
+- The portable Python copy installer retains dry-run, drift detection, backups,
+  rollback, profiles, local overlays and offline doctor for compatibility/migration.
 
-Do not redesign these layers without evidence of a concrete failure.
+Do not delete or redesign the legacy path until a separately reviewed compatibility
+migration proves the native replacement.
 
 ## Runtime conclusions
 

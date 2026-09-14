@@ -1,19 +1,39 @@
 # OMP Kit
 
-A personal Oh My Pi harness: versioned runtime configuration, model routing,
-restricted custom agents, workflow skills and a portable installer.
+A personal Oh My Pi harness with model-neutral custom agents, workflow skills, a
+native plugin distribution path, and a legacy portable installer.
 
-The current settings are based on the owner's working files uploaded on
-2026-09-12, not the earlier guessed CPA configuration. The CPA route is
-`http://localhost:8317/v1` using `openai-responses` and `CPA_API_KEY`.
+## Native core plugin trial
 
-## Start on another machine
+Current development/runtime smoke target: **OMP 18.1.19**. Previous OMP 18.1.18
+plugin smoke remains historical compatibility evidence; this does not by itself raise
+the minimum supported version. From a clone of this repository:
 
-Prerequisites: **OMP and uv on PATH**, a reachable CPA service/account, and a CPA
-key available to OMP. The installer does not provision subscriptions, deploy CPA,
-transfer OAuth databases, install browsers/LSPs or authenticate GitHub for you.
-`uv run --script` manages the installer's Python and PyYAML dependency separately
-from the repository's larger development environment.
+```sh
+omp plugin link .
+omp plugin list
+```
+
+The plugin exposes the existing `luna-code`, `luna-deep`, `luna-doc`, and `sol-review`
+agents, active skills, and a Main-only workflow rule. The agents are model-neutral:
+use `/agents` to set a native per-agent override, or let them inherit the normal
+task/session model. This path does not install CPA, copy `config.yml`/`models.yml`, or
+change ordinary OMP preferences.
+
+To remove the linked checkout:
+
+```sh
+omp plugin uninstall omp-kit
+```
+
+## Legacy/compatibility installer
+
+The existing Python installer remains available for Harness v2 migration and machines
+that intentionally want the managed configuration snapshot. It requires **OMP and uv on
+PATH**, a reachable CPA service/account, and a CPA key available to OMP. The installer
+does not provision subscriptions, deploy CPA, transfer OAuth databases, install
+browsers/LSPs or authenticate GitHub for you. `uv run --script` manages the installer's
+Python and PyYAML dependency separately from the repository's development environment.
 
 Clone this repository using your normal GitHub access, then:
 
@@ -107,39 +127,38 @@ default-root choice explicit.
 
 Full custom-agent discovery requires OMP's native default/profile topology. An
 arbitrary `PI_CODING_AGENT_DIR` can relocate OMP state but is not treated as a full
-Harness v2 root on OMP 18.1.18. Local YAML overrides live in
-`<agent-root>/.omp-kit/local/`; templates are in `config/local.example/`. Mappings
-merge, arrays replace, and secret values belong in the environment or `.env`, not
-those YAML files.
+Harness v2 root in the historically validated 18.1.18 installer path. Local YAML
+overrides live in `<agent-root>/.omp-kit/local/`; templates are in
+`config/local.example/`. Mappings merge, arrays replace, and secret values belong in
+the environment or `.env`, not those YAML files.
 
 ## Layout and policies
 
 ```text
-config/          User-derived portable settings, profiles and non-installed references
-agents/          Role-backed custom task agents
+package.json     OMP plugin package metadata and published resource roots
+agents/          Model-neutral custom task agents with bounded tool surfaces
 skills/          Maintained active skills; registry.yaml remains generated
+rules/           Main-session workflow entry point for native plugin discovery
+config/          Legacy managed settings, profiles and non-installed references
 drafts/          Inactive work before promotion
-scripts/         Installer, static configuration checks and existing maintenance tools
-docs/            Architecture, installation, configuration and migration notes
-tests/           Repository and isolated installer tests
+scripts/         Legacy installer, static checks and maintenance tools
+docs/            Current docs plus clearly separated historical archives
+tests/           Repository, plugin-contract and isolated installer tests
 ```
 
-Sol/Luna routing is a selected working policy, not a claim that model benchmarks
-guarantee task success or a fixed weekly quota. The director sends intent and
-boundaries; workers retrieve relevant evidence and stop at acceptance or escalation.
-Detailed orchestration belongs to `omp-workflow`, not a large global system prompt.
+Main owns intent, routing, integration, verification judgment, final reporting, and
+self-hosting feedback judgment. `omp-workflow` is the default Main operating workflow
+for repository work; it decides whether Main should execute directly, delegate one
+bounded task, or run independent delegated work in parallel. Concrete Sol/Luna routing
+remains user-owned model configuration rather than a plugin contract.
 
-Start with [installation](docs/omp-installation.md), [configuration](docs/omp-configuration.md),
-and the [migration record](docs/config-migration-2026-09-12.md).
-The [guide](docs/HARNESS_V2_GUIDE.md) describes current policy, the
-[runtime experiment record](docs/HARNESS_V2_RUNTIME_EXPERIMENTS.md) records completed
-architecture gates and deferred endurance/quota work, and
-[validation](docs/VALIDATION.md) records what has actually been tested. The
-[handoff](docs/HARNESS_V2_HANDOFF.md) is the current continuation entry point for
-another agent. Future OMP-native development, Bun/TypeScript adoption and upstream-reuse
-rules are recorded in the [capability roadmap](docs/omp-roadmap.md); the
-[test automation plan](docs/HARNESS_V2_TEST_AUTOMATION.md) keeps the current
-fallback-auditor boundary and deferred runtime-test infrastructure work.
+For active development, start with the [documentation map](docs/README.md) and
+[shared working state](docs/WORKING_STATE.md). Current design is documented in
+[architecture](docs/architecture.md), [workflows](docs/workflows.md),
+[configuration](docs/omp-configuration.md), and [validation](docs/VALIDATION.md).
+The [installation guide](docs/omp-installation.md) documents the supported legacy/
+compatibility installer. Completed Harness v2 and native-foundation phase records live
+under `docs/archive/` and are historical evidence rather than current handoffs.
 
 ## Maintenance
 
@@ -153,7 +172,6 @@ just check-registry
 just validate-registry
 just test                       # combined repository tests
 ```
-
 
 `just` is optional for installation. Skill-local tools may need their own dependencies.
 Passing static checks does not establish provider connectivity or live OMP compatibility.

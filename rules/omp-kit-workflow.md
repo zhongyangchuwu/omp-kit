@@ -1,3 +1,8 @@
+---
+alwaysApply: true
+agents: main
+---
+
 # OMP Kit workflow entry point
 
 For repository work in Main, load `omp-workflow` as the default operating workflow
