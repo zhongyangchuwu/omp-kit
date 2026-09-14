@@ -39,7 +39,7 @@ normal OMP session
 
 Routine dogfood sessions are observations, not experiments by default. OMP remains the raw session/stat authority; omp-kit derives compact local summaries outside Git without copying full transcripts or adding a model-visible logging turn.
 
-See [`session-evidence.md`](session-evidence.md) and Issue #21 for the collector/schema and current product status.
+See [`session-evidence.md`](session-evidence.md) and completed Issue #21 for the accepted collector/schema contract and runtime evidence.
 
 ### Durable experiment evidence
 
@@ -92,6 +92,7 @@ Lightweight title prefixes describe problem shape rather than authority:
 [feedback]     structured feedback capability/product work
 [telemetry]    routine evidence collection/summary infrastructure
 [coordination] multi-agent coordination/supervision problem
+[release]      version/onboarding/release-candidate preparation
 ```
 
 A useful Issue normally records the problem/goal, evidence, scope and ownership, current decision/hypothesis, acceptance criteria, related upstream work when relevant, and a clear closure/reactivation condition.
