@@ -75,7 +75,7 @@ def test_native_plugin_skills_match_active_registry() -> None:
     assert {path.parent.name for path in skill_paths} == active_skills
     for path in skill_paths:
         metadata = parse_registry_frontmatter(path)
-        frontmatter_source, body = markdown_sections(path)
+        _, body = markdown_sections(path)
         assert metadata.get("name") == path.parent.name
         assert metadata.get("description")
         assert body
@@ -84,8 +84,12 @@ def test_native_plugin_skills_match_active_registry() -> None:
         assert isinstance(resource, dict)
         activation = resource.get("activation", {})
         if activation.get("mode") == "explicit-only":
-            assert "disable-model-invocation: true" in frontmatter_source.splitlines()
-            assert "hide: true" in frontmatter_source.splitlines()
+            # omp-kit explicit-only includes an explicit user workflow request,
+            # not only a slash/manual invocation. OMP hidden skills disappear
+            # from the model-facing discovered skill list, so mapping
+            # explicit-only -> hide would make those workflows undiscoverable.
+            assert metadata.get("disable-model-invocation") is not True
+            assert metadata.get("hide") is not True
 
 
 def test_native_plugin_main_rule_matches_legacy_entrypoint() -> None:

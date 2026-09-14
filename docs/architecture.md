@@ -9,9 +9,12 @@ under `docs/design/` and does not override actual repository/runtime behavior.
 
 Skill `resource.yaml` files remain the provenance/risk/activation source for repository
 maintenance, while OMP discovers plugin skills from `skills/*/SKILL.md`. The native
-contract exposes exactly the active registry set and mirrors explicit-only activation
-with OMP skill frontmatter. `registry.yaml` remains generated and continues to index
-skills and drafts.
+contract exposes exactly the active registry set. Repository activation modes are policy
+semantics, not a mechanical one-to-one mapping to OMP `hide` frontmatter: an
+`explicit-only` skill may need to stay model-visible so an explicit user workflow request
+can select it, while OMP hidden/`disable-model-invocation` skills are appropriate only
+when a separate explicit/manual invocation path exists. `registry.yaml` remains generated
+and continues to index skills and drafts.
 
 ## Installation boundary
 

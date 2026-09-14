@@ -1,8 +1,6 @@
 ---
 name: document-parser
 description: Parse PDFs, Word, PowerPoint, Excel, images, and web pages into clean Markdown for the agent to read and analyze. Use when the user asks to extract text from a document, convert a PDF, read a paper, parse a scanned file, or any document-to-text task. Backed by MinerU CLI and liteparse.
-disable-model-invocation: true
-hide: true
 ---
 
 # Document Parser
