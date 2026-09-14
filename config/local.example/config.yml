@@ -1,0 +1,3 @@
+# Optional per-machine overrides, not additional global policy.
+# Copy to <agent-root>/.omp-kit/local/config.yml; leave empty to use the tracked defaults.
+{}

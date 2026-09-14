@@ -1,0 +1,84 @@
+{
+  "schema": "omp-kit.experiment/v1",
+  "id": "2026-09-14-zotero-neo-b2-luna-code-lsp",
+  "date": "2026-09-14",
+  "issue": 5,
+  "question": "Does adding full lsp provide enough incremental value for luna-code on a real cross-file TypeScript dependency-navigation task?",
+  "status": "accepted",
+  "decision": {
+    "outcome": "reject",
+    "scope": "default full lsp capability for luna-code based on Phase B2",
+    "summary": "The treatment naturally made zero LSP calls, produced the same correct dependency map as the baseline, added prompt overhead, and used more wall/model time, tokens and cost. Lower read/grep/tool counts cannot be attributed to LSP because it was unused."
+  },
+  "revisions": {
+    "ompKit": "60060745c3ce1e501f8423bca9eceb6a502f2c53",
+    "ompPreview": "f5bcee2e82a754d2190d8ddb8aee73b5d237dffb",
+    "zoteroNeo": "190c353fcdf23ac6f1b6a1f16bc3ad70cf51e069",
+    "telemetryEvaluator": "OMP 18.1.19"
+  },
+  "model": {
+    "resolved": "cpa/gpt-5.6-luna:high",
+    "thinking": "high",
+    "fallback": false
+  },
+  "task": {
+    "sha256": "b2958332178458e585ca94d9d97756238237239330b49683ec3de8f937f1a11a",
+    "constraint": "read-only dependency map; no product decision"
+  },
+  "design": {
+    "order": ["baseline-run-1", "treatment-run-1"],
+    "arms": [
+      {
+        "id": "baseline",
+        "tools": ["read", "grep", "glob", "edit", "write", "bash", "yield"]
+      },
+      {
+        "id": "treatment",
+        "tools": ["read", "grep", "glob", "edit", "write", "bash", "yield", "lsp"]
+      }
+    ],
+    "controlledVariables": [
+      "immutable task text",
+      "Zotero-Neo commit and tree",
+      "OMP preview revision",
+      "model and thinking level",
+      "independent dependency installations from one lockfile",
+      "PATH and TypeScript language-server installation",
+      "fresh sessions and no cross-run answer contamination"
+    ]
+  },
+  "lsp": {
+    "server": "typescript-language-server 6.0.0",
+    "workspaceTypeScript": "5.9.3",
+    "resolved": true,
+    "effectiveInTreatment": true,
+    "calls": 0,
+    "actions": []
+  },
+  "telemetry": {
+    "source": "OMP 18.1.19",
+    "interfaces": ["/api/sessions", "/api/session/trace"],
+    "fullEventCollectorUsed": false
+  },
+  "artifacts": {
+    "id": "2026-09-14-zotero-neo-b2-luna-code-lsp",
+    "state": "local-retained",
+    "localRootPolicy": "${XDG_DATA_HOME:-$HOME/.local/share}/omp-kit/artifacts/",
+    "filesIncludingIndex": 19,
+    "bytesIncludingIndex": 1612212,
+    "indexEntries": 18,
+    "indexSha256": "45730539041f4ce62eaed9cdc1bd6e04f3604c125ae79ad11b7274a28c189019",
+    "sourceDuplicateDeleted": false,
+    "remote": null
+  },
+  "issueComments": [
+    "https://github.com/zhongyangchuwu/omp-kit/issues/5#issuecomment-5655460718"
+  ],
+  "limitations": [
+    "One stochastic A/B pair on one repository and one dependency-navigation task.",
+    "The treatment did not call lsp, so no quality or efficiency difference can be attributed to semantic navigation.",
+    "Exact JSON tool-schema bytes were not measured; only the rendered system-prompt delta is known.",
+    "The decision rejects default exposure from this B2 evidence and does not claim LSP is useless on every coding task.",
+    "Main's independent ground truth used exact symbol search and bounded source/test reads because the Main LSP device had no server for the external checkout."
+  ]
+}

@@ -1,0 +1,29 @@
+name: omp-research
+kind: skill
+status: active
+path: skills/omp-research
+source:
+  type: self
+  origin: null
+  references: []
+  imported: "2026-06-17"
+  promoted: "2026-06-17"
+  notes:
+  - Self-authored research workflow skill promoted from reviewed draft.
+risk:
+  level: low
+  reason: Instruction-only active skill with no executable code or external side effects.
+activation:
+  mode: automatic
+  notes: Use for codebase, library, framework, SDK, API, option, or source research before design or implementation.
+verification:
+  commands:
+  - uv run pytest tests
+  notes:
+  - Verify active metadata, registry consistency, linking behavior, and repository tests after research skill changes.
+maintenance:
+  last_reviewed: '2026-06-17'
+  notes:
+  - Promoted from reviewed draft; draft removed after active promotion cleanup.
+relationships:
+  upstream: []

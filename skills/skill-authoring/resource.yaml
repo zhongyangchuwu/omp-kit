@@ -1,0 +1,35 @@
+name: skill-authoring
+kind: skill
+status: active
+path: skills/skill-authoring
+
+source:
+  type: self
+  origin: null
+  references: []
+  imported: null
+  promoted: null
+  notes: []
+
+risk:
+  level: low
+  reason: Documentation-only portable skill authoring, review, and maintenance guidance.
+
+activation:
+  mode: automatic
+  notes: Use when creating, reviewing, refactoring, evaluating, updating, or maintaining Agent Skills.
+
+verification:
+  commands:
+    - uv run pytest skills/skill-authoring/tests/test_docs.py
+  notes:
+    - skills-ref validate skills/skill-authoring when skills-ref is available.
+
+maintenance:
+  last_reviewed: "2026-05-28"
+  notes:
+    - Keep portable guidance separate from runtime-specific notes.
+    - Use this skill as the maintenance hub for resource metadata conventions.
+
+relationships:
+  upstream: []

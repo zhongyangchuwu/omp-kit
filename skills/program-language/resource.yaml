@@ -1,0 +1,41 @@
+name: program-language
+kind: skill
+status: active
+path: skills/program-language
+
+source:
+  type: self
+  origin: null
+  references: []
+  imported: null
+  promoted: "2026-06-13"
+  notes:
+    - Self-authored skill. Go, Python, and Rust reference content derive from official documentation and community ecosystem consensus.
+    - Designed to be extended with additional language references under references/; cross-language infrastructure references live in references/shared.md.
+
+risk:
+  level: low
+  reason: Instruction-only ecosystem reference; no scripts, network access, secrets, or destructive operations.
+
+activation:
+  mode: automatic
+  notes: >
+    Activate when the agent detects a covered language project marker, or when
+    the user asks about language-specific tooling, package managers,
+    formatters, linters, test runners, type checkers, libraries, ecosystem
+    docs, scaffolding, or stack conventions.
+
+verification:
+  commands:
+    - just test
+  notes:
+    - Validate metadata and generated registry.
+
+maintenance:
+  last_reviewed: "2026-07-11"
+  notes:
+    - Review language ecosystem recommendations quarterly, especially Python and Rust tooling.
+    - Keep SKILL.md as the routing control panel; put language details in focused support files.
+
+relationships:
+  upstream: []

@@ -1,0 +1,36 @@
+name: omp-debug
+kind: skill
+status: active
+path: skills/omp-debug
+source:
+  type: upstream-derived
+  origin: references/obra@superpowers/skills/systematic-debugging
+  references:
+  - label: obra@superpowers/systematic-debugging
+    path: references/obra@superpowers/skills/systematic-debugging
+    repository: https://github.com/obra/superpowers.git
+    branch: null
+    commit: null
+  imported: "2026-06-17"
+  promoted: "2026-06-17"
+  notes:
+  - Promoted from reviewed OMP-native debugging draft.
+  - Upstream systematic-debugging concepts informed this skill; upstream scripts and runtime-specific wording were not promoted.
+risk:
+  level: low
+  reason: Instruction-only active skill with no executable code or external side effects.
+activation:
+  mode: automatic
+  notes: Use when diagnosing failing tests, runtime errors, flakes, hangs, regressions, incorrect outputs, integration failures, performance anomalies, or other unknown root causes.
+verification:
+  commands:
+  - uv run pytest tests
+  notes:
+  - Verify active metadata, registry consistency, linking behavior, and repository tests after debug skill changes.
+maintenance:
+  last_reviewed: '2026-06-17'
+  notes:
+  - Promoted from reviewed draft; draft removed after active promotion cleanup.
+relationships:
+  upstream:
+  - references/obra@superpowers/skills/systematic-debugging

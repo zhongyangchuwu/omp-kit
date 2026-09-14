@@ -1,0 +1,157 @@
+# Based on the user working routes; credentials are environment-variable names.
+# cost is a user-supplied reference estimate, NOT measured Team quota or API billing.
+# Unsupported cost.tiers is preserved in reference/pricing.yml, not sent to OMP.
+providers:
+  cpa:
+    baseUrl: http://localhost:8317/v1
+    api: openai-responses
+    apiKey: CPA_API_KEY
+    authHeader: true
+    models:
+    - id: gpt-6-astra
+      name: GPT-6 Astra
+      reasoning: true
+      input:
+      - text
+      - image
+      contextWindow: 1050000
+      maxTokens: 128000
+      thinking:
+        mode: effort
+        efforts:
+        - low
+        - medium
+        - high
+        - xhigh
+        - max
+        defaultLevel: high
+      cost:
+        input: 10
+        output: 50
+        cacheRead: 1
+        cacheWrite: 12.5
+      compactionModel: cpa/gpt-5.6-luna
+    - id: gpt-5.6-sol
+      name: GPT-5.6 Sol
+      reasoning: true
+      input:
+      - text
+      - image
+      contextWindow: 1050000
+      maxTokens: 128000
+      thinking:
+        mode: effort
+        efforts:
+        - low
+        - medium
+        - high
+        - xhigh
+        - max
+        defaultLevel: high
+      cost:
+        input: 4
+        output: 20
+        cacheRead: 0.4
+        cacheWrite: 5
+      compactionModel: cpa/gpt-5.6-luna
+    - id: gpt-5.6-terra
+      name: GPT-5.6 Terra
+      reasoning: true
+      input:
+      - text
+      - image
+      contextWindow: 1050000
+      maxTokens: 128000
+      thinking:
+        mode: effort
+        efforts:
+        - low
+        - medium
+        - high
+        - xhigh
+        - max
+        defaultLevel: medium
+      cost:
+        input: 2
+        output: 12
+        cacheRead: 0.2
+        cacheWrite: 2.5
+      compactionModel: cpa/gpt-5.6-luna
+    - id: gpt-5.6-luna
+      name: GPT-5.6 Luna
+      reasoning: true
+      input:
+      - text
+      - image
+      contextWindow: 1050000
+      maxTokens: 128000
+      thinking:
+        mode: effort
+        efforts:
+        - low
+        - medium
+        - high
+        - xhigh
+        - max
+        defaultLevel: medium
+      cost:
+        input: 0.2
+        output: 1.2
+        cacheRead: 0.02
+        cacheWrite: 0.25
+  deepseek:
+    baseUrl: https://api.deepseek.com
+    api: openai-completions
+    apiKey: DEEPSEEK_API_KEY
+    authHeader: true
+    models:
+    - id: deepseek-v4-pro
+      name: DeepSeek V4 Pro
+      reasoning: true
+      thinking:
+        mode: effort
+        efforts:
+        - high
+        - xhigh
+      input:
+      - text
+      contextWindow: 1000000
+      maxTokens: 384000
+      compat:
+        supportsDeveloperRole: false
+        supportsReasoningEffort: true
+        maxTokensField: max_tokens
+        reasoningEffortMap:
+          high: high
+          xhigh: max
+        supportsToolChoice: false
+        requiresReasoningContentForToolCalls: true
+        requiresAssistantContentForToolCalls: true
+        extraBody:
+          thinking:
+            type: enabled
+    - id: deepseek-v4-flash
+      name: DeepSeek V4 Flash
+      reasoning: true
+      thinking:
+        mode: effort
+        efforts:
+        - high
+        - xhigh
+      input:
+      - text
+      contextWindow: 1000000
+      maxTokens: 384000
+      compat:
+        supportsDeveloperRole: false
+        supportsReasoningEffort: true
+        maxTokensField: max_tokens
+        reasoningEffortMap:
+          high: high
+          xhigh: max
+        supportsToolChoice: false
+        requiresReasoningContentForToolCalls: true
+        requiresAssistantContentForToolCalls: true
+        extraBody:
+          thinking:
+            type: enabled

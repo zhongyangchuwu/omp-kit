@@ -15,10 +15,8 @@
     "omp-kit-evidence": "./scripts/session_evidence.ts"
   },
   "scripts": {
-    "test": "bun test ./tests/ts",
     "test:ts": "bun test ./tests/ts",
     "typecheck": "tsc --noEmit",
-    "verify": "bun run typecheck && bun run test",
     "evidence:collect": "bun ./scripts/session_evidence.ts collect",
     "evidence:report": "bun ./scripts/session_evidence.ts report"
   },
@@ -31,7 +29,7 @@
   },
   "omp": {
     "name": "OMP Kit",
-    "description": "Model-neutral agents, core workflow skills, structured feedback, and session evidence for Oh My Pi",
+    "description": "Model-neutral workers, workflow skills, session evidence, and main-session policy for Oh My Pi",
     "extensions": ["./extensions/feedback.ts"]
   }
 }

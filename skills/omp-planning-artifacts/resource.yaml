@@ -1,0 +1,29 @@
+name: omp-planning-artifacts
+kind: skill
+status: active
+path: skills/omp-planning-artifacts
+source:
+  type: self
+  origin: null
+  references: []
+  imported: "2026-06-17"
+  promoted: "2026-06-17"
+  notes:
+  - Self-authored durable planning artifact skill promoted from reviewed draft.
+risk:
+  level: low
+  reason: Instruction-only active skill with no executable code or external side effects.
+activation:
+  mode: automatic
+  notes: Use when durable .planning state, phase artifacts, lifecycle records, or handoff context are created, updated, validated, or resumed.
+verification:
+  commands:
+  - uv run pytest tests
+  notes:
+  - Verify active metadata, registry consistency, linking behavior, and repository tests after planning artifact skill changes.
+maintenance:
+  last_reviewed: '2026-06-17'
+  notes:
+  - Promoted from reviewed draft; draft removed after active promotion cleanup.
+relationships:
+  upstream: []

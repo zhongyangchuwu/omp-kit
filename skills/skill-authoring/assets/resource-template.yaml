@@ -1,0 +1,30 @@
+name: example
+kind: skill
+status: draft
+path: skills/example
+
+source:
+  type: self
+  origin: null
+
+risk:
+  level: low
+  reason: Instruction-only resource with no executable code or external side effects.
+
+activation:
+  mode: automatic
+  notes: Replace with the resource activation policy.
+
+verification:
+  commands: []
+  notes: []
+
+maintenance:
+  last_reviewed: "YYYY-MM-DD"
+  notes: []
+
+relationships:
+  extensions: []
+  tools: []
+  packages: []
+  upstream: []

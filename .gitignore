@@ -1,20 +1,36 @@
+# Local upstream/source checkouts and environments
+/references/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 node_modules/
 
-# Local credentials and OMP runtime state
+# Local experiment datasets / staging. Durable raw experiment artifacts belong
+# in the configured external artifact store; Git keeps manifests/decisions.
+/.experiments/
+
+# Never commit machine configuration, secrets or runtime state
 .env
 .env.*
+!.env.example
+!.env.sample
+config/local/
 .omp-kit/
 *.db
 *.db-wal
 *.db-shm
 *.bak-*
 *.tmp
+.DS_Store
+Thumbs.db
+
+# Retained from the existing repository
+.worktrees/
+worktrees/
+/incoming/
 secrets.json
 *.pem
 *.key
-
-# Local worktrees / OS files
-.worktrees/
-worktrees/
-.DS_Store
-Thumbs.db

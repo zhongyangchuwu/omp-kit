@@ -1,52 +1,118 @@
-# Delegation
+# Delegation and persistent workers
 
-Main owns user intent, task boundaries, shared interfaces, acceptance, escalation and integration. Workers own only the bounded work assigned to them. Optimize accepted useful work, not delegation rate or worker token share.
+The director owns user intent, task boundaries, shared interfaces, acceptance,
+escalation and integration decisions. Workers own scoped exploration, editing,
+local debugging and verification evidence for their assigned work. Optimize useful
+accepted work, not hours spent waiting or a fixed token-share target.
 
-## Choose delegation only when it earns its cost
+## Select by task, not by a mandatory escalation ladder
 
-Use Main direct for small, high-context or judgment-heavy work. Delegate when specialization, isolation or parallelism is likely to outweigh briefing, transfer, waiting, integration and repair cost.
+Use `luna-code` for clear local/pattern-based changes, `luna-deep` for difficult
+cross-file work, `luna-doc` for documentation/config synthesis and `sol-review`
+for an independent high-risk review. Resolve these from the live agent catalog;
+never assume an unavailable agent or tool exists. Model and effort live in config.
 
-Choose a discovered agent by task shape:
+Give each workstream an immediate objective, allowed scope, context references and
+completion evidence. Do not restate long discussions the worker can retrieve.
+For important invariants or ambiguous behavior, give explicit acceptance criteria.
 
-- `luna-code` — clear local/pattern-based implementation;
-- `luna-deep` — difficult cross-file implementation/debugging;
-- `luna-doc` — documentation/config synthesis;
-- `sol-review` — independent intent-level review when a second judgment is valuable.
+Use one owner for each writable scope. Concurrent independent work is useful;
+concurrent overlapping edits require isolation or a serialized integration plan.
+A director checking evidence should not repeat the entire worker investigation.
 
-Concrete model/effort selection belongs to OMP/user runtime configuration, not to the agent definition.
+If a workstream changes a shared type, schema, catalog, interface, configuration
+contract or similar cross-slice surface, Main owns the consumer/integration question.
+Before acceptance, account for likely production call sites, tests/fixtures,
+mocks/fakes and contract-facing docs/examples. A worker that discovers an out-of-scope
+consumer reports it; it does not silently expand writable scope. Main may deliberately
+reassign that consumer or handle it during integration.
 
-## Dispatch contract
+At integration, compare the actual changed files with the scopes that were assigned.
+Unexpected or overlapping writes are explicit integration findings rather than an
+implicit change to worker ownership.
 
-Give a worker only what controls execution:
+## Lifecycle
 
-```text
-objective
-allowed/writable scope
-material constraints
-context references
-acceptance / verification target
-```
+Use OMP's ordinary `task` tool to launch the chosen custom agent. Record its actual
+returned id, scope and expected evidence. Use the available `hub` interface or
+runtime result-delivery mechanism to continue that worker; consult the live schema
+rather than guessing a `hub wait` command. Do not promise persistence after an
+unverified restart/park/revival path. If the worker cannot be revived, launch a new
+one with a concise checkpoint and known context references.
 
-Do not rewrite long parent history the worker can retrieve. One owner should control each writable scope; overlapping concurrent writes require isolation or serialization.
+When blocked, wait for completion through supported blocking or async delivery.
+Avoid short repeated polling and needless supervisor wakeups. If built-in Vibe is
+being used instead, load `vibe-compat.md`; `vibe_wait` rules are not generic hub APIs.
 
-If a worker finds an out-of-scope consumer or dependency, it reports it to Main rather than silently widening scope.
+## Time budget and supervision
 
-## Coordination
+A delegated task should have a rough **first-checkpoint window** chosen from its shape,
+not an exact completion promise. Use a simple bucket rather than false precision:
 
-Use OMP's supported task/hub/result-delivery surfaces and inspect the live schema rather than guessing commands. Preserve the returned worker id and reuse the same worker for coherent follow-up when supported.
+- **quick** — local edit/doc/config or one narrow check: about 2 minutes;
+- **standard** — scoped implementation plus targeted tests: about 5 minutes;
+- **deep** — cross-file debugging/refactor or several dependent checks: about 10 minutes.
 
-A wait timeout or missing result is not proof of failure. Inspect supported status once, request a concise checkpoint when useful, and continue only when there is new evidence or a justified next step. Avoid short polling loops and repeated supervisor wakeups.
+Known slow builds, installs or external services may justify a longer window based on
+observed baselines. The estimate is for supervisor cadence only; it is not a requirement
+for the worker to sacrifice correctness or skip decision-critical verification.
 
-Cancel or replace a worker when continued execution has no justified path, after preserving useful partial evidence. Do not scrape live session files merely to infer whether another agent is busy.
+When the live `hub` schema exposes a timeout, prefer one bounded wait that roughly
+matches the checkpoint window. Never use an indefinite wait (`timeoutMs: 0`) merely to
+watch a worker finish. A wait timeout is a checkpoint, not a failure.
 
-## Repair and escalation
+On the **first material overrun**:
 
-Follow the worker's `bounded-executor` repair contract. Repeated materially different failures on the same blocker trigger a report/escalation rather than an unbounded autonomous loop. Main may clarify scope, split the task, choose another route, or return a material product/authorization decision to the user.
+1. inspect supported job/agent status (`hub jobs` / `hub list` or the equivalent live
+   schema) rather than repeatedly polling every few seconds;
+2. if the worker is still running without a delivered result, send one concise checkpoint
+   request asking for progress, current blocker, next action and whether director help is
+   needed;
+3. if there is concrete new progress, grant one new bounded window appropriate to the
+   remaining work.
 
-## Integration and verification
+Do not inspect another live agent by scraping its session file or repeatedly reading its
+history just to infer whether it is busy; use coordination/status surfaces and ask the
+worker directly. History remains useful for completed evidence and context retrieval.
 
-Workers use focused checks that can falsify their own change. A repository-wide full gate is not mandatory in every worker.
+On a **second comparable overrun**, or sooner when the checkpoint reports stagnation:
+ask the worker to yield partial findings, clarify/split/escalate the task, or cancel the
+specific background job if continued execution has no justified next step. Do not keep
+extending the same blocked approach. Cancellation is an intervention tool, not an
+ordinary completion path; preserve the worker's available evidence before replacing it.
 
-Main reconciles actual writes and shared contracts, then relies on the current PR merge-ref CI for routine integrated mechanical acceptance when the repository provides it. If the accepted tree changes, the new CI result is evidence for the new candidate.
+These checkpoint windows complement, rather than replace, OMP runtime guards such as
+soft request budgets or hard runtime limits. Do not lower global guards from one slow
+experiment; collect real request/session-span evidence first.
 
-Independent review is selected by failure cost, ambiguity and the value of another judgment. Prefer giving a reviewer a mechanically clean integrated diff so reviewer effort goes to semantics, lifecycle, product behavior and other questions deterministic checks do not decide.
+## Escalation and verification
+
+Follow the worker's bounded repair budget. Two materially different failed attempts
+on the same unresolved blocker trigger a report, not a new infinite agent loop.
+The director may clarify scope, split the problem, change tier or ask the user.
+Track provider retries, technical repairs, escalation and user scope changes separately.
+
+Workers own verification evidence for their scope. Use focused checks while debugging
+and before handoff. Do not mechanically run the same repository-wide full gate in every
+worker just because it is cheap; repeated full-gate output and model/tool turns are still
+overhead, and a shared working tree may change before acceptance.
+
+A worker-local full gate remains useful when it answers a distinct diagnostic question,
+when an isolated worktree needs a pre-merge safety check, when the worker owns the exact
+final tree and its pass can be reused as final acceptance evidence, or when Main asks for
+it explicitly.
+
+The director owns the integrated verification result, but can delegate command execution
+to a suitable verifier. After related workstreams settle and the accepted tree is
+integrated, run the normal full deterministic gate once when it is cheap and relevant.
+That integrated pass is the mechanical acceptance gate. If later fixes materially
+change the tree, rerun only the checks required by the changed state rather than by a
+phase ritual.
+
+Independent review remains selective by failure cost. When practical, mechanically
+verify the integrated diff before strong review so reviewer effort is spent on semantics,
+lifecycle, product judgment, ambiguity and other risks not already decided by cheap
+checks. Routine changes do not require a separate expensive review by default.
+
+Return material product preferences, irreversible architecture choices and destructive
+operations to the user. Ordinary implementation choices may follow repo conventions.

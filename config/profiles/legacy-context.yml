@@ -1,0 +1,4 @@
+compaction:
+  experimentalContextManagement: false
+  methodOrder: [shake, soft]
+  asyncEnabled: false

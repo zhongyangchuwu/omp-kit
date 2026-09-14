@@ -1,0 +1,26 @@
+{
+  "skill_name": "skill-name",
+  "evals": [
+    {
+      "id": "happy-path",
+      "prompt": "Create a realistic prompt that should use this skill.",
+      "expected_output": "Describe the observable successful output.",
+      "files": [],
+      "assertions": [
+        "The output satisfies the primary user request.",
+        "The output follows the skill's required format.",
+        "The output avoids known unsafe or incorrect behavior."
+      ]
+    },
+    {
+      "id": "near-miss",
+      "prompt": "Create a realistic prompt that shares keywords but should not use this skill.",
+      "expected_output": "The agent should use a different skill, ask for clarification, or proceed without this skill.",
+      "files": [],
+      "assertions": [
+        "The output does not force this skill onto an unrelated task.",
+        "The output explains the correct boundary when needed."
+      ]
+    }
+  ]
+}
