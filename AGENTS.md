@@ -69,17 +69,21 @@ already owns that behavior.
 
 ## Combined checks
 
-After completing a coherent batch of changes, run the combined deterministic gate:
+During implementation, run the narrowest focused checks that can falsify the current
+change. For native-core acceptance, the normal full deterministic gate is GitHub Actions
+`.github/workflows/verify.yml`; it checks lockfile freshness, runs the repository-owned
+`just verify`, and rejects tracked-file drift on the exact pushed/PR tree.
 
-```sh
-just verify
-```
+A successful CI result replaces a routine local copy of the same full gate. Run
+`just verify` locally only when it is useful as a pre-push check, when debugging CI, or
+when explicitly requested for a distinct reason. Do not rerun it locally merely because
+a handoff occurred.
 
 Regenerate registry only when skill metadata changes. Use temporary agent roots for
 installer/plugin tests. Never install into the user's live root merely to test a script.
 Ordinary tests must stay offline and must not call providers/models. Do not claim
-OMP/provider compatibility from YAML parsing or filesystem tests; use an isolated real
-OMP runtime smoke when runtime behavior is part of the claim.
+OMP/provider compatibility from YAML parsing, filesystem tests, or CI alone; use an
+isolated real OMP runtime smoke when runtime behavior is part of the claim.
 
 ## Current policy constraints
 
