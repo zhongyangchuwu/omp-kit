@@ -54,10 +54,26 @@ def test_current_markdown_relative_links_resolve() -> None:
     assert not failures, "\n".join(failures)
 
 
+def bundled_support_targets(skill: Path) -> list[str]:
+    targets = SUPPORT.findall(prose(skill.read_text(encoding="utf-8")))
+    # Bare docs/... in workflow prose describes the target project, not necessarily
+    # a bundled Skill directory. Explicit Markdown links are checked above.
+    return [target for target in targets
+            if not target.startswith("docs/") or (skill.parent / "docs").is_dir()]
+
+
 def test_skill_entrypoint_support_references_resolve() -> None:
     for path in sorted((ROOT / "skills").glob("*/SKILL.md")):
-        for target in SUPPORT.findall(prose(path.read_text(encoding="utf-8"))):
+        for target in bundled_support_targets(path):
             assert (path.parent / target).is_file(), f"{path.relative_to(ROOT)}: missing {target}"
+
+
+def test_support_targets_distinguish_project_docs_from_bundled_docs(tmp_path: Path) -> None:
+    skill = tmp_path / "SKILL.md"
+    skill.write_text("Use `docs/WORKING_STATE.md`, `references/missing.md` and `assets/test.json`.", encoding="utf-8")
+    assert bundled_support_targets(skill) == ["references/missing.md", "assets/test.json"]
+    (tmp_path / "docs").mkdir()
+    assert bundled_support_targets(skill) == ["docs/WORKING_STATE.md", "references/missing.md", "assets/test.json"]
 
 
 def test_distributed_design_and_experiment_assets_exist() -> None:
