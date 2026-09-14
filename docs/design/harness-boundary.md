@@ -134,11 +134,11 @@ Issue #9 periodically audits rules that can consume model attention, handoffs, e
 | Delegation for every task | model-compensation | absent; Main-direct remains valid |
 | Independent strong review after every edit | model-compensation | absent; review remains conditional on risk/ambiguity |
 | Generic end-of-task self-improvement reflection | model-compensation | removed; feedback is event-triggered by friction already observed during real work |
-| Repository-wide full verification in every worker plus again after integration | repeated evidence/process overhead | remove as default; focused worker checks + one integrated full gate, with worker full gate only for a distinct purpose |
+| Repository-wide full verification in every worker plus again after integration | repeated evidence/process overhead | removed as default; focused worker checks + one integrated gate, with worker full gate only for a distinct purpose |
 | Rewriting long parent context into every worker brief | model-compensation / context overhead | avoid; push the execution contract and retrieve rationale/history on demand |
 | Search-first history retrieval as a hard gate | model-compensation | not a hard gate; it is relevance guidance and broader concise reads remain valid when appropriate |
 | Durable `.planning/` phase lifecycle | specialized persistence/workflow mode | retain as deliberate opt-in pending Issue #11; missing `.planning/` is not a reason to initialize it |
-| Integrated deterministic repository verification | evidence boundary | keep; one accepted-tree gate provides objective mechanical evidence |
+| Integrated deterministic repository verification | evidence boundary | keep; GitHub Actions executes the repository-owned gate once on the accepted CI-supported tree |
 | Runtime capability enforcement | runtime boundary | keep OMP-owned; never replace with prompt conventions |
 | OMP-native session/stats telemetry | runtime/evidence boundary | keep and reuse; do not rebuild a parser/database/collector |
 
@@ -159,7 +159,7 @@ no observed friction
 -> no feedback/reflection phase
 ```
 
-This removes a recurring model-compensation obligation without weakening the durable feedback sink or the `report != self-modify` boundary. It was locally accepted at commit `8bbd02c3a2350b0198c454d4ec41666c7cca366f` through the normal provider-free repository gate.
+This removes a recurring model-compensation obligation without weakening the durable feedback sink or the `report != self-modify` boundary. It was accepted through the normal provider-free repository gate.
 
 ### Ablation 2: duplicate repository-wide verification
 
@@ -175,9 +175,9 @@ related writes settle
 -> one full deterministic gate on the accepted integrated tree
 ```
 
-A worker full gate remains available for a distinct question: isolated pre-merge safety, cross-slice diagnosis, explicit Main request, or a worker that owns the exact final tree and whose result can be reused as acceptance evidence.
+A worker full gate remains available for a distinct question: isolated pre-merge safety, cross-slice diagnosis, explicit Main request, CI diagnosis, or an isolated worker-owned final tree whose result can be reused as acceptance evidence.
 
-This preserves the evidence boundary while removing duplicate collection of the same evidence. The web-authored policy change is not locally verified until the next normal deterministic gate passes; no bespoke model A/B is justified.
+This preserves the evidence boundary while removing duplicate collection of the same evidence. The split-core sequence supplied real dogfood: unchanged handoffs did not justify repeated full runs, while later tree changes correctly made earlier evidence stale. Issue #18 then moved the routine integrated gate to GitHub Actions so repository mechanical acceptance no longer requires a local-agent handoff.
 
 ## Evaluation / observed effect
 
@@ -189,23 +189,25 @@ The strongest current evidence is architectural and real-work based rather than 
 - The obsolete local OMP session parser was removed after OMP-native telemetry proved sufficient for the exercised use case.
 - Generic end-of-task self-improvement reflection is no longer mandatory; feedback is a by-product of observed friction rather than a workflow phase.
 - Repository-wide deterministic verification remains an acceptance boundary, but repeated equivalent full-gate runs are no longer a default worker ritual.
+- GitHub Actions now executes the settled-tree deterministic gate automatically; local execution is reserved for focused debugging or genuinely local/runtime-specific claims.
 
-Recurring dogfood should now reveal whether these simplifications preserve useful findings while reducing workflow/tool overhead. #5/#8 telemetry can supply natural evidence without a separate synthetic experiment.
+Recurring dogfood should reveal whether these simplifications preserve useful findings while reducing workflow/tool overhead. #5/#8 telemetry can supply natural evidence without a separate synthetic experiment.
 
 ## Counter-evidence and limits
 
 - Stronger models can become more likely to skip steps they consider obvious. Some harness constraints remain useful when they enforce obligations or external evidence rather than compensate for weak reasoning.
 - A mechanism that looks like model compensation may also encode valuable organizational or safety semantics. Remove the recurring obligation, not the underlying evidence boundary, unless evidence supports that stronger change.
 - Removing generic reflection could reduce the rate at which weak but recurring friction is noticed. Revisit if real dogfood stops surfacing issues that were previously caught reliably.
-- A worker full gate can still be the cheapest useful evidence before a risky isolated merge or while diagnosing a broad breakage. The new policy removes automatic duplication, not the ability to run it.
-- Reducing test repetition must not become permission to skip the final integrated gate merely to save tokens/time.
+- A worker full gate can still be the cheapest useful evidence before a risky isolated merge or while diagnosing a broad breakage. The policy removes automatic duplication, not the ability to run it.
+- Reducing test repetition must not become permission to ignore a failed or missing final integrated gate merely to save tokens/time.
+- CI cannot replace an installed-runtime/profile smoke when the claim actually depends on local OMP state.
 - External strong-model discussion is design input, not benchmark truth.
 
 ## Current status
 
 **Accepted project principle; current-generation inventory established; recurring evaluation remains open.**
 
-Ablation 1 is locally verified. Ablation 2 is authored and pending the next normal deterministic repository gate. Issue #9 remains open as a recurring audit.
+Ablations 1 and 2 are accepted. Issue #18 completed routine CI execution of the integrated deterministic gate. Issue #9 remains open as a recurring audit for future model/runtime changes rather than because either current ablation is awaiting verification.
 
 Do not create synthetic experiments solely to fill the inventory; prefer real omp-kit work and OMP-native telemetry.
 
@@ -215,6 +217,7 @@ Do not create synthetic experiments solely to fill the inventory; prefer real om
 - `../workflows.md`
 - `../VALIDATION.md`
 - `verification.md`
+- `../../.github/workflows/verify.yml`
 - `../../skills/omp-workflow/SKILL.md`
 - `../../skills/omp-workflow/references/execution.md`
 - `../../skills/omp-workflow/references/self-improvement.md`
@@ -224,6 +227,7 @@ Do not create synthetic experiments solely to fill the inventory; prefer real om
 - Issue #9 — recurring model-compensation/process ablation
 - Issue #10 — completed context authority/provenance design
 - Issue #11 — `.planning/` / issue-centered workflow coexistence
+- Issue #18 — completed GitHub Actions deterministic gate
 
 ## Revisit triggers
 
@@ -234,4 +238,5 @@ Re-audit this record when:
 - dogfood shows a rule adds latency/tokens/handoffs without new evidence;
 - repeated failures show the current harness is under-constraining a mechanical or external-state obligation;
 - event-triggered feedback misses reusable friction that the previous default reflection reliably surfaced;
-- focused worker checks repeatedly miss failures that an early worker full gate would have caught materially sooner.
+- focused worker checks repeatedly miss failures that an early worker full gate would have caught materially sooner;
+- CI becomes materially unreliable or diverges from repository-declared toolchain semantics.
