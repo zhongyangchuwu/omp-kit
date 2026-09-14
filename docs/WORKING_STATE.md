@@ -27,13 +27,14 @@ feedback branch:  omp-native-foundation
 feedback PR:      #3 feat: add self-hosting feedback extension (Draft / blocked)
 normal runtime:   OMP 18.1.20
 split record:     #16 closed completed
+deterministic CI: .github/workflows/verify.yml
 ```
 
 The native-foundation core and feedback extension have separate review ownership. PR #17 targets `main`. PR #3 is stacked on `omp-native-foundation-core` and owns only the feedback-specific delta.
 
 PR #3 remains blocked because released OMP 18.1.20 does not contain the hard child capability boundary required for Main-only feedback. Upstream PR #9521 remains open; Issue #4 owns released-runtime closure. Do not re-couple unrelated core work to that blocker.
 
-Exact current PR readiness and the latest accepted tested HEAD belong in PR #17 / PR #3 and their owning Issues. Do not create a new git commit solely to copy the just-tested SHA into this file.
+Exact current PR readiness and the latest accepted tested HEAD belong in PR #17 / PR #3 and their GitHub Actions / Issue state. Do not create a new git commit solely to copy the just-tested SHA into this file.
 
 ## Active work
 
@@ -49,7 +50,7 @@ Exact current PR readiness and the latest accepted tested HEAD belong in PR #17 
 | #11 | deferred design/dogfood | Decide issue-centered state vs `.planning/` coexistence after genuine recovery/offline evidence. |
 | #12 | long-lived dogfood | Experiment artifact lifecycle; remote replication/schema helper remain optional. |
 
-Completed maintenance record #16 documents the core/feedback PR split and its acceptance evidence; it is not an active implementation owner.
+Completed maintenance record #16 documents the core/feedback PR split and its acceptance evidence. Issue #18 owns the GitHub Actions rollout until its CI acceptance criteria are closed; it does not change Issue #9's verification policy.
 
 ## Current worker dogfood surfaces
 
@@ -108,7 +109,9 @@ related writes settle
 
 A worker-local full gate is reserved for a distinct purpose such as isolated pre-merge safety, cross-slice diagnosis, explicit Main request, or a worker that owns the exact final tree whose result can be reused as acceptance evidence.
 
-Do not rerun an unchanged full gate merely because work crossed a handoff or phase label. If later integration or fixes materially change the covered tree, the prior evidence is stale and one new integrated gate is justified.
+For the native core, GitHub Actions now owns the routine integrated full gate. A successful CI run on the exact commit replaces the local-agent copy of the same deterministic check. Local `just verify` is optional pre-push/debugging evidence; runtime/profile claims outside CI still require their appropriate local or released-runtime smoke.
+
+Do not rerun an unchanged full gate merely because work crossed a handoff or phase label. If later integration or fixes materially change the covered tree, the new commit gets a new CI run because the tree changed.
 
 Issue #11 still owns `.planning/` replacement/coexistence; #9 does not pre-empt that decision.
 
@@ -133,13 +136,11 @@ See Issue #7 and `docs/design/supervision.md`.
 
 ## Validation handling
 
-The core split intentionally excludes the feedback-only Bun/TypeScript surface. Core `just verify` therefore covers the Python repository suite, harness validation, registry freshness/validation, and `git diff --check`.
+The core split intentionally excludes the feedback-only Bun/TypeScript surface. Core `just verify` covers the Python repository suite, harness validation, registry freshness/validation, and `git diff --check`.
 
-The settled pre-review-cleanup core tree passed one provider-free integrated gate with 98 Python tests and clean harness/registry/diff checks. The subsequent review cleanup changes current documentation, so its final exact tree needs one new integrated gate before PR #17 is marked ready again.
+`.github/workflows/verify.yml` runs that repository-owned gate on GitHub-hosted runners after first checking `uv.lock` freshness and then checking for tracked-file drift. It uses pinned setup actions, Python 3.12, read-only contents permission, and no project secrets. The initial push and PR runs succeeded with 98 Python tests and clean harness/registry/diff results.
 
-After that gate, record the exact HEAD/results in PR #17. Do not change this file solely to mirror the new SHA and thereby invalidate the just-tested tree.
-
-Feedback-specific TypeScript/Bun verification and any future released-runtime feedback smoke remain owned by PR #3 / Issue #4.
+Current-tree acceptance is now read from the Actions/check status for PR #17. Do not add a local handoff merely to rerun the identical deterministic gate. Feedback-specific TypeScript/Bun verification and any future released-runtime feedback smoke remain owned by PR #3 / Issue #4.
 
 ## Recently completed
 
@@ -158,9 +159,8 @@ Feedback-specific TypeScript/Bun verification and any future released-runtime fe
 
 ## Next action
 
-1. Finish the current PR #17 documentation-review cleanup.
-2. If the current core HEAD differs from the exact accepted HEAD in PR #17, run one provider-free integrated `just verify`; do not duplicate the gate on an unchanged tree.
-3. If clean, record the exact result in PR #17 and mark it ready for review without another tree-changing bookkeeping commit.
-4. Keep PR #3 stacked and Draft until Issue #4's released-runtime criteria are satisfied.
-5. Resume normal omp-kit development after the core review boundary is clean; let #5/#8 evidence accumulate passively from real sessions.
-6. Do not manufacture #11's fresh-session recovery test merely to satisfy its checklist.
+1. Let GitHub Actions verify the settled current PR #17 core HEAD; do not duplicate the same deterministic gate locally.
+2. If CI is clean, record the exact result in PR #17 / #18 metadata and mark PR #17 ready without another tree-changing bookkeeping commit.
+3. Keep PR #3 stacked and Draft until Issue #4's released-runtime criteria are satisfied.
+4. Resume normal omp-kit development after the core review boundary is clean; let #5/#8 evidence accumulate passively from real sessions.
+5. Do not manufacture #11's fresh-session recovery test merely to satisfy its checklist.
