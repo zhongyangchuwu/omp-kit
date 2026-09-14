@@ -1,50 +1,46 @@
 ---
 name: git-workflow
-description: Use when working with Git or GitHub repository operations: checking state, choosing branch or worktree isolation, linking work to owning Issues, staging changes, writing Conventional-style commit messages, opening pull requests, handling CI/review feedback, merging, or cleaning up branches.
+description: Use for Git/GitHub repository state, owning Issue/PR boundaries, safe branch/merge operations, CI/review handling, and acceptance-based Issue closure.
 ---
 
 # Git Workflow
 
-## Focus
+Keep Git/GitHub work state-driven and proportional. General Git syntax, branch naming and commit prose do not need a project-specific playbook; this Skill exists for omp-kit's repository governance boundaries.
 
-Git and GitHub repository operations for personal development that stay compatible with GitHub Flow and, when the repository uses them, preserve Issue/PR ownership of unfinished work.
+## Before mutation
 
-## Activation
+Read the actual branch, HEAD, worktree/dirty state and relevant PR/Issue state before acting. Preserve unrelated or pre-existing user changes. Retrieved notes/history never replace current Git/GitHub read-back.
 
-Use this skill for repository state checks, branch/worktree decisions, Issue-to-branch/PR ownership, commit message writing, pull request preparation, CI feedback, review handling, merge, and branch cleanup.
+For non-trivial work in a repository that already uses Issues, identify the owning concrete Issue when one exists. Do not create an Issue merely to satisfy process when a small PR fully owns the work.
 
-## Default workflow
+## Change boundary
 
-Use GitHub Flow with a fast local path.
+Small low-risk maintenance can use the current workspace when repository/user policy permits it. Non-trivial behavior, shared-contract, release or multi-file work normally uses a short-lived branch and PR.
 
-Small, low-risk maintenance may use the current workspace with direct verification. Non-trivial work uses a short-lived branch, pull request, CI checks, review feedback, an appropriate merge strategy, and branch cleanup.
+Keep one PR focused on one coherent change/problem. If implementation exposes another independently closable problem, return it to Main rather than silently widening the PR.
 
-When the repository already uses Issues for unresolved work, identify the owning Issue before non-trivial implementation. A PR is the implementation/review surface for that problem; merging it does not automatically mean the Issue's acceptance criteria are complete.
+Workers may produce local/scoped evidence, but Main owns remote repository mutation and final integration/merge judgment.
 
-## Rules
+## Verification and review
 
-- Read actual Git/PR state before mutation; do not infer current state from old notes.
-- Keep the default branch installable and recoverable.
-- Use branches as review, history, and rollback boundaries.
-- Use worktrees as filesystem isolation for parallel work, risky experiments, dirty workspaces, and long PR iteration.
-- Keep one PR focused on one coherent change/problem.
-- When an owning Issue exists, link the PR to it and preserve material acceptance/verification evidence there or in the PR.
-- Do not close an unfinished Issue merely because a PR merged; close only when its acceptance criteria are satisfied.
-- Use Conventional-style commit messages; write bodies for non-trivial changes.
-- Open PRs for non-trivial changes.
-- Use relevant focused local checks when useful; let repository CI own routine full acceptance when that is the repository policy.
-- Merge only after required CI/review conditions are met and authorization permits the merge.
-- Request independent review when its expected value justifies the cost; do not make a particular reviewer mandatory by ritual.
-- Choose squash/merge/rebase according to repository policy and history value rather than treating one method as universal.
-- Delete ordinary feature branches after merge when no stacked/dependent work still needs them.
+Use focused checks while changing code. When repository CI owns the routine full deterministic gate, the current PR candidate's CI is the normal mechanical acceptance evidence; do not duplicate an unchanged gate locally without another reason.
 
-## Support files
+Read failed job logs before changing code. Fix the actual failing layer and require evidence for the updated candidate.
 
-| Need | Load |
-| --- | --- |
-| Choosing fast local path or GitHub Flow path | `references/workflow.md` |
-| Branch, worktree, default branch, and branch naming rules | `references/branch-and-worktree.md` |
-| Conventional-style commit message rules | `references/commit-messages.md` |
-| Owning Issue, PR, CI/review, merge, closure, and cleanup rules | `references/pull-requests.md` |
-| OMP GitHub tool mapping for PRs, CI, searches, and PR checkout | `references/omp-github-tools.md` |
-| Repository/project state checks before Git operations | `references/state-checks.md` |
+Use independent review when its expected semantic/risk value justifies the cost, not as a mandatory ritual.
+
+## Merge
+
+Before merge, confirm the current head/base, required CI/review state, and authorization. Never infer merge permission from old discussion or a passing check.
+
+Choose squash/merge/rebase by repository policy and whether commit/stack ancestry has durable value; no method is universally required.
+
+After merge, inspect the landed state/CI when required and re-evaluate the owning Issue acceptance criteria.
+
+**Merged does not mean completed.** Close an Issue only when its acceptance criteria are complete or deliberately superseded. If dogfood/runtime/upstream conditions remain, keep it open and use the repository's active/inactive semantics.
+
+Delete an ordinary branch/worktree only after confirming its work is merged/saved and no stacked or dependent work still needs it.
+
+## Tool boundary
+
+Use the Git/GitHub surfaces actually available in the current runtime. Do not encode a volatile command catalogue into this Skill. Local Git state belongs to Git; hosted PR/Issue/CI state belongs to GitHub read-back.

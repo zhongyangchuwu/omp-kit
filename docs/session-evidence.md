@@ -1,6 +1,6 @@
 # Session Evidence
 
-omp-kit uses **OMP as the raw session/stat recorder** and derives compact local summaries for later analysis. This gives #5/#8/#9 a quantitative evidence base without adding a second journal parser, trace database, or model-visible logging step.
+OMP Kit uses **OMP as the raw session/stat recorder** and derives compact local summaries for later analysis. This gives #5/#8/#9 quantitative evidence without adding a second journal parser, trace database or model-visible logging turn.
 
 ## Product model
 
@@ -10,38 +10,36 @@ normal OMP session
   -> omp-kit evidence collect                   # incremental derived summary
   -> local session-evidence store               # compact, outside Git
   -> aggregate report                           # inspect/filter later
-  -> selected material evidence                 # optionally promote through #12
+  -> current Issue/PR/doc decision when material
 ```
 
-Raw collection is already automatic because OMP persists normal sessions. The omp-kit collector can run later and reconstruct any new or changed session from OMP's public stats/session surfaces. Users do **not** need to remember to log every session or add a reflection turn before exit.
+Users do not need to add a logging/reflection step to ordinary sessions. The collector can run later and summarize new or changed saved sessions from OMP public stats/session surfaces.
 
 ## Commands
 
-From the repository/package:
-
-```bash
+```sh
 bun run evidence:collect
 bun run evidence:report
 ```
 
 The packaged CLI exposes the same interface:
 
-```bash
+```sh
 omp-kit-evidence collect
 omp-kit-evidence report
 ```
 
 Useful filters:
 
-```bash
+```sh
 bun run evidence:collect -- --folder /path/to/project --since 2026-09-01T00:00:00Z
 bun run evidence:report  -- --folder /path/to/project --since 2026-09-01T00:00:00Z
 bun run evidence:report  -- --json
 ```
 
-`--folder` accepts the normal project filesystem path or a substring. Matching uses the public session trace `cwd` when available and also accepts OMP's `/api/sessions.folder` value as a fallback. This matters on released OMP versions where stats can expose a session-storage key such as `-project-omp-kit` while the corresponding trace correctly reports `/home/user/project/omp-kit`. omp-kit does not reproduce that storage-key encoding locally.
+`--folder` accepts a normal project filesystem path or substring. Matching prefers public session-trace `cwd` and accepts `/api/sessions.folder` only as fallback metadata. This avoids reproducing OMP's non-reversible session-storage key encoding.
 
-`collect` first asks OMP stats to synchronize its ordinary session data, discovers root sessions, and only rebuilds a derived summary when its compact revision changed. Re-running it over unchanged sessions is idempotent. Summaries created by the pre-fix v1 candidate without explicit `cwd` provenance are refreshed once so later reports can use normal filesystem-path filters reliably.
+`collect` asks OMP stats to synchronize ordinary session data, discovers root sessions and rebuilds a summary only when its compact revision changes. Re-running over unchanged completed sessions is idempotent; an active session may legitimately rebuild as it changes.
 
 ## Storage
 
@@ -54,43 +52,33 @@ ${PI_CODING_AGENT_DIR or OMP agent dir}/omp-kit/session-evidence/
     <sha256-of-root-session-file>.json
 ```
 
-Set `OMP_KIT_EVIDENCE_DIR` or pass `--root` to use another local derived-data directory.
-
-This store is intentionally outside Git. It contains compact summaries, not copied transcripts or full trace payloads.
+Set `OMP_KIT_EVIDENCE_DIR` or pass `--root` for another local derived-data directory. The store is intentionally outside Git and contains compact summaries rather than copied transcripts or full traces.
 
 ## Summary schema
 
-Current schema:
+Current schema: `omp-kit.session-evidence/v1`.
 
-```text
-omp-kit.session-evidence/v1
-```
-
-Each root-session summary retains, where OMP exposes the information reliably:
+Where OMP exposes the information reliably, each root summary retains:
 
 - root session/project/cwd/title/time bounds;
 - request, token, cost-equivalent and unpriced-request totals;
 - wall/model/tool/idle timing;
-- main/subagent/advisor track counts and request counts;
+- main/subagent/advisor track and request counts;
 - model calls, tokens, cost and sampled provider identity;
 - per-tool calls/errors/durations;
-- subagent envelope activity and coarse overlap;
-- structured `omp_kit_feedback` record ids/categories/severities linked from every track in the root trace.
+- subagent activity-envelope overlap;
+- structured `omp_kit_feedback` ids/categories/severities from root and child tracks.
 
-The user-facing `session.folder` value prefers the public trace `cwd` and falls back to the summary folder only when OMP does not expose a cwd. The explicit `session.cwd` field preserves whether the trace provided that filesystem-path provenance.
+Provider identity is sampled through one public `/api/session/entry` lookup per `(track, model)` when needed. Missing values remain `null`. This is **sampled provenance**, not an exact provider-routing ledger: same-model calls routed through multiple providers may be conflated. Request/model/token counts are independent of that sampled label.
 
-Provider identity is not duplicated from raw journals. OMP trace does not include it directly, so the v1 collector selectively reads one public `/api/session/entry` sample per `(track, model)` when needed. If provider provenance cannot be recovered through that public surface, it stays `null` rather than being guessed. This is deliberately **sampled provenance**, not an exact provider-routing ledger: if one track uses the same model id through multiple providers, v1 may attribute those same-model calls to the sampled provider. Request/model/token counts remain independent of that sampled label. Do not use v1 summaries to make a provider-fallback decision that requires exact per-request attribution.
-
-Subagent overlap is deliberately named **envelope overlap**: it measures simultaneous child-track activity envelopes and is a coordination signal, not a claim about CPU/GPU concurrency.
+Subagent overlap is activity-envelope overlap, not a claim about hardware concurrency.
 
 ## OMP interfaces
 
-The collector uses the released/public OMP stats package/server:
+The collector uses released/public OMP surfaces:
 
 ```text
 @oh-my-pi/omp-stats
-  startServer()
-
 /api/sync
 /api/sessions
 /api/session/trace
@@ -101,26 +89,21 @@ Do not replace these with direct `stats.db` queries or raw OMP JSONL parsing.
 
 ## Feedback relationship
 
-`omp_kit_feedback` is the qualitative evidence stream. Its records remain durable in the feedback store and session journal. The evidence collector links feedback by the public session-file provenance stored in each feedback record.
+`omp_kit_feedback` is the complementary qualitative evidence stream. Records retain supported session-file provenance. The collector joins feedback from every trace track so Main and worker observations can appear in the same root-session summary.
 
-A root session can contain Main and child transcripts, so the collector joins feedback from **all trace tracks**, not only the root session file. This lets worker feedback appear in the same root-session evidence used for delegation/tool analysis.
+Counters do not decide whether delegation or a workflow was good. Feedback does not authorize a change. #5/#8/#9 combine quantitative summaries, qualitative evidence, task acceptance and judgment only when a real decision is needed.
 
-Counters do not decide whether a workflow was good. Feedback does not authorize a change. #5/#8/#9 combine quantitative summaries, qualitative evidence, task acceptance, and human judgment when a real decision is needed.
+## Durable decisions
 
-## Routine observation vs experiment evidence
-
-Routine session summaries are cheap observations and remain outside Git.
-
-When a set of sessions materially supports a durable project decision, select the relevant summaries/raw identities and promote the decision through `docs/experiments.md` / `evidence/experiments/`. Do not freeze every normal session as an experiment.
+Routine summaries stay outside Git. When observations materially support a durable project decision, record the **current conclusion and relevant provenance** in the owning Issue/PR/current doc. Do not copy full raw sessions or create a second repository evidence archive solely for chronology; OMP data, external retained artifacts when genuinely needed, Git history and Issue/PR history provide the underlying provenance.
 
 ## Privacy and scope
 
-The collector is local-only. It does not upload telemetry, contact a cloud service, or copy full conversation text into its derived store. Session file paths, project paths, model/tool metadata, usage/cost-equivalent values, and feedback identifiers are still potentially sensitive local metadata and should be treated accordingly.
+The collector is local-only. It does not upload telemetry or copy full conversation text into its derived store. Session/project paths, model/tool metadata, usage values and feedback identifiers are still potentially sensitive local metadata.
 
 ## Current limitations
 
-- Quality/acceptance is not inferred automatically from token or timing counters.
-- Provider identity is sampled per `(track, model)`, not an exact per-request routing ledger; same-model provider switching may be conflated.
+- Quality/acceptance is not inferred from token or timing counters.
+- Provider identity is sampled per `(track, model)`, not per request.
 - Provider sampling depends on the public session-entry payload; unavailable values remain unknown.
-- The collector summarizes the sessions visible to the current OMP stats/profile store; cross-machine aggregation is not part of v1.
-- Remote replication belongs to #12 only after a real backend is chosen.
+- Cross-machine aggregation/replication is not part of v1.

@@ -19,4 +19,4 @@ scanner output as untrusted evidence that must be reconciled with repository fac
 Report actionable defects with file/line evidence, impact and confidence.
 Separate demonstrated defects from concerns needing verification. Do not invent
 findings to meet a quota. Report coverage limits even when no issue is found.
-This agent is read-only: return all fixes to an implementation worker.
+This agent is read-only: return findings to Main for integration and any fix routing.
