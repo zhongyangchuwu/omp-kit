@@ -25,6 +25,7 @@ const {
 	appendFeedbackRecord,
 	buildFeedbackRecord,
 	createFeedbackSchema,
+	feedbackContextFromRuntime,
 } = feedback;
 
 const validInput = {
@@ -37,9 +38,18 @@ const validInput = {
 
 const feedbackSchema = createFeedbackSchema(zod);
 
+type RuntimeContext = {
+	cwd: string;
+	sessionManager: {
+		getSessionId?: () => string;
+		getSessionFile?: () => string | undefined;
+	};
+};
+
 type RegisteredTool = {
 	name: string;
 	approval: string;
+	description: string;
 	parameters: {
 		safeParse(value: unknown): {
 			success: boolean;
@@ -52,7 +62,7 @@ type RegisteredTool = {
 		params: unknown,
 		signal: unknown,
 		onUpdate: unknown,
-		context: { cwd: string },
+		context: RuntimeContext,
 	): Promise<unknown>;
 };
 
@@ -130,36 +140,36 @@ function idFrom(record: unknown): string {
 	return record.id;
 }
 
-async function invokeTool(tool: RegisteredTool, cwd = isolatedAgentDir): Promise<unknown> {
-	return tool.execute("feedback-test-call", validInput, undefined, undefined, { cwd });
+async function invokeTool(
+	tool: RegisteredTool,
+	cwd = isolatedAgentDir,
+	sessionId = "feedback-test-session",
+	sessionFile: string | undefined = join(isolatedAgentDir, "sessions", "feedback-test.jsonl"),
+): Promise<unknown> {
+	return tool.execute("feedback-test-call", validInput, undefined, undefined, {
+		cwd,
+		sessionManager: {
+			getSessionId: () => sessionId,
+			getSessionFile: () => sessionFile,
+		},
+	});
 }
 
 afterAll(async () => {
 	await rm(isolatedAgentDir, { recursive: true, force: true });
-	if (previousAgentDir === undefined) {
-		delete process.env.PI_CODING_AGENT_DIR;
-	} else {
-		process.env.PI_CODING_AGENT_DIR = previousAgentDir;
-	}
-	if (previousOmpProfile === undefined) {
-		delete process.env.OMP_PROFILE;
-	} else {
-		process.env.OMP_PROFILE = previousOmpProfile;
-	}
-	if (previousPiProfile === undefined) {
-		delete process.env.PI_PROFILE;
-	} else {
-		process.env.PI_PROFILE = previousPiProfile;
-	}
+	if (previousAgentDir === undefined) delete process.env.PI_CODING_AGENT_DIR;
+	else process.env.PI_CODING_AGENT_DIR = previousAgentDir;
+	if (previousOmpProfile === undefined) delete process.env.OMP_PROFILE;
+	else process.env.OMP_PROFILE = previousOmpProfile;
+	if (previousPiProfile === undefined) delete process.env.PI_PROFILE;
+	else process.env.PI_PROFILE = previousPiProfile;
 });
 
 describe("feedback schema", () => {
 	test("accepts a valid feedback input and rejects unknown fields", () => {
 		const parsed = feedbackSchema.safeParse(validInput);
 		expect(parsed.success).toBe(true);
-		if (parsed.success) {
-			expect(parsed.data).toEqual(validInput);
-		}
+		if (parsed.success) expect(parsed.data).toEqual(validInput);
 
 		const unknownField = feedbackSchema.safeParse({ ...validInput, unexpected: true });
 		expect(unknownField.success).toBe(false);
@@ -167,22 +177,16 @@ describe("feedback schema", () => {
 
 	test("accepts only the published categories", () => {
 		for (const category of FEEDBACK_CATEGORIES) {
-			const parsed = feedbackSchema.safeParse({ ...validInput, category });
-			expect(parsed.success).toBe(true);
+			expect(feedbackSchema.safeParse({ ...validInput, category }).success).toBe(true);
 		}
-
-		const parsed = feedbackSchema.safeParse({ ...validInput, category: "not-a-feedback-category" });
-		expect(parsed.success).toBe(false);
+		expect(feedbackSchema.safeParse({ ...validInput, category: "not-a-feedback-category" }).success).toBe(false);
 	});
 
 	test("accepts only the published severities", () => {
 		for (const severity of FEEDBACK_SEVERITIES) {
-			const parsed = feedbackSchema.safeParse({ ...validInput, severity });
-			expect(parsed.success).toBe(true);
+			expect(feedbackSchema.safeParse({ ...validInput, severity }).success).toBe(true);
 		}
-
-		const parsed = feedbackSchema.safeParse({ ...validInput, severity: "urgent" });
-		expect(parsed.success).toBe(false);
+		expect(feedbackSchema.safeParse({ ...validInput, severity: "urgent" }).success).toBe(false);
 	});
 
 	test("requires non-empty bounded summary, evidence, and suggested direction", () => {
@@ -193,26 +197,24 @@ describe("feedback schema", () => {
 		] as const;
 
 		for (const [field, maxLength] of boundedFields) {
-			const empty = feedbackSchema.safeParse({ ...validInput, [field]: "" });
-			expect(empty.success).toBe(false);
-
-			const atLimit = feedbackSchema.safeParse({ ...validInput, [field]: "x".repeat(maxLength) });
-			expect(atLimit.success).toBe(true);
-
-			const excessive = feedbackSchema.safeParse({
-				...validInput,
-				[field]: "x".repeat(maxLength + 1),
-			});
-			expect(excessive.success).toBe(false);
+			expect(feedbackSchema.safeParse({ ...validInput, [field]: "" }).success).toBe(false);
+			expect(feedbackSchema.safeParse({ ...validInput, [field]: "x".repeat(maxLength) }).success).toBe(true);
+			expect(feedbackSchema.safeParse({ ...validInput, [field]: "x".repeat(maxLength + 1) }).success).toBe(false);
 		}
 	});
 });
 
-test("buildFeedbackRecord adds durable metadata without changing validated input", () => {
-	const record = buildFeedbackRecord(validInput, { cwd: "/workspace/project" });
+test("buildFeedbackRecord adds durable metadata and session provenance", () => {
+	const record = buildFeedbackRecord(validInput, {
+		cwd: "/workspace/project",
+		sessionId: "session-123",
+		sessionFile: "/sessions/session-123.jsonl",
+	});
 
 	expect(record.schemaVersion).toBe(1);
 	expect(record.cwd).toBe("/workspace/project");
+	expect(record.sessionId).toBe("session-123");
+	expect(record.sessionFile).toBe("/sessions/session-123.jsonl");
 	expect(record.category).toBe(validInput.category);
 	expect(record.severity).toBe(validInput.severity);
 	expect(record.summary).toBe(validInput.summary);
@@ -222,46 +224,65 @@ test("buildFeedbackRecord adds durable metadata without changing validated input
 	expect(Number.isNaN(Date.parse(record.timestamp))).toBe(false);
 });
 
+test("feedbackContextFromRuntime uses public session identity when available and does not invent it", () => {
+	expect(
+		feedbackContextFromRuntime("/workspace/project", {
+			getSessionId: () => "session-123",
+			getSessionFile: () => "/sessions/session-123.jsonl",
+		}),
+	).toEqual({
+		cwd: "/workspace/project",
+		sessionId: "session-123",
+		sessionFile: "/sessions/session-123.jsonl",
+	});
+
+	expect(feedbackContextFromRuntime("/workspace/project", {})).toEqual({ cwd: "/workspace/project" });
+});
+
 test("appendFeedbackRecord creates parents and preserves repeated valid JSONL records", async () => {
 	const root = await mkdtemp(join(tmpdir(), "omp-kit-feedback-jsonl-"));
 	const path = join(root, "nested", "feedback.jsonl");
 	const records = [
-		buildFeedbackRecord(validInput, { cwd: "/workspace/one" }),
-		buildFeedbackRecord({ ...validInput, category: "verification" }, { cwd: "/workspace/two" }),
+		buildFeedbackRecord(validInput, { cwd: "/workspace/one", sessionId: "one" }),
+		buildFeedbackRecord({ ...validInput, category: "verification" }, { cwd: "/workspace/two", sessionId: "two" }),
 	];
 
 	try {
 		await appendFeedbackRecord(path, records[0]);
 		await appendFeedbackRecord(path, records[1]);
-
 		expect((await stat(join(root, "nested"))).isDirectory()).toBe(true);
 		const lines = (await readFile(path, "utf8")).trimEnd().split(/\r?\n/);
 		expect(lines).toHaveLength(2);
-		expect(lines.map((line) => JSON.parse(line))).toEqual(records);
+		expect(lines.map(line => JSON.parse(line))).toEqual(records);
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}
 });
 
-test("uses the official agent directory for the durable target", async () => {
+test("uses the official agent directory and persists runtime session provenance", async () => {
 	await rm(join(getAgentDir(), "omp-kit"), { recursive: true, force: true });
 	const registered = registerFeedbackTool();
-	const result = await invokeTool(registered.tool, "/workspace/from-tool");
+	const sessionFile = join(isolatedAgentDir, "sessions", "worker.jsonl");
+	const result = await invokeTool(registered.tool, "/workspace/from-tool", "worker-session", sessionFile);
 	const target = feedbackPath();
 	const persisted = JSON.parse(await readFile(target, "utf8"));
 
 	expect(target).toBe(join(isolatedAgentDir, "omp-kit", "feedback.jsonl"));
-	expect(persisted).toMatchObject({ cwd: "/workspace/from-tool" });
+	expect(persisted).toMatchObject({
+		cwd: "/workspace/from-tool",
+		sessionId: "worker-session",
+		sessionFile,
+	});
 	expect(detailsFrom(result)).toEqual(persisted);
 });
 
-test("registers the omp_kit_feedback tool", () => {
+test("registers an evidence-only write-tier feedback tool", () => {
 	const registered = registerFeedbackTool();
 	expect(registered.tool.name).toBe("omp_kit_feedback");
 	expect(registered.tool.approval).toBe("write");
+	expect(registered.tool.description).toContain("evidence only");
 	expect(registered.tool.parameters.safeParse(validInput).success).toBe(true);
 	expect(registered.tool.parameters.safeParse({ ...validInput, severity: "urgent" }).success).toBe(false);
-
 });
 
 test("does not use the network while recording feedback", async () => {
@@ -288,7 +309,6 @@ test("surfaces a durable write failure as a tool error", async () => {
 	await rm(join(getAgentDir(), "omp-kit"), { recursive: true, force: true });
 	await mkdir(target, { recursive: true });
 	const registered = registerFeedbackTool();
-
 	await expect(invokeTool(registered.tool)).rejects.toThrow();
 });
 
@@ -297,7 +317,7 @@ test("keeps a durable write successful when appendEntry fails", async () => {
 	let appendEntryRecord: unknown;
 	const registered = registerFeedbackTool((_type, record) => {
 		appendEntryRecord = record;
-		throw new Error("session provenance is unavailable");
+		throw new Error("session provenance append is unavailable");
 	});
 
 	const result = await invokeTool(registered.tool);
@@ -306,9 +326,7 @@ test("keeps a durable write successful when appendEntry fails", async () => {
 
 	expect(registered.appendEvents).toHaveLength(1);
 	const appendEvent = registered.appendEvents[0];
-	if (appendEvent === undefined) {
-		throw new Error("feedback tool did not call appendEntry");
-	}
+	if (appendEvent === undefined) throw new Error("feedback tool did not call appendEntry");
 	expect(appendEvent.type).toBe("omp-kit-feedback");
 	expect(appendEntryRecord).toBe(returnedRecord);
 	expect(idFrom(appendEntryRecord)).toBe(idFrom(returnedRecord));
