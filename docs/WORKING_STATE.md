@@ -21,10 +21,10 @@ Current project scope is **omp-kit only**. Do not use another repository as a ne
 ## Current status
 
 ```text
-main:                         f7ad0b9ec876948121e5c0c117f2e164ffbc3aa4
 native-foundation core:       PR #17 merged
+compatibility policy:         PR #19 merged
 feedback branch:              omp-native-foundation
-feedback PR:                  #3 feat: add self-hosting feedback extension (Draft / blocked)
+feedback PR:                  #3 feat: add self-hosting feedback extension (Draft / inactive / blocked)
 feedback PR base:             main
 last evidenced normal runtime: OMP 18.1.20
 latest upstream seen:         OMP 18.1.21
@@ -33,7 +33,9 @@ split record:                 #16 closed completed
 deterministic CI:             .github/workflows/verify.yml (#18 closed completed)
 ```
 
-The native-foundation core is now on `main`. PR #3 targets `main` directly and owns only the feedback-specific delta: one commit and eight changed files at the current candidate.
+Do not copy the current `main` SHA into this mutable index. The actual branch HEAD is authoritative and should be inspected at task start.
+
+The native-foundation core and OMP compatibility policy are on `main`. PR #3 targets `main` directly and owns only the feedback-specific delta: one commit and eight changed files at the current candidate.
 
 OMP 18.1.21 has been changelog-triaged. Its changes are limited to Chromium/browser-automation fixes and do not touch an omp-kit compatibility surface, so no dedicated compatibility smoke is required. See `docs/omp-compatibility.md` for the version-risk and impact-override policy.
 
@@ -41,20 +43,43 @@ PR #3 remains blocked because released OMP 18.1.21 still does not contain the ha
 
 Exact current PR readiness and the latest accepted candidate result belong in PR #3 and its GitHub Actions / Issue state. Do not create a new git commit solely to copy a just-tested candidate SHA into this file.
 
-## Active work
+## Work status semantics
+
+Open Issues are unfinished. Use status labels to separate current attention from parked work:
+
+```text
+status:active
+  -> unfinished and currently gathering evidence / dogfood / implementation input
+
+status:inactive
+  -> unfinished but waiting on an upstream condition, a natural trigger, or future evidence
+
+closed / completed
+  -> acceptance criteria are complete
+```
+
+Do not close an unfinished Issue merely to reduce the active list. Move it between active and inactive instead.
+
+### Active
 
 | Item | State | Purpose |
 | --- | --- | --- |
-| PR #3 | Draft / blocked | Feedback-only PR; do not make review-ready until #4 closes. |
-| #4 | blocked upstream | Hard Main/worker capability boundary on a supported release. |
-| #5 | observational dogfood | Learn worker-tool value from real omp-kit sessions and OMP-native telemetry. |
-| #7 | upstream tracking | Three remaining coordination/configuration gaps; unchanged by the 18.1.21 browser-only patch. |
-| #8 | evidence gathering | Delegation economics from real work. |
-| #9 | active recurring audit | Remove/simplify model-compensation and repeated-process overhead. |
-| #11 | deferred design/dogfood | Decide issue-centered state vs `.planning/` coexistence after genuine recovery/offline evidence. |
-| #12 | long-lived dogfood | Experiment artifact lifecycle; remote replication/schema helper remain optional. |
+| #5 | `status:active` / observational dogfood | Learn worker-tool value from real omp-kit sessions and OMP-native telemetry. |
+| #8 | `status:active` / evidence gathering | Measure delegation economics from real work. |
+| #11 | `status:active` / dogfood before implementation | Test issue-centered state through genuine restart/recovery/offline cases before changing workflows. |
+| #12 | `status:active` / long-lived dogfood | Exercise the experiment artifact lifecycle on materially different experiments. |
 
-Completed PR #17 and maintenance records #16/#18 document the native-foundation landing, core/feedback ownership split, and GitHub Actions deterministic gate. None is an active implementation owner.
+### Inactive
+
+| Item | State | Reactivation trigger |
+| --- | --- | --- |
+| PR #3 | Draft / `status:inactive` / blocked | Issue #4 closes after a supported released-runtime capability boundary and smoke. |
+| #4 | `status:inactive` / blocked upstream | OMP ships #9521 or an equivalent hard child capability boundary in a supported release. |
+| #7 | `status:inactive` / upstream tracker | One tracked coordination gap becomes a concrete blocker or receives a relevant released upstream fix. |
+| #9 | `status:inactive` / recurring audit | A major model/runtime change or repeated dogfood friction makes another scaffolding ablation decision-relevant. |
+| #15 | `status:inactive` / belief backlog | A concrete composition/governance problem makes one hypothesis decision-relevant. |
+
+Completed PR #17/#19 and maintenance records #16/#18 document the native-foundation landing, compatibility policy, core/feedback ownership split, and GitHub Actions deterministic gate. None is an active implementation owner.
 
 ## Current worker dogfood surfaces
 
@@ -86,7 +111,7 @@ OMP ordinary session persistence is the recorder. Prefer `/api/sessions`, `/api/
 
 ## Current Issue #9 ablation state
 
-Two current-generation simplifications are accepted.
+Two current-generation simplifications are accepted. Issue #9 is currently inactive rather than completed; retain it open until its own acceptance criteria are deliberately satisfied or superseded.
 
 ### Generic reflection removal
 
@@ -130,13 +155,13 @@ history://<id> -> concise subagent transcript
 
 Do not build an omp-kit result store for this.
 
-Three active gaps remain:
+Three known gaps remain:
 
 1. `hub wait` still wakes on the first matching peer message and cannot filter by workflow-semantic message class;
 2. peer messages still lack first-class `progress / blocker / decision-request / final` kinds;
 3. ordinary custom-agent frontmatter still cannot express per-agent `lspReadOnly`.
 
-The 18.1.21 browser-only patch does not change this audit. See Issue #7 and `docs/design/supervision.md`.
+Issue #7 is currently inactive: these gaps remain recorded, but no omp-kit implementation should be manufactured around them. The 18.1.21 browser-only patch does not change this audit. See Issue #7 and `docs/design/supervision.md`.
 
 ## Validation handling
 
@@ -152,6 +177,7 @@ OMP release compatibility follows `docs/omp-compatibility.md`: every release get
 
 ## Recently completed
 
+- **PR #19 OMP compatibility policy** — merged to `main`; version-risk defaults plus impact overrides now own release triage.
 - **PR #17 native foundation core** — merged to `main`; the post-merge `main` Verify gate passed.
 - **#18 deterministic GitHub Actions gate** — completed; routine repository-wide mechanical acceptance no longer requires a local-agent handoff.
 - **#16 core/feedback PR split** — completed; independent core work no longer waits on the feedback blocker.
@@ -169,8 +195,8 @@ OMP release compatibility follows `docs/omp-compatibility.md`: every release get
 
 ## Next action
 
-1. Keep PR #3 Draft while upstream PR #9521 (or an equivalent released implementation) is absent from released OMP.
-2. When a supported release gains the hard child capability boundary, run the Issue #4 released-runtime smoke; only then consider making PR #3 ready for review.
-3. Triage new OMP releases with `docs/omp-compatibility.md`; do not manufacture tests or Issues for unrelated patch churn.
-4. Resume normal omp-kit development from `main`; let #5/#8 evidence accumulate passively from real sessions.
-5. Do not manufacture #11's fresh-session recovery test merely to satisfy its checklist.
+1. Resume normal omp-kit development from `main`; let active #5/#8/#11/#12 evidence accumulate from real work rather than manufactured tests.
+2. Keep PR #3 and #4 inactive while upstream PR #9521 (or an equivalent released implementation) is absent from released OMP.
+3. When a supported release gains the hard child capability boundary, reactivate #4, run its released-runtime smoke, and only then consider making PR #3 ready for review.
+4. Triage new OMP releases with `docs/omp-compatibility.md`; do not manufacture tests or Issues for unrelated patch churn.
+5. Reactivate #7/#9/#15 only when their documented triggers become decision-relevant.
