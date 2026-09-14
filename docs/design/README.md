@@ -38,7 +38,7 @@ Use plain categories rather than a fake numeric confidence score.
 | `anecdote / hypothesis` | Plausible design input without enough evidence to treat as established. |
 | `counter-evidence` | Observation that limits, contradicts, or narrows a design claim. |
 
-Always preserve material limitations. A one-user wait trace is not a universal cost ratio. A personal bake-off is not a public benchmark. A preview branch is not a released-runtime compatibility guarantee.
+Always preserve material limitations. A one-user trace is not a universal cost ratio. A personal bake-off is not a public benchmark. A preview branch is not a released-runtime compatibility guarantee.
 
 ## Persistence rule
 
@@ -51,37 +51,40 @@ accepted rationale/evidence      -> docs/design/*.md
 unresolved question/experiment   -> GitHub Issue
 chronological experiment updates -> Issue comments
 implementation/review            -> Pull Request
-old phase-specific long evidence -> docs/archive/
+routine session observations     -> local session-evidence store
+material durable experiment      -> evidence/experiments/
+old phase-specific long evidence -> docs/archive/ when local history is useful
 ```
 
-If a design record names an open question that could change implementation or policy, it should link to an Issue with a closure condition. When that Issue resolves, promote the durable conclusion back into the record.
+If a design record names an open question that could change implementation or policy, link to an Issue with a closure/reactivation condition. When that Issue resolves, promote only the durable conclusion back into current docs; preserve history rather than rewriting it.
 
 ## Current records
 
-| Record | Current status | Main persistent work |
+| Record | Current status | Persistent work |
 | --- | --- | --- |
-| [`harness-boundary.md`](harness-boundary.md) | accepted principle, recurring audit | #9 model-compensation ablation |
-| [`delegation.md`](delegation.md) | accepted routing shape, economics still evolving | #8 delegation economics; #5 worker tools; #6 integration |
-| [`verification.md`](verification.md) | accepted principle, policy refinement open | #6 parallel integration/verification |
-| [`supervision.md`](supervision.md) | accepted local policy, upstream-limited runtime | #7 OMP coordination gaps |
-| [`context-authority.md`](context-authority.md) | accepted authority/provenance policy, dogfood ongoing | #11 information-model dogfood; runtime/context changes |
+| [`harness-boundary.md`](harness-boundary.md) | accepted boundary principle; systematic audit not yet run | #9 later scaffolding ablation; #5/#8 evidence |
+| [`delegation.md`](delegation.md) | accepted routing shape; economics evolving | #8 delegation economics; #5 worker tools |
+| [`verification.md`](verification.md) | accepted CI/review/runtime evidence architecture | #9 later process ablation |
+| [`supervision.md`](supervision.md) | accepted local policy; some runtime semantics remain upstream-owned | #7 OMP coordination gaps |
+| [`context-authority.md`](context-authority.md) | accepted authority/provenance policy | #11 project-state dogfood |
 
 ## Coverage backlog
 
-The following topics are real and persistent but do not yet have a full design record. Their unresolved state is stored in Issues rather than model memory:
+The following topics are real but do not necessarily need a dedicated design record yet. Their unresolved state belongs in Issues, not model memory:
 
-- **Worker capability surface** — Issue #5. Future record should explain why each worker tool exists, what its capability cost is, and which boundaries OMP must enforce.
-- **Model routing / delegation economics** — Issue #8. Currently kept inside `delegation.md` because task shape and routing economics are tightly coupled; split only if the evidence becomes large enough.
-- **Independent parallelism / ownership** — currently part of `delegation.md` and Issue #6. Split when it develops mechanisms/evidence distinct from delegation itself.
-- **Self-hosting feedback** — implementation exists and Phase 1.5 is documented in current validation/Issue #4. Add a dedicated design record when the Main-only capability boundary is available on a supported OMP release and the mechanism can be evaluated end-to-end.
+- **Worker capability surface** — Issue #5. Future durable conclusions should explain why capabilities remain, what their consequence is, and which enforcement belongs to OMP.
+- **Model routing / delegation economics** — Issue #8. Currently lives primarily in `delegation.md`; split only if evidence becomes large enough to justify another mechanism-level record.
+- **Issue-centered project state** — Issue #11. V1 is implemented; a dedicated design record is warranted only if natural dogfood produces durable rationale beyond the workflow reference/current context-authority record.
+- **Structured self-hosting feedback** — completed Issue #4 established the v0 product: bounded qualitative evidence may be recorded by Main/workers and never implies authorization/self-modification. Add a dedicated record only if future lifecycle, triage, capability-hardening, or consequence semantics become complex enough to deserve one.
+- **Routine session evidence** — completed Issue #21 established the collector/product contract. `../session-evidence.md` is the current user-facing contract; a design record is unnecessary unless future evidence semantics become a distinct architecture problem.
 
-Do not create empty placeholder files merely to make the list look complete. A new record should begin when there is enough real problem/evidence content to review.
+Do not create empty placeholder files merely to make the list look complete.
 
 ## Source discipline
 
 External articles, posts, and community projects are design inputs, not automatically project truth. Summarize the relevant claim, link the original/available source, label its evidence type, and preserve important counterarguments.
 
-The initial 2026-09-13 design pass drew particularly from:
+The initial design pass drew particularly from:
 
 - OMP Hashline/edit contract and first-party benchmark material: https://github.com/can1357/oh-my-pi
 - `GPT-6 Astra 之后，哪些 Harness 还值得做？` mirror: https://www.iconb.cn/article/0eec42eaeef142c5df5c5e1f88864592
