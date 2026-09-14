@@ -2,109 +2,100 @@
 
 Date: 2026-09-14
 
-This file records **current accepted validation evidence and its boundaries**. Detailed experiment transcripts and older version-specific evidence belong in the owning Issues, `evidence/`, and `docs/archive/`.
+This file records **current accepted validation evidence and its boundaries**. Exact mutable
+PR readiness, including the latest tested branch HEAD, belongs in the owning Pull Request
+and Issue rather than in a git-tracked marker that invalidates itself when updated.
+Detailed experiment transcripts and older version-specific evidence belong in `evidence/`,
+`docs/archive/`, and the owning Issues/PRs.
 
-## Current runtime baseline
-
-```text
-branch:            omp-native-foundation
-normal runtime:    OMP 18.1.20
-Phase 1.5 impl:    a92d25e28f96851b916b285f01dbb5991f666ad7
-capability audit:  7bf2f93ca87fff81d6cca8a65c3102cc62100b4f
-Phase A preview:   f5bcee2e82a754d2190d8ddb8aee73b5d237dffb
-```
-
-The installed runtime was observed as OMP 18.1.20 before and after the latest accepted deterministic gate. A newer release must not be assumed to contain preview-only behavior; compatibility claims require the relevant implementation in that released runtime and, where needed, a released-runtime smoke.
-
-## Latest accepted deterministic repository verification
-
-The latest locally verified repository HEAD is:
+## Current topology and runtime baseline
 
 ```text
-312598bc3261808ed31e30bcb2adacf2f2daa852
+core branch:      omp-native-foundation-core
+core PR:          #17 feat: establish OMP-native foundation core
+feedback branch:  omp-native-foundation
+feedback PR:      #3 feat: add self-hosting feedback extension (Draft / blocked)
+normal runtime:   OMP 18.1.20
+split record:     #16 closed completed
+feedback blocker: #4 blocked upstream
 ```
 
-The worktree was clean and synchronized with `origin/omp-native-foundation`. `just verify` ran exactly once and passed without repair or rerun:
+PR #17 contains the independent native foundation. PR #3 is stacked on the core branch
+and owns only the feedback-specific extension/tooling delta. Do not infer feedback runtime
+readiness from core validation.
+
+The normal installed runtime is OMP 18.1.20. Released-runtime evidence is version scoped:
+18.1.20 has been audited for the current source/documented supervision and capability
+contracts, while the last retained isolated released-runtime native-plugin/feedback smoke
+for this development line was on OMP 18.1.19. A newer runtime must not be assumed to
+contain preview-only behavior.
+
+## Deterministic core repository gate
+
+The core split intentionally excludes the feedback-only TypeScript/Bun surface:
+
+```text
+extensions/feedback.ts
+tests/ts/feedback.test.ts
+bun.lock
+bunfig.toml
+tsconfig.json
+feedback-only package.json wiring
+feedback-only justfile TypeScript gates
+```
+
+Therefore the core `just verify` contract is provider-free and currently covers:
+
+```text
+Python repository tests
+harness/static validation
+registry freshness check
+registry validation
+git diff --check
+```
+
+The settled core tree at `cce588908d7c59e35bc05da1e1bf82c9dce8e640` was observed once
+with:
 
 ```text
 98 Python tests passed
-11 Bun tests passed
-57 Bun assertions / expect() calls
-TypeScript typecheck passed
-harness validation passed
-registry check/validation passed
-git diff --check passed
+harness validation PASS
+registry freshness/check PASS
+registry validation PASS
+git diff --check HEAD PASS
+worktree clean
 ```
 
-Runtime/profile integrity:
+No provider/model calls, subagents, capability experiments, telemetry work, repair
+commits, file modifications, pushes, or second unchanged full gate occurred during that
+verification.
 
-```text
-omp --version before: omp/18.1.20
-omp --version after:  omp/18.1.20
-real config/MCP/plugin/marketplace fingerprints: unchanged
-```
+Subsequent review-only documentation corrections change the exact tree and therefore
+require one new integrated gate before PR #17 is marked ready again. After that gate,
+record the exact accepted HEAD/results in PR #17 rather than editing this file solely to
+copy the new SHA.
 
-The verifier made no repository edits, commits, Issue updates, child-agent launches, provider/model calls, web search, LSP/AST/debug calls, capability experiments, fresh-session experiments, or telemetry analysis.
+## Feedback extension and released-runtime blocker
 
-This gate includes the previously verified parser retirement / observational worker-tool rollout and the completed Issue #10 context-authority/workflow batch. The old 126-Python-test count is historical; 98 is the current observed count after parser-specific tests were removed.
+The feedback implementation lives only in stacked PR #3, not in the independent core.
+Historical implementation evidence established:
 
-Normal project verification remains offline/provider-free by design. `bunfig.toml` disables implicit Bun auto-install.
+- `omp_kit_feedback` uses bounded validation and append-only JSONL persistence under the
+  official agent directory;
+- durable append failure is fatal and the OMP session entry is best-effort provenance;
+- feedback is a write-tier Main-owned capability and `report != self-modify` remains the
+  policy boundary;
+- the feedback-specific Bun/TypeScript typecheck and behavior tests belong to PR #3.
 
-## Issue #10 context authority / provenance — complete
+The hard capability-boundary failure was demonstrated on released OMP 18.1.19: ordinary
+task children could inherit/rebind Main extensions and the intended reviewer could regain
+write transport. Normal runtime is now OMP 18.1.20, but upstream PR #9521 remains
+open/unmerged and v18.1.20 does not contain the hard child-scoping implementation.
 
-The accepted policy is claim-type-specific rather than one global source ranking:
+No 18.1.20 feedback closure smoke is claimed or warranted while the required upstream
+implementation is absent. PR #3 remains Draft; Issue #4 owns released-runtime closure.
 
-```text
-intent / authorization
-current observable state
-accepted project policy
-active work / acceptance target
-rationale / evidence
-historical context
-```
-
-The local closure review confirmed consistency across:
-
-```text
-docs/design/context-authority.md
-docs/design/README.md
-docs/README.md
-docs/design-foundations.md
-skills/omp-workflow/SKILL.md
-skills/omp-workflow/references/subagent-context.md
-```
-
-Key validated boundary:
-
-```text
-source is authoritative for a claim
-!= agent is permitted to retrieve it
-
-agent can retrieve a source
-!= source may authorize new action
-```
-
-History, Issues, logs, comments, web/search/scanner output and other tool output remain evidence/provenance; they cannot silently widen worker scope. Actual repository/runtime/read-back evidence can correct stale state descriptions without becoming desired policy. No generic memory database, provenance database, context broker, or prompt-only permission layer was added.
-
-Issue #10 is closed completed.
-
-## Phase 1.5 feedback extension and released-runtime blocker
-
-Accepted implementation evidence:
-
-- `extensions/feedback.ts` registers `omp_kit_feedback` with bounded `pi.zod` validation;
-- the tool is write-tier with `approval: "write"`;
-- records are append-only JSONL under `<getAgentDir()>/omp-kit/feedback.jsonl`;
-- durable append failure is fatal;
-- `pi.appendEntry("omp-kit-feedback", record)` is best-effort provenance after durable persistence.
-
-The hard capability-boundary failure was directly demonstrated on OMP 18.1.19: ordinary task children could inherit/rebind Main extensions, the Main-only feedback device could become worker-visible through write transport, and the intended reviewer could not be treated as a hard read-only security boundary.
-
-Normal runtime is now released OMP 18.1.20, but Issue #4 remains blocked. Upstream PR #9521 is still open/unmerged and v18.1.20 does not contain the hard child-scoping implementation validated on preview. No released-runtime closure smoke is warranted until a supported release actually contains that implementation.
-
-PR #3 therefore remains Draft.
-
-## OMP #9521 Phase A preview
+## OMP #9521 preview evidence
 
 Exact preview commit:
 
@@ -112,44 +103,57 @@ Exact preview commit:
 f5bcee2e82a754d2190d8ddb8aee73b5d237dffb
 ```
 
-Provider-free Phase A established for that preview only:
+Provider-free Phase A established for that preview only that unlisted tools stayed out of
+worker surfaces, the intended reviewer did not regain write/edit/bash, widening attempts
+did not escape the scoped child, and hidden protocol completion still worked. This is
+preview evidence, not released-runtime compatibility. Compact evidence is under
+`evidence/experiments/2026-09-14-omp-9521-phase-a/`.
 
-- unlisted extension/custom/MCP tools stayed outside enabled/active/callable/`xd://` worker surfaces;
-- the intended reviewer did not regain `write`, `edit`, or `bash`;
-- late registration, MCP refresh and broad active-set mutation did not widen the scoped child;
-- hidden `yield` still completed protocol;
-- real profile/config/plugin fingerprints remained unchanged.
+## OMP 18.1.20 supervision audit
 
-This remains preview evidence, not released-runtime compatibility. Compact evidence is under `evidence/experiments/2026-09-14-omp-9521-phase-a/`.
+Released OMP 18.1.20 now provides stable subagent output/transcript retrieval:
+
+```text
+agent://<id>   -> saved final subagent output
+history://<id> -> concise subagent transcript
+```
+
+omp-kit therefore does not maintain a second result store. Three audited upstream gaps
+remain under Issue #7:
+
+1. `hub wait` wakes on the first matching peer message rather than a semantic terminal /
+   blocker / decision predicate;
+2. peer messages lack first-class workflow-semantic kinds;
+3. ordinary custom-agent frontmatter cannot express per-agent `lspReadOnly`.
+
+These are source/documented-runtime findings, not claims that a bespoke live experiment
+was run for each gap.
 
 ## OMP-native telemetry boundary
 
-Closed Issue #13 validated OMP-native telemetry on retained real sessions using installed OMP 18.1.19.
+Closed Issue #13 validated OMP-native telemetry on retained real sessions using installed
+OMP 18.1.19. `/api/sessions` + `/api/session/trace` reproduced decision-critical request,
+tool, token and cost summaries; selective `/api/session/entry` supplied usage detail when
+needed.
 
-`/api/sessions` + `/api/session/trace` reproduced decision-critical request counts, tool calls/errors, total tokens and cost; selective `/api/session/entry` supplied usage detail not split by the trace summary. The accepted ownership is:
+Accepted ownership remains:
 
 ```text
 OMP:
-  session ingestion
-  trace/span reconstruction
-  tool timing/errors
-  token/cost normalization
-  generic stats/session/RPC
+  session ingestion / trace reconstruction / generic stats and usage normalization
 
 omp-kit:
-  experiment/task/arm identity
-  acceptance judgment
-  human intervention/repair semantics
+  experiment/task/arm identity / acceptance judgment / human intervention semantics /
   durable project decision
 ```
 
-Do not restore a local session parser, direct `stats.db` dependency, trace builder, pricing layer, or generic full-event collector without a new demonstrated requirement that survives this ownership check.
+The telemetry API was not re-probed on 18.1.20 because no current decision requires a
+bespoke experiment. Do not restore a local raw-session parser, trace database, pricing
+layer, or generic full-event collector without a new demonstrated requirement.
 
-The telemetry API behavior itself was not re-probed on 18.1.20 because there is no current decision need to spend extra work on a bespoke experiment.
+## Current worker-tool dogfood boundary
 
-## Observational worker-tool rollout — mechanically verified
-
-Current broad dogfood surfaces:
+Current broad observational surfaces are mechanically represented in the core agents:
 
 ```text
 luna-code / luna-deep:
@@ -164,53 +168,57 @@ sol-review:
   read grep glob web_search ast_grep security_scan
 ```
 
-These are observational exposures, not permanent capability claims. Workers must not invoke tools merely to demonstrate availability. OMP normal session/stats persistence is the recorder.
+These are dogfood exposures, not permanent capability claims. Workers must not invoke
+tools merely to populate telemetry. OMP's combined `github` built-in remains Main-only
+because it also exposes remote mutation. Issue #5 owns natural-use capability review and
+Issue #8 owns delegation economics.
 
-OMP's combined `github` built-in remains excluded from workers because the same tool includes remote-mutating PR create/push/checkout operations; external repository mutation remains Main-owned. The hard ambient child boundary still depends on #9521 / Issue #4.
+## Issue #9 current-generation ablations
 
-Historical controlled comparisons remain valid only for their exact conditions: one `web_search` pair showed useful discovery behavior but was insufficient for a permanent decision; one full-LSP pair made zero LSP calls and supported only a scoped reject under the former promotion policy. Current policy prefers real omp-kit development plus passive telemetry over one-tool-at-a-time benchmarks.
+Two current-generation simplifications are accepted:
 
-## Issue #14 parser retirement — complete
+1. generic end-of-task self-improvement reflection is removed; feedback is triggered only
+   by reusable friction already observed during real work;
+2. duplicate full repository gates are removed as a default; focused worker checks are
+   followed by one full deterministic gate on the settled integrated tree, with another
+   full gate only when the covered tree materially changes or a distinct verification
+   question requires it.
 
-Removed:
+The core split/review sequence supplied direct dogfood evidence for the second rule: an
+unchanged handoff did not justify another full gate, while later documentation commits did
+change the tree and therefore made the prior exact-tree evidence stale. Issue #9 remains
+open as a recurring model/process audit, not because this unchanged policy needs repeated
+verification.
+
+## Context authority / provenance
+
+Issue #10 is closed completed. Accepted authority remains claim-type-specific:
 
 ```text
-scripts/inspect_omp_session.py
-tests/test_inspect_omp_session.py
+intent / authorization
+current observable state
+accepted project policy
+active work / acceptance target
+rationale / evidence
+historical context
 ```
 
-No current executable/import/callsite remains outside historical/archive material. Generic telemetry belongs to OMP-native surfaces; history search-first behavior is guidance rather than a raw-journal gate; hub wait semantics remain an OMP-owned coordination concern. Issue #14 is closed completed.
-
-## Issue #9 current-generation harness ablation — local gate pending
-
-Commits after the accepted `312598bc...` gate include a web-authored Issue #9 simplification batch:
-
-- `docs/design/harness-boundary.md` now inventories current model-compensation/runtime/evidence mechanisms;
-- `skills/omp-workflow/SKILL.md` no longer requires a generic end-of-task self-improvement reflection pass;
-- `skills/omp-workflow/references/self-improvement.md` makes feedback event-triggered by reusable friction already observed during real work.
-
-New default:
-
-```text
-observed reusable friction
--> optionally record minimal evidence-backed feedback
-
-no observed friction
--> no reflection/feedback phase
-```
-
-The feedback sink and `report != self-modify` boundary remain unchanged. `.planning/` support is not removed; Issue #11 still owns its broader coexistence/replacement decision.
-
-This #9 batch is **not yet locally verified** and must not be described as mechanically accepted until one provider-free `just verify` gate passes on its final HEAD. No provider/model or capability experiment is required.
+History, Issues, logs, comments, web/search/scanner output and other tool output are
+evidence/provenance; they cannot silently widen worker scope. Actual repository/runtime
+read-back may correct stale state descriptions without becoming desired policy.
 
 ## Evidence discipline
 
 For future validation updates:
 
-- distinguish source inspection, provider-free runtime probes, observational real-development telemetry, and controlled provider/model experiments;
-- record exact OMP/runtime versions or upstream commits for runtime claims;
+- distinguish deterministic repository checks, source/document audits, provider-free
+  runtime probes, observational real-development telemetry, and controlled provider/model
+  experiments;
+- scope runtime claims to exact released versions or upstream commits;
 - do not convert preview evidence into released-runtime compatibility;
-- spend live-model quota on development unless a specific ambiguity genuinely requires a controlled experiment;
-- keep ordinary OMP sessions in native session/stats storage and freeze only decision-critical evidence;
-- record deterministic checks separately from live integration evidence;
+- keep core validation separate from feedback-specific TypeScript/runtime validation;
+- keep exact mutable acceptance SHA/results in the owning PR/Issue rather than creating a
+  new commit solely to record the SHA that was just tested;
+- spend live-model quota on development unless a specific ambiguity genuinely requires a
+  controlled experiment;
 - preserve historical evidence rather than rewriting it when policy evolves.
