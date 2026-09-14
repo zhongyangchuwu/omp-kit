@@ -2,8 +2,8 @@
 
 The director owns user intent, task boundaries, shared interfaces, acceptance,
 escalation and integration decisions. Workers own scoped exploration, editing,
-local debugging and targeted verification. Optimize useful accepted work, not
-hours spent waiting or a fixed token-share target.
+local debugging and verification evidence for their assigned work. Optimize useful
+accepted work, not hours spent waiting or a fixed token-share target.
 
 ## Select by task, not by a mandatory escalation ladder
 
@@ -19,6 +19,17 @@ For important invariants or ambiguous behavior, give explicit acceptance criteri
 Use one owner for each writable scope. Concurrent independent work is useful;
 concurrent overlapping edits require isolation or a serialized integration plan.
 A director checking evidence should not repeat the entire worker investigation.
+
+If a workstream changes a shared type, schema, catalog, interface, configuration
+contract or similar cross-slice surface, Main owns the consumer/integration question.
+Before acceptance, account for likely production call sites, tests/fixtures,
+mocks/fakes and contract-facing docs/examples. A worker that discovers an out-of-scope
+consumer reports it; it does not silently expand writable scope. Main may deliberately
+reassign that consumer or handle it during integration.
+
+At integration, compare the actual changed files with the scopes that were assigned.
+Unexpected or overlapping writes are explicit integration findings rather than an
+implicit change to worker ownership.
 
 ## Lifecycle
 
@@ -44,7 +55,7 @@ not an exact completion promise. Use a simple bucket rather than false precision
 
 Known slow builds, installs or external services may justify a longer window based on
 observed baselines. The estimate is for supervisor cadence only; it is not a requirement
-for the worker to sacrifice correctness or skip verification.
+for the worker to sacrifice correctness or skip decision-critical verification.
 
 When the live `hub` schema exposes a timeout, prefer one bounded wait that roughly
 matches the checkpoint window. Never use an indefinite wait (`timeoutMs: 0`) merely to
@@ -81,11 +92,27 @@ on the same unresolved blocker trigger a report, not a new infinite agent loop.
 The director may clarify scope, split the problem, change tier or ask the user.
 Track provider retries, technical repairs, escalation and user scope changes separately.
 
-The director owns the integrated verification result, but can delegate the command
-execution to a suitable worker. Run a project-wide gate once for the integrated
-change, not independently in every worker. An independent reviewer needs a diff
-artifact or explicit base/current sources, requirements and verification evidence.
-Routine changes do not require a separate expensive review by default.
+Workers own verification evidence for their scope. Use focused checks while debugging
+and before handoff. Do not mechanically run the same repository-wide full gate in every
+worker just because it is cheap; repeated full-gate output and model/tool turns are still
+overhead, and a shared working tree may change before acceptance.
+
+A worker-local full gate remains useful when it answers a distinct diagnostic question,
+when an isolated worktree needs a pre-merge safety check, when the worker owns the exact
+final tree and its pass can be reused as final acceptance evidence, or when Main asks for
+it explicitly.
+
+The director owns the integrated verification result, but can delegate command execution
+to a suitable verifier. After related workstreams settle and the accepted tree is
+integrated, run the normal full deterministic gate once when it is cheap and relevant.
+That integrated pass is the mechanical acceptance gate. If later fixes materially
+change the tree, rerun only the checks required by the changed state rather than by a
+phase ritual.
+
+Independent review remains selective by failure cost. When practical, mechanically
+verify the integrated diff before strong review so reviewer effort is spent on semantics,
+lifecycle, product judgment, ambiguity and other risks not already decided by cheap
+checks. Routine changes do not require a separate expensive review by default.
 
 Return material product preferences, irreversible architecture choices and destructive
 operations to the user. Ordinary implementation choices may follow repo conventions.

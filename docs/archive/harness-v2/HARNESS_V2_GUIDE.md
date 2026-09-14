@@ -12,31 +12,34 @@ earlier are not validated implementation contracts.
 
 | Resource | Responsibility |
 | --- | --- |
-| config/config.yml | Model roles and portable runtime preferences |
-| config/models.yml | Actual provider routes, model metadata and secret-variable names |
-| config/APPEND_SYSTEM.md | Short entry point, not another full system prompt |
-| agents/*.md | Specific task role and restricted tool surface |
-| omp-workflow | Orchestration, context retrieval, escalation and meaningful gates |
-| bounded-executor | Implementation scope, repair, evidence and termination |
-| omp-review | Review procedure and actionable findings |
+| package.json | Native OMP plugin identity and distributable resource roots |
+| agents/*.md | Model-neutral task roles with restricted tool surfaces |
+| skills/* | Workflow, execution, test and review behavior |
+| rules/omp-kit-workflow.md | Main-only native workflow entry point |
+| config/config.yml | Legacy installer model roles and portable runtime preferences |
+| config/models.yml | Legacy installer provider routes and model metadata |
+| config/APPEND_SYSTEM.md | Legacy installer copy of the workflow entry point |
 | Project rules/docs | Repository facts and accepted local decisions |
-| .omp-kit/local | Private machine overrides, not checked into Git |
+| .omp-kit/local | Private legacy-installer overrides, not checked into Git |
 
-The existing skill registry/provenance/promotion machinery remains. It still indexes
-skills and drafts; agents/config are separate native OMP resources, not fake skills.
-The installer selects active skills from that registry and checks agent references.
+The native plugin uses the repository resource roots directly and leaves ordinary OMP
+settings untouched. The existing registry/provenance machinery still owns active skill
+selection and drafts. The Python installer remains a compatibility/migration path that
+copies config, agents and registry-selected skills and checks their references.
+
 
 ## Division of work
 
 The main director owns user intent, interfaces, decomposition, unresolved decisions
 and integration. Execution workers read source, edit, test and repair within a bounded
-scope. The current role map uses Sol for director/high-risk work and Luna for normal
-or deeper execution. Terra and Astra remain available; no workflow requires deleting
-them. Changing a role should not require editing an agent's fixed effort field.
+scope. The legacy Harness v2 configuration retains the tested Sol/Luna routing as
+migration evidence, but the native plugin does not require that mapping.
 
-`luna-code`, `luna-deep`, `luna-doc`, and `sol-review` are task-shape names. Their
-model/effort resolves through `@fast_worker`, `@good_worker` or `@review`.
-No automatic fallback to a more expensive provider/model is enabled by this kit.
+`luna-code`, `luna-deep`, `luna-doc`, and `sol-review` retain their established names
+while the plugin architecture changes. Their definitions are model-neutral: native
+`task.agentModelOverrides`, configured through `/agents`, wins when present; otherwise
+OMP uses the normal task/session model fallback. Concrete provider, model and effort
+remain user-owned.
 
 Workers have explicit tools and no child-spawn policy. Code workers have write and
 execution capability; docs workers cannot run tests; reviewers cannot edit or run

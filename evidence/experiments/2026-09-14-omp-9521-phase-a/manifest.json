@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "experiment_id": "2026-09-14-omp-9521-phase-a",
+  "title": "OMP PR #9521 hard per-subagent capability boundary",
+  "date": "2026-09-14",
+  "status": "pass",
+  "evidence_type": "controlled_runtime_experiment",
+  "claim_scope": "upstream_preview_only",
+  "related_issues": [4, 5, 12],
+  "revisions": {
+    "omp_kit_tested": "d4347ee45a9f35f9af1fb7a078f716a7a20348c0",
+    "omp_preview_tested": "f5bcee2e82a754d2190d8ddb8aee73b5d237dffb",
+    "omp_kit_result_docs_commit": "43944939ead4b58b24075e2578f70c7781fb8fa5",
+    "normal_installed_omp_after": "18.1.19"
+  },
+  "provider_calls": {
+    "external_provider_or_model_calls": 0,
+    "bundled_mock_provider_used": true,
+    "observed_external_network_calls_in_lifecycle_probe": 0
+  },
+  "isolation": {
+    "detached_tmp_upstream_checkout": true,
+    "temporary_home": true,
+    "temporary_omp_profile": true,
+    "temporary_agent_config_cache_dirs": true,
+    "in_memory_session_manager": true,
+    "settings_isolated": true,
+    "task_depth": 1,
+    "enforce_tool_allowlist": true,
+    "real_user_profile_intentionally_modified": false
+  },
+  "retained_artifacts": {
+    "human_summary": "README.md",
+    "normalized_results": "results.json",
+    "issue_comment": "https://github.com/zhongyangchuwu/omp-kit/issues/5#issuecomment-5654573689",
+    "validation_summary": "docs/VALIDATION.md",
+    "raw_probe_scripts_retained": false,
+    "raw_runtime_traces_retained": false,
+    "large_raw_logs_retained": false
+  },
+  "repository_verification": {
+    "command": "just verify",
+    "status": "pass",
+    "python_tests_passed": 126,
+    "bun_tests_passed": 11,
+    "bun_assertions_passed": 57,
+    "typescript_typecheck_passed": true,
+    "installer_registry_validation_passed": true,
+    "git_diff_check_passed": true
+  },
+  "limits": [
+    "Preview evidence is not released-runtime compatibility evidence.",
+    "The experiment did not independently replay every upstream internal path such as cold revival or Cursor-native frame/resource handling.",
+    "The original temporary probe scripts and raw traces were deleted after the experiment, so this is not a byte-for-byte replay package.",
+    "Phase A capability safety does not establish Phase B tool usefulness."
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "baseline": {
+    "durationMs": 424367,
+    "requests": 23,
+    "tokens": 356351,
+    "totalTokensIncludingCacheRead": 3785215,
+    "referenceCost": 0.15283148,
+    "toolCalls": 98,
+    "toolErrors": 2,
+    "systemPromptBytes": 11526
+  },
+  "treatment": {
+    "durationMs": 293947,
+    "requests": 18,
+    "tokens": 324524,
+    "totalTokensIncludingCacheRead": 3311020,
+    "referenceCost": 0.13380772,
+    "toolCalls": 67,
+    "toolErrors": 0,
+    "systemPromptBytes": 11553,
+    "webSearchCalls": 8,
+    "observedSearchProvider": "exa",
+    "rawSearchSources": 102
+  },
+  "treatmentDeltaPercent": {
+    "duration": -30.73,
+    "requests": -21.74,
+    "tokens": -8.93,
+    "totalTokensIncludingCacheRead": -12.53,
+    "referenceCost": -12.45,
+    "toolCalls": -31.63,
+    "systemPromptBytes": 0.23
+  },
+  "correctness": {
+    "baseline": "correct at observation time",
+    "treatment": "correct at observation time",
+    "mainGroundTruthVerified": true
+  },
+  "decision": "later"
+}

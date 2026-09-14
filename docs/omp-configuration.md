@@ -1,10 +1,14 @@
-# Canonical configuration and source boundaries
+# Configuration and source boundaries
 
-## Current source of truth
+## Native plugin and legacy configuration sources
 
-`config/config.yml`, `config/models.yml` and `config/APPEND_SYSTEM.md` are the
-portable source files. `config/profiles/*.yml` contains opt-in settings overlays.
-`config/reference/` is never installed or loaded by OMP.
+The native core plugin is defined by `package.json` plus the repository `agents/`,
+`skills/`, and `rules/` roots. It does not install or modify ordinary OMP settings.
+
+For the legacy/compatibility installer, `config/config.yml`, `config/models.yml` and
+`config/APPEND_SYSTEM.md` remain the portable source files. `config/profiles/*.yml`
+contains opt-in settings overlays. `config/reference/` is never installed or loaded by
+OMP.
 
 The base runtime settings preserve the owner's 2026-09-12 upload, including:
 

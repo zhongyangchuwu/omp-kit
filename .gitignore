@@ -8,6 +8,10 @@ __pycache__/
 .ruff_cache/
 node_modules/
 
+# Local experiment datasets / staging. Durable raw experiment artifacts belong
+# in the configured external artifact store; Git keeps manifests/decisions.
+/.experiments/
+
 # Never commit machine configuration, secrets or runtime state
 .env
 .env.*
