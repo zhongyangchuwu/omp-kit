@@ -7,10 +7,23 @@
   "files": [
     "agents",
     "skills",
-    "rules"
+    "rules",
+    "extensions"
   ],
+  "scripts": {
+    "test:ts": "bun test ./tests/ts/feedback.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@oh-my-pi/pi-coding-agent": "18.1.19"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.14",
+    "typescript": "5.9.3"
+  },
   "omp": {
     "name": "OMP Kit",
-    "description": "Model-neutral workers, workflow skills, and main-session policy for Oh My Pi"
+    "description": "Model-neutral workers, workflow skills, and main-session policy for Oh My Pi",
+    "extensions": ["./extensions/feedback.ts"]
   }
 }
