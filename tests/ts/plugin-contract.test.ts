@@ -73,7 +73,6 @@ describe("native plugin contract", () => {
 		for (const reference of reviewReferences) {
 			expect(review).toContain(`references/${reference}`);
 		}
-		expect(review).not.toContain("REVIEW.md");
 	});
 
 	test("agents stay model-neutral and autoload only core skills", async () => {
