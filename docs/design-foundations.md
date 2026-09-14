@@ -37,11 +37,17 @@ Prefer real complaints, source/runtime inspection, dogfood, tests, and controlle
 
 ### Model-compensation mechanisms are temporary until proven otherwise
 
-Generic planning rituals, reflection loops, repetitive opinion-only review, and verbose handoffs may compensate for a particular model generation. Re-audit and ablate them as models improve instead of treating yesterday's workaround as permanent architecture. See Issue #9.
+Generic planning rituals, reflection loops, repetitive opinion-only review, and verbose handoffs may compensate for a particular model generation. Re-audit and ablate them as models improve instead of treating yesterday's workaround as permanent architecture. Issue #9 owns the later systematic current-generation audit; it is not complete merely because two opportunistic simplifications already landed.
 
 ### Runtime and evidence boundaries are more durable
 
 State, ownership, permissions, cancellation, recovery, external facts, read-back, and objective acceptance cannot be removed merely by making the model reason better. Prefer OMP-native runtime primitives and external evidence over prompt conventions or local runtime clones.
+
+### Capability design follows consequence, not labels
+
+A prompt saying `do not write` is not a runtime security boundary. Authority-bearing capabilities should use runtime-enforced scoping when that boundary matters.
+
+Not every write-shaped tool has the same consequence, however. `omp_kit_feedback` is intentionally a bounded shared evidence sink: Main/workers may append a structured observation, but the tool cannot mutate repository policy, Issues, configuration, or authorize another action. The earlier Main-only capability audit remains useful evidence for future OMP hardening; it is no longer a prerequisite for having feedback at all.
 
 ### Delegation is optional and must earn its coordination cost
 
@@ -53,11 +59,11 @@ Multiple role personas reading the same assumptions do not automatically create 
 
 ### Spend model judgment where deterministic automation cannot substitute
 
-Cheap deterministic tests and repository verification should absorb mechanical uncertainty when they are fast. Strong review is more valuable for semantics, lifecycle, product judgment, ambiguity, and high-consequence risks. See `design/verification.md` and Issue #6.
+Cheap deterministic tests and repository verification should absorb mechanical uncertainty when they are fast. Strong review is more valuable for semantics, lifecycle, product judgment, ambiguity, and high-consequence risks. See `design/verification.md`.
 
-### Capability boundaries must be runtime-enforced
+### Observe normal work before designing experiments around impressions
 
-A reviewer told by prompt not to write is not equivalent to a runtime that cannot expose write capability. Phase 1.5 intentionally remains blocked on released OMP 18.1.20 because upstream #9521 is still open and the required hard child boundary is not in that release. See Issue #4.
+OMP owns raw session/stat recording. omp-kit now derives compact routine session summaries and links structured feedback so #5/#8/#9 can reason from actual development rather than memory alone. Routine observations are not experiments by default; #12 owns promotion into durable experiment evidence when a sample materially supports a decision.
 
 ### Context quality is about authority, not only memory volume
 
