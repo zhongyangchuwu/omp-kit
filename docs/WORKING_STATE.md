@@ -24,14 +24,14 @@ Current project scope is **omp-kit only** unless the user explicitly authorizes 
 native foundation:            PR #17 merged
 OMP compatibility policy:     PR #19 merged
 Issue lifecycle cleanup:      PR #20 merged
-project-state v1:             PR #22 Ready; pending landing
-shared feedback:              PR #3 Ready; OMP 18.1.21 Main + worker smoke PASS
-session evidence collector:   PR #23 Ready/stacked; OMP 18.1.21 runtime smoke PASS after folder/cwd fix
+project-state v1:             PR #22 merged; #11 remains open for dogfood
+shared feedback:              PR #3 merged; #4 completed; OMP 18.1.21 Main + worker smoke PASS
+session evidence collector:   PR #23 v1 candidate; OMP 18.1.21 runtime acceptance PASS
 latest upstream seen/triaged: OMP 18.1.21
 routine deterministic gate:   .github/workflows/verify.yml
 ```
 
-OMP 18.1.21 was triaged as browser/Chromium-only for the previously owned compatibility surfaces. The collector smoke additionally found an OMP stats folder/cwd representation mismatch, now tracked upstream as `can1357/oh-my-pi#12060`; omp-kit uses public `SessionTrace.cwd` for normal filesystem-path filtering instead of reproducing the storage-key encoding.
+OMP 18.1.21 was triaged as browser/Chromium-only for the previously owned compatibility surfaces. Collector runtime acceptance additionally found an OMP stats folder/cwd representation mismatch, tracked upstream as `can1357/oh-my-pi#12060`; omp-kit uses public `SessionTrace.cwd` for normal filesystem-path filtering instead of reproducing the storage-key encoding.
 
 Do not copy the current `main` SHA into this index; inspect the actual branch when work begins.
 
@@ -54,30 +54,34 @@ A merged PR does not automatically complete its owning Issue.
 
 | Item | Current purpose |
 | --- | --- |
-| #4 | Land shared structured `omp_kit_feedback` with bounded evidence-only semantics. Runtime acceptance is complete; close only after PR #3 is in the normal tree and criteria are rechecked. |
-| #5 | Accumulate real worker/tool evidence; consume #21 summaries for later `keep / prune / investigate` review. |
-| #8 | Accumulate real delegation/routing evidence; consume #21 quantitative summaries plus task acceptance judgment. |
-| #11 | Land issue-centered project-state v1, then dogfood fresh-session recovery, duplication, offline limits, and specialized `.planning/` use cases. |
-| #21 | Land the default session evidence collector/aggregator. Runtime acceptance is complete; close only after PR #23 is in the normal tree and criteria are rechecked. |
+| #5 | Accumulate real worker/tool evidence; consume routine session summaries for later `keep / prune / investigate` review. |
+| #8 | Accumulate real delegation/routing evidence; combine quantitative summaries with task acceptance judgment. |
+| #11 | Dogfood the landed issue-centered project-state v1 through natural fresh-session recovery, duplication, offline limits, and specialized `.planning/` use cases. |
+| #21 | Land PR #23's runtime-accepted session evidence collector into the normal tree, then re-check the completed acceptance checklist and close only if all criteria remain satisfied. |
 
 ## Inactive
 
 | Item | Reactivation trigger |
 | --- | --- |
 | #7 | A recorded supervision semantic becomes a real blocker or OMP releases a relevant contract change. |
-| #9 | Enough routine #21 evidence accumulates for a systematic Harness/scaffolding ablation pass, or one rule causes obvious repeated friction. |
+| #9 | Enough routine session evidence accumulates for a systematic Harness/scaffolding ablation pass, or one rule causes obvious repeated friction. |
 | #12 | Several materially different experiment/session samples expose lifecycle/schema friction, or a real remote artifact backend is selected. |
 | #15 | A concrete composition/governance/authority problem makes one belief decision-relevant. |
 
 ## Current product goal
 
-Finish landing the three foundations required for a stable v0 dogfood baseline:
+Complete the final v0 landing boundary by putting PR #23's routine quantitative session evidence collector in the normal tree. Project-state v1 and structured qualitative feedback are already landed.
 
-1. **project state v1** — #11 / PR #22;
-2. **structured qualitative feedback** — #4 / PR #3;
-3. **routine quantitative session evidence** — #21 / PR #23.
+After #21 is complete, shift emphasis from infrastructure construction to measured dogfood:
 
-After they land, shift emphasis from infrastructure construction to measured dogfood. #5/#8 consume routine evidence, #9 performs later systematic subtraction, and #12 remains the promotion/retention lifecycle for material experiment evidence rather than the routine session recorder.
+```text
+normal development
+-> OMP raw sessions/stats
+-> omp-kit compact session evidence + structured feedback
+-> #5 capability review / #8 delegation economics
+-> later #9 systematic subtraction
+-> #12 only when material observations should be promoted into durable experiment evidence
+```
 
 ## Stable ownership boundaries
 
@@ -106,14 +110,30 @@ sol-review:
 
 Workers do not recursively orchestrate. `sol-review` stays intent-level read-only. OMP's combined `github` built-in remains Main-owned because it contains remote mutation.
 
+## Evidence product
+
+OMP remains the raw recorder. omp-kit session evidence is a compact derived layer outside Git:
+
+```text
+OMP saved sessions + stats/trace
+-> omp-kit-evidence collect
+-> local compact session summaries
+-> omp-kit-evidence report
+-> optional later promotion through #12
+```
+
+The v1 collector accepts normal filesystem paths for project filtering, correlates feedback across root/child trace tracks, and exposes model/provider/tool/delegation/time/token/cost-equivalent dimensions without inferring qualitative quality automatically.
+
 ## Verification
 
 For CI-supported repository changes, the current PR merge-ref `Verify` run is the routine full deterministic pre-merge evidence. An authorized merge receives a `main` push verification. Do not duplicate an unchanged full gate locally without a distinct reason.
 
-Released-runtime/profile/capability claims remain outside CI and require the appropriate real OMP smoke.
+Released-runtime/profile/capability claims remain outside CI and require the appropriate real OMP smoke. The feedback and session-evidence v0 surfaces have both received OMP 18.1.21 runtime acceptance.
 
 ## Recently completed
 
+- #4 / PR #3 — shared structured feedback + Bun/TypeScript foundation; Main and normal-worker runtime acceptance passed.
+- PR #22 — issue-centered project-state v1 implementation; #11 remains open for natural dogfood.
 - PR #20 — active/inactive/completed Issue lifecycle semantics and compact state-index policy.
 - PR #19 — OMP release compatibility policy.
 - PR #17 — OMP-native foundation core.
@@ -125,7 +145,7 @@ Released-runtime/profile/capability claims remain outside CI and require the app
 
 ## Next
 
-1. Land PR #22 after semantic review and current merge-ref CI; keep #11 open for natural dogfood.
-2. Land PR #3 after semantic review/current merge-ref CI; then recheck and close #4 if all criteria are satisfied.
-3. Retarget PR #23 to the updated `main`, review the reduced collector-only diff, require a fresh merge-ref CI, then land it and recheck #21.
-4. Refresh this index to the landed v0 baseline and perform the small release/readme/version pass for the first usable v0.x release.
+1. Review PR #23 as a collector-only diff against current `main`, require a fresh merge-ref Verify, and land it only if clean.
+2. After landing, re-check #21 acceptance and close it only if every criterion is satisfied; verify the `main` push gate.
+3. Prepare the small release/readme/version/state cleanup for the first usable v0.x release.
+4. Begin measured dogfood through #5/#8/#11; keep #9/#12 inactive until their evidence triggers are met.
