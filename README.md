@@ -113,7 +113,7 @@ bun run verify
 
 GitHub Actions runs the same deterministic typecheck/tests on each PR merge-ref and again after an authorized landing on `main`. Passing CI does not establish machine-specific OMP behavior; runtime claims still need the relevant released-runtime smoke.
 
-Current project state: [`docs/WORKING_STATE.md`](docs/WORKING_STATE.md)  
-Architecture and layer boundaries: [`docs/architecture.md`](docs/architecture.md)  
-Current validation evidence: [`docs/VALIDATION.md`](docs/VALIDATION.md)  
-OMP compatibility policy: [`docs/omp-compatibility.md`](docs/omp-compatibility.md)
+- Current project state: [`docs/WORKING_STATE.md`](docs/WORKING_STATE.md)
+- Architecture and layer boundaries: [`docs/architecture.md`](docs/architecture.md)
+- Current validation evidence: [`docs/VALIDATION.md`](docs/VALIDATION.md)
+- OMP compatibility policy: [`docs/omp-compatibility.md`](docs/omp-compatibility.md)
