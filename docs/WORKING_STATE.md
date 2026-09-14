@@ -34,7 +34,7 @@ The native-foundation core and feedback extension have separate review ownership
 
 PR #3 remains blocked because released OMP 18.1.20 does not contain the hard child capability boundary required for Main-only feedback. Upstream PR #9521 remains open; Issue #4 owns released-runtime closure. Do not re-couple unrelated core work to that blocker.
 
-Exact current PR readiness and the latest accepted tested HEAD belong in PR #17 / PR #3 and their GitHub Actions / Issue state. Do not create a new git commit solely to copy the just-tested SHA into this file.
+Exact current PR readiness and the latest accepted candidate result belong in PR #17 / PR #3 and their GitHub Actions / Issue state. Do not create a new git commit solely to copy the just-tested candidate into this file.
 
 ## Active work
 
@@ -109,9 +109,9 @@ related writes settle
 
 A worker-local full gate is reserved for a distinct purpose such as isolated pre-merge safety, cross-slice diagnosis, explicit Main request, CI diagnosis, or an isolated worker-owned final tree whose result can be reused as acceptance evidence.
 
-For CI-supported repository work, GitHub Actions owns the routine integrated full gate. A successful CI run on the exact commit replaces the local-agent copy of the same deterministic check. Local `just verify` is optional pre-push/debugging evidence; runtime/profile claims outside CI still require their appropriate local or released-runtime smoke.
+For CI-supported repository work, GitHub Actions owns the routine integrated full gate. Pull requests run once against the current GitHub merge-ref; pushes to `main` verify the landed commit. Do not also run a full source-branch push gate for the same PR update. Local `just verify` is optional pre-push/debugging evidence; runtime/profile claims outside CI still require their appropriate local or released-runtime smoke.
 
-Do not rerun an unchanged full gate merely because work crossed a handoff or phase label. If later integration or fixes materially change the covered tree, the new commit gets a new CI run because the tree changed.
+Do not rerun an unchanged full gate merely because work crossed a handoff or phase label. If later integration or fixes materially change the PR candidate, the updated PR gets a new CI run because the tree changed.
 
 Issue #11 still owns `.planning/` replacement/coexistence; #9 does not pre-empt that decision.
 
@@ -138,11 +138,11 @@ See Issue #7 and `docs/design/supervision.md`.
 
 The core split intentionally excludes the feedback-only Bun/TypeScript surface. Core `just verify` covers the Python repository suite, harness validation, registry freshness/validation, and `git diff --check`.
 
-`.github/workflows/verify.yml` runs the repository-owned gate on GitHub-hosted runners after checking `uv.lock` freshness and then checks for tracked-file drift. It uses pinned setup actions, Python 3.12, read-only contents permission, and no project secrets.
+`.github/workflows/verify.yml` runs the repository-owned gate on GitHub-hosted runners after checking `uv.lock` freshness and then checks for tracked-file drift. It uses pinned setup actions, Python 3.12, read-only contents permission, no persisted checkout credentials, and no project secrets.
 
 When a tree contains `bun.lock`, the same workflow enables Bun/TypeScript verification, installs frozen dependencies, and derives the Bun version from the repository `packageManager` declaration. Core trees without `bun.lock` skip Bun entirely.
 
-Current-tree mechanical acceptance is read from the Actions/check status for the owning PR. Do not add a local handoff merely to rerun the identical deterministic gate. Released-runtime capability claims remain outside CI and require their appropriate runtime smoke.
+Pre-merge mechanical acceptance is read from the Actions/check status for the owning PR's current merge-ref. After merge, the `main` push gate verifies the landed commit. Do not add a local handoff merely to rerun the identical deterministic gate. Released-runtime capability claims remain outside CI and require their appropriate runtime smoke.
 
 ## Recently completed
 
@@ -162,8 +162,8 @@ Current-tree mechanical acceptance is read from the Actions/check status for the
 
 ## Next action
 
-1. Let GitHub Actions verify the settled PR #17 review-fix head; do not duplicate the same deterministic gate locally.
-2. If CI is clean, keep PR #17 review-ready and record exact acceptance evidence only in PR/Actions metadata, with no tree-changing bookkeeping commit.
+1. Let GitHub Actions verify the settled PR #17 review-fix merge-ref; do not duplicate the same deterministic gate locally or with a source-branch push gate.
+2. If CI is clean, mark PR #17 review-ready and record mutable acceptance evidence only in PR/Actions metadata, with no tree-changing bookkeeping commit.
 3. Keep PR #3 stacked and Draft until Issue #4's released-runtime criteria are satisfied; its deterministic Python/TypeScript gate is automated, but that does not close the runtime blocker.
 4. Resume normal omp-kit development after the PR #17 review boundary is clean; let #5/#8 evidence accumulate passively from real sessions.
 5. Do not manufacture #11's fresh-session recovery test merely to satisfy its checklist.

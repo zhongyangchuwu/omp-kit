@@ -47,9 +47,11 @@ TypeScript typecheck
 
 Issue #18 moved routine execution of the settled-tree gate to `.github/workflows/verify.yml`. The workflow uses read-only repository permission, checks `uv.lock` freshness, runs the repository-owned `just verify`, and rejects tracked-file drift. It needs no project secrets, provider/model calls, OMP runtime, subagents, capability experiments or telemetry work.
 
+Pull requests run against GitHub's current PR merge-ref; pushes to `main` verify the landed commit. The workflow does not also run a full gate merely because the source branch was pushed, so one PR update does not create both a branch-push run and a PR run for the same work.
+
 When `bun.lock` is present, the workflow installs Bun and frozen dependencies before running the same repository gate. Bun version selection follows the repository's `packageManager` declaration rather than an independent CI-only version pin.
 
-Exact current commit results belong in GitHub Actions / the owning PR rather than in this design record.
+Current candidate results belong in GitHub Actions / the owning PR rather than in this design record.
 
 ### Issue #6 established integrated acceptance ownership
 
@@ -82,7 +84,7 @@ worker-local / focused evidence
   -> did this scoped change survive the checks relevant to the change?
 
 integrated deterministic CI gate
-  -> does the accepted final tree mechanically satisfy repository contracts?
+  -> does the accepted PR candidate / landed main tree mechanically satisfy repository contracts?
 
 strong / independent review
   -> are there semantic, lifecycle, product, security, ambiguity or cross-slice failures not captured by cheap checks?
@@ -100,7 +102,7 @@ The objective is **minimum evidence duplication at the same acceptance strength*
 
 > Prefer the cheapest evidence that can falsify the relevant failure mode, and do not collect the same evidence twice unless the state or question changed.
 
-A repository-wide full gate is valuable because it answers a broad mechanical question about one concrete tree. Once that tree changes materially, the answer may be stale. Before it changes, rerunning the same gate solely because work crossed a handoff or phase label usually adds little.
+A repository-wide full gate is valuable because it answers a broad mechanical question about one concrete candidate tree. Once that tree changes materially, the answer may be stale. Before it changes, rerunning the same gate solely because work crossed a handoff or phase label usually adds little.
 
 Strong reviewer/model effort should likewise add a different kind of evidence or judgment rather than restating a compile/test-clean result.
 
@@ -115,11 +117,12 @@ implementation / debugging
 
 related writes settle
 -> reconcile actual writes and cross-slice consumers
--> push / update the accepted integrated tree
--> one GitHub Actions deterministic gate on that tree
+-> update the accepted PR candidate
+-> one GitHub Actions deterministic gate on the current PR merge-ref
 -> selective strong review when consequence / ambiguity warrants it
 -> fixes, if any
--> new CI gate only because the accepted tree changed
+-> new PR CI gate only because the candidate tree changed
+-> after merge, one main-push gate verifies the landed commit
 ```
 
 ### Worker-local full gate
@@ -140,9 +143,9 @@ On a shared changing tree, a worker-level full pass may describe another workstr
 
 After related writes settle, GitHub Actions is the normal repository-wide deterministic acceptance point for CI-supported work. It executes the repository-owned gate rather than maintaining a second YAML implementation of the test contract.
 
-If integration or review changes behavior covered by the gate, the prior result is stale and the new commit receives a new CI run. If only workflow bookkeeping changes while the covered tree does not, there is no ritual local rerun requirement.
+For pull requests, the accepted pre-merge mechanical evidence is the current merge-ref run. If integration or review changes behavior covered by the gate, the updated PR receives a new run. The workflow does not add a second source-branch full run for the same update. After merge, the `main` push gate answers the distinct question of whether the landed commit remains mechanically clean.
 
-Local `just verify` remains a useful pre-push/debugging command, not a mandatory duplicate of a passing exact-tree CI result.
+Local `just verify` remains a useful pre-push/debugging command, not a mandatory duplicate of passing PR CI.
 
 ### Shared contracts
 
@@ -175,6 +178,8 @@ Issue #6 supplied the accepted distinction between worker evidence and integrate
 
 Real split/review work validated the second rule: an unchanged settled tree did not justify another local full pass, while later tree changes correctly required new acceptance evidence. Issue #18 then moved that routine integrated evidence to GitHub Actions without changing the acceptance policy itself.
 
+The initial Actions rollout deliberately exercised both core and stacked feedback paths. It also exposed one remaining duplication: the active core branch triggered both `push` and `pull_request`, causing two full gates for one branch update. Review removed that redundant source-branch trigger; PR CI now owns pre-merge acceptance, and `main` push CI owns post-landing acceptance.
+
 The core and stacked feedback paths have both exercised the Actions design: core skips Bun when no `bun.lock` exists; feedback enables its Bun/TypeScript checks when the lockfile is present. Future dogfood should continue to reveal whether focused local checks plus one automated integrated gate preserve useful defect detection. No bespoke A/B is required unless real failures create a decision-critical ambiguity.
 
 ## Counter-evidence and limits
@@ -182,7 +187,7 @@ The core and stacked feedback paths have both exercised the Actions design: core
 - A worker-local full run can be high-value before an isolated/risky merge or when it is the only practical way to diagnose cross-slice breakage.
 - Passing CI tests/typecheck does not establish UI usability, external-service state, runtime security properties or product semantics unless directly covered.
 - High-consequence changes may require expensive E2E/manual/external verification even after the normal deterministic gate passes.
-- If a review or integration fix changes code covered by the full suite, the resulting CI run is new evidence about a new tree, not duplication.
+- If a review or integration fix changes code covered by the full suite, the resulting PR CI run is new evidence about a new candidate, not duplication.
 - Reducing duplicate runs must not become an excuse to ignore a failed/missing final integrated gate merely to save tokens or time.
 - GitHub-hosted Linux does not replace platform-specific Windows/macOS checks when platform behavior is the actual claim.
 

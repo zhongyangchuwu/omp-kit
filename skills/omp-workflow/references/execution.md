@@ -29,16 +29,17 @@ A worker-local full gate is justified when it has a distinct purpose, for exampl
 - CI itself is unavailable or is the subject of the diagnosis.
 
 Otherwise, after related work settles, Main/integration ownership reconciles the
-combined tree and lets the repository's normal CI full gate evaluate the exact commit.
-For omp-kit's native core, `.github/workflows/verify.yml` checks lockfile freshness,
+combined tree and lets the repository's normal CI full gate evaluate the current PR
+candidate. For omp-kit, `.github/workflows/verify.yml` runs pull requests against the
+GitHub PR merge-ref and runs again on `main` after landing. It checks lockfile freshness,
 runs `just verify`, and rejects tracked-file drift on a clean GitHub-hosted runner. A
-successful run on the exact commit is the normal mechanical acceptance evidence; do not
-repeat the identical full gate locally merely because ownership crossed a handoff.
+successful current PR gate is the normal pre-merge mechanical acceptance evidence; do
+not repeat the identical full gate locally merely because ownership crossed a handoff.
 
 If later integration, review fixes, or requirement changes alter behavior relevant to
-the gate, the new commit receives a new CI run because the tree changed. Rerun affected
-focused checks during repair as needed, but do not rerun an unchanged successful full
-gate solely because another workflow phase label was crossed.
+the gate, the updated PR receives a new CI run because the candidate tree changed.
+Rerun affected focused checks during repair as needed, but do not rerun an unchanged
+successful full gate solely because another workflow phase label was crossed.
 
 Local `just verify` remains useful as an optional pre-push check or when diagnosing CI.
 Machine-specific OMP/runtime/profile claims still need the relevant local or released-

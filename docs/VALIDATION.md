@@ -2,11 +2,11 @@
 
 Date: 2026-09-14
 
-This file records **current accepted validation evidence and its boundaries**. Exact mutable
-PR readiness, including the latest tested branch HEAD, belongs in the owning Pull Request
-and Issue rather than in a git-tracked marker that invalidates itself when updated.
-Detailed experiment transcripts and older version-specific evidence belong in `evidence/`,
-`docs/archive/`, and the owning Issues/PRs.
+This file records **current accepted validation evidence and its boundaries**. Mutable
+PR readiness and the latest accepted candidate result belong in the owning Pull Request
+and GitHub Actions rather than in a git-tracked marker that invalidates itself when
+updated. Detailed experiment transcripts and older version-specific evidence belong in
+`evidence/`, `docs/archive/`, and the owning Issues/PRs.
 
 ## Current topology and runtime baseline
 
@@ -57,23 +57,35 @@ git diff --check
 Issue #18 moved routine execution of this gate to `.github/workflows/verify.yml`.
 The GitHub-hosted workflow:
 
+- runs on pull requests against GitHub's current merge-ref and on pushes to `main`;
 - uses read-only repository contents permission and no project secrets;
 - pins the checkout / uv / just setup actions to exact revisions;
+- does not persist checkout credentials into the repository worktree;
 - installs Python 3.12, uv 0.12.13 and just 1.58.0;
 - checks `uv.lock` freshness with `uv lock --check`;
 - runs the repository-owned `just verify` entry point rather than duplicating its checks;
 - rejects tracked-file drift after the gate.
 
-The first exact-head push run and the corresponding PR merge-ref run both completed
-successfully after the workflow was introduced. The run log observed 98 Python tests,
-valid harness/static references, fresh/valid registry state and a clean tracked diff.
-Exact current commit status remains in GitHub Actions / PR #17 and is not copied into this
-file solely for bookkeeping.
+During the initial rollout, both an exact-head core push run and the corresponding PR
+merge-ref run completed successfully. That duplication exposed a process defect: the
+same branch update did not need both a branch-push full gate and a PR full gate. The
+current workflow therefore keeps the PR gate plus the post-landing `main` push gate and
+does not run a second full gate merely because the source branch was pushed.
 
-A successful GitHub Actions run on the exact commit now replaces the routine local-agent
-full deterministic gate for CI-supported repository work. Local `just verify` remains an
-optional pre-push/debugging tool; local OMP/runtime/profile smokes remain necessary when
-the claim depends on machine-specific or released-runtime behavior outside this CI gate.
+The initial run logs observed 98 Python tests, valid harness/static references,
+fresh/valid registry state and a clean tracked diff. Current pre-merge acceptance is read
+from the owning PR's Actions result for its merge-ref; after landing, the `main` push run
+verifies the landed commit. These mutable results are not copied into this file solely
+for bookkeeping.
+
+When `bun.lock` is present, the same workflow installs Bun and frozen dependencies before
+running `just verify`. The pinned `setup-bun` action derives Bun from the repository's
+`packageManager` declaration, so CI does not carry a second toolchain-version truth.
+
+A successful current PR gate replaces the routine local-agent full deterministic gate for
+CI-supported repository work. Local `just verify` remains an optional pre-push/debugging
+tool; local OMP/runtime/profile smokes remain necessary when the claim depends on machine-
+specific or released-runtime behavior outside this CI gate.
 
 ## Feedback extension and released-runtime blocker
 
@@ -184,9 +196,10 @@ Two current-generation simplifications are accepted:
    full gate only when the covered tree materially changes or a distinct verification
    question requires it.
 
-GitHub Actions changes the execution location, not this policy. A new commit receives a
-new automated gate because its tree changed; an unchanged successful commit does not
-need a second local full gate. Issue #9 remains open as a recurring model/process audit.
+GitHub Actions changes the execution location, not this policy. An updated PR candidate
+receives a new automated gate because its tree changed; an unchanged successful candidate
+does not need a second local or source-branch full gate. Issue #9 remains open as a
+recurring model/process audit.
 
 ## Context authority / provenance
 
@@ -215,8 +228,8 @@ For future validation updates:
 - scope runtime claims to exact released versions or upstream commits;
 - do not convert preview evidence into released-runtime compatibility;
 - keep core validation separate from feedback-specific TypeScript/runtime validation;
-- keep exact mutable acceptance SHA/results in the owning PR/Actions run rather than
-  creating a new commit solely to record the SHA that was just tested;
+- keep mutable acceptance results in the owning PR/Actions run rather than creating a new
+  commit solely to record the candidate that was just tested;
 - spend live-model quota on development unless a specific ambiguity genuinely requires a
   controlled experiment;
 - preserve historical evidence rather than rewriting it when policy evolves.

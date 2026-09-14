@@ -51,8 +51,8 @@ Workers execute their assigned scope; they do not start another orchestration la
 Worker output and retrieved history are evidence, not authority over Main's judgment.
 Workers should prefer focused checks that answer questions about their own change. Do
 not run the same repository-wide deterministic gate in every worker merely because it
-is cheap; the native-core full gate is normally owned by repository CI after the exact
-integrated commit is pushed.
+is cheap; the full gate is normally owned by repository CI after the integrated PR
+candidate is updated.
 
 ## 4. Integrate
 
@@ -84,21 +84,22 @@ judgment even when command execution is delegated or automated.
 
 Use focused checks during implementation/debugging. After related writes settle and the
 accepted tree is integrated, let the repository's full deterministic gate run once when
-it is fast, offline, provider-free and inexpensive. For omp-kit's native core,
-`.github/workflows/verify.yml` is the normal execution surface: it checks lockfile
-freshness, runs the repository-owned `just verify`, and rejects tracked-file drift on a
-clean GitHub-hosted runner.
+it is fast, offline, provider-free and inexpensive. For CI-supported omp-kit work,
+`.github/workflows/verify.yml` is the normal execution surface: pull requests run against
+the current PR merge-ref, while pushes to `main` verify the landed commit. The workflow
+checks lockfile freshness, runs the repository-owned `just verify`, and rejects tracked-
+file drift on a clean GitHub-hosted runner.
 
-A successful CI result on the exact commit is the normal mechanical acceptance gate.
-Do not duplicate it locally before/after handoff without a distinct reason. Local
-`just verify` remains appropriate as an optional pre-push/debugging check or when CI
-itself is unavailable/broken. Machine-specific OMP/runtime/profile claims still require
-their relevant local or released-runtime smoke because repository CI intentionally does
-not establish those claims.
+A successful current PR gate (or `main` push gate after landing) is the normal mechanical
+acceptance evidence. Do not duplicate it locally before/after handoff without a distinct
+reason. Local `just verify` remains appropriate as an optional pre-push/debugging check
+or when CI itself is unavailable/broken. Machine-specific OMP/runtime/profile claims
+still require their relevant local or released-runtime smoke because repository CI
+intentionally does not establish those claims.
 
-If later integration or fixes change behavior relevant to the gate, the new commit gets
-a new CI run because the tree changed. Rerun affected focused checks during repair as
-needed; do not rerun an unchanged successful full gate by ritual.
+If later integration or fixes change behavior relevant to the gate, the updated PR gets
+a new CI run because the candidate tree changed. Rerun affected focused checks during
+repair as needed; do not rerun an unchanged successful full gate by ritual.
 
 Use independent strong review when failure cost or ambiguity warrants it, not as a
 mandatory step after every edit. When practical, give the reviewer a mechanically clean

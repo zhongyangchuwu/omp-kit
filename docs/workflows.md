@@ -54,22 +54,23 @@ Out-of-scope consumers return to Main/integration ownership; workers do not sile
 expand writable scope merely because they discovered one.
 
 When the repository's full deterministic gate is fast, offline, provider-free and
-relevant, run it once on the accepted integrated tree. For the native core, the default
-mechanical acceptance path is `.github/workflows/verify.yml`: GitHub Actions checks the
-committed `uv.lock`, runs the repository-owned `just verify` entry point, and rejects
-tracked-file drift on a clean hosted runner. The workflow requires only read access to
-repository contents and no project secrets.
+relevant, run it once on the accepted integrated tree. For CI-supported repository work,
+the default mechanical acceptance path is `.github/workflows/verify.yml`: pull requests
+run the gate against GitHub's current PR merge-ref, while pushes to `main` verify the
+landed commit. The workflow checks the committed `uv.lock`, runs the repository-owned
+`just verify` entry point, and rejects tracked-file drift on a clean hosted runner. It
+requires only read access to repository contents and no project secrets.
 
-A successful CI run on the exact commit replaces the routine local-agent full gate for
-CI-supported repository work. Local `just verify` remains useful as an optional pre-push
-check or when diagnosing CI itself; local OMP/runtime/profile smokes remain necessary
-when the claim depends on machine-specific or released-runtime behavior that CI does not
-exercise.
+A successful current PR gate (or `main` push gate after landing) replaces the routine
+local-agent full gate for CI-supported repository work. Local `just verify` remains
+useful as an optional pre-push check or when diagnosing CI itself; local OMP/runtime/
+profile smokes remain necessary when the claim depends on machine-specific or released-
+runtime behavior that CI does not exercise.
 
 If later review/integration fixes materially change behavior covered by the gate, the
-new commit receives a new CI run because the tree changed — not because the workflow
-crossed another phase label. Do not rerun an unchanged successful commit merely to
-repeat the same evidence.
+updated PR receives a new CI run because the candidate tree changed — not because the
+workflow crossed another phase label. Do not rerun an unchanged successful candidate
+merely to repeat the same evidence.
 
 Independent strong review remains selective by failure cost. When practical, give the
 reviewer a mechanically clean integrated diff so model judgment is spent on semantics,
