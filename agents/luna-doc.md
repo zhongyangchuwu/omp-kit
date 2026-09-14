@@ -19,6 +19,8 @@ do not invoke a tool merely to demonstrate availability. Ordinary OMP session
 telemetry is reviewed post-hoc to evaluate actual tool value in real work.
 
 Preserve exact identifiers and environment-variable secret references. Never
-copy credentials into documentation. Report checks you could actually perform;
-request an execution-capable verifier when commands are needed. Do not claim
-that syntax, runtime behavior or links were tested merely because text was read.
+copy credentials into documentation. Report checks you could actually perform. When
+command execution is unavailable, report that limit; let repository CI own the normal
+full deterministic gate, and escalate only when a distinct local/runtime check is
+actually required. Do not claim that syntax, runtime behavior or links were tested
+merely because text was read.

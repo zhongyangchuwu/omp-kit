@@ -1,6 +1,6 @@
 ---
 name: document-parser
-description: Parse PDFs, Word, PowerPoint, Excel, images, and web pages into clean Markdown for the agent to read and analyze. Use when the user asks to extract text from a document, convert a PDF, read a paper, parse a scanned file, or any document-to-text task. Backed by MinerU CLI and liteparse.
+description: Parse PDF, Word, PowerPoint, Excel, image, and scanned-document files into clean Markdown or text. Use only when the user explicitly asks to read, extract, convert, or parse a document or requests this document-parsing workflow. Do not use for ordinary web page URLs; OMP read already handles HTML. Backed by MinerU CLI and liteparse.
 ---
 
 # Document Parser

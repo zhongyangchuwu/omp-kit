@@ -70,9 +70,11 @@ already owns that behavior.
 ## Combined checks
 
 During implementation, run the narrowest focused checks that can falsify the current
-change. For native-core acceptance, the normal full deterministic gate is GitHub Actions
-`.github/workflows/verify.yml`; it checks lockfile freshness, runs the repository-owned
-`just verify`, and rejects tracked-file drift on the exact pushed/PR tree.
+change. For CI-supported repository acceptance, the normal full deterministic gate is
+GitHub Actions `.github/workflows/verify.yml`; it checks lockfile freshness, runs the
+repository-owned `just verify`, and rejects tracked-file drift on the current PR
+merge-ref. After an authorized merge, the separate `main` push gate verifies the landed
+commit.
 
 A successful CI result replaces a routine local copy of the same full gate. Run
 `just verify` locally only when it is useful as a pre-push check, when debugging CI, or
