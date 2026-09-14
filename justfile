@@ -44,9 +44,19 @@ promote-skill path *args:
 test:
     uv run python -m pytest tests
 
+
+# Deterministic offline TypeScript gates; these use the checked-in Bun dependency graph.
+test-ts:
+    bun run test:ts
+
+typecheck:
+    bun run typecheck
+
 # Final deterministic local gate. Live OMP/provider smokes are intentionally excluded.
 verify:
     just test
+    just typecheck
+    just test-ts
     just validate-harness
     just check-registry
     just validate-registry

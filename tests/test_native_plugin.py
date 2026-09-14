@@ -37,12 +37,17 @@ def test_native_plugin_manifest_exposes_resource_roots() -> None:
     assert manifest["name"] == "omp-kit"
     assert manifest["private"] is True
     assert manifest["packageManager"].startswith("bun@")
-    assert set(manifest["files"]) == {"agents", "skills", "rules"}
+    assert set(manifest["files"]) == {"agents", "skills", "rules", "extensions"}
     assert manifest["omp"]["name"] == "OMP Kit"
     assert manifest["omp"]["description"]
+    assert manifest["omp"]["extensions"] == ["./extensions/feedback.ts"]
 
     for resource in manifest["files"]:
         assert (ROOT / resource).is_dir()
+
+    for extension in manifest["omp"]["extensions"]:
+        extension_path = ROOT / extension.removeprefix("./")
+        assert extension_path.is_file()
 
 
 def test_native_plugin_agents_are_model_neutral_and_bounded() -> None:
