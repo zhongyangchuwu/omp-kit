@@ -24,14 +24,14 @@ Current project scope is **omp-kit only** unless the user explicitly authorizes 
 native foundation:            PR #17 merged
 OMP compatibility policy:     PR #19 merged
 Issue lifecycle cleanup:      PR #20 merged
-feedback implementation:      PR #3 Draft; now active for refresh/review
-feedback branch:              omp-native-foundation
-last normal runtime evidence: OMP 18.1.20
+project-state v1:             PR #22 Ready; pending landing
+shared feedback:              PR #3 Ready; OMP 18.1.21 Main + worker smoke PASS
+session evidence collector:   PR #23 Ready/stacked; OMP 18.1.21 runtime smoke PASS after folder/cwd fix
 latest upstream seen/triaged: OMP 18.1.21
 routine deterministic gate:   .github/workflows/verify.yml
 ```
 
-OMP 18.1.21 was triaged as browser/Chromium-only for omp-kit compatibility. Release review follows `docs/omp-compatibility.md`.
+OMP 18.1.21 was triaged as browser/Chromium-only for the previously owned compatibility surfaces. The collector smoke additionally found an OMP stats folder/cwd representation mismatch, now tracked upstream as `can1357/oh-my-pi#12060`; omp-kit uses public `SessionTrace.cwd` for normal filesystem-path filtering instead of reproducing the storage-key encoding.
 
 Do not copy the current `main` SHA into this index; inspect the actual branch when work begins.
 
@@ -54,31 +54,30 @@ A merged PR does not automatically complete its owning Issue.
 
 | Item | Current purpose |
 | --- | --- |
-| #4 | Ship shared structured `omp_kit_feedback` with bounded evidence-only semantics; Main-only hard scoping is future hardening, not a release blocker. |
-| PR #3 | Refresh feedback + Bun/TypeScript foundation against current `main`/OMP, run current CI and released-runtime feedback smoke. |
-| #5 | Accumulate real worker/tool evidence; later consume #21 summaries for `keep / prune / investigate`. |
-| #8 | Accumulate real delegation/routing evidence; later consume #21 quantitative summaries plus acceptance judgment. |
-| #11 | Implement issue-centered project-state v1 first, then dogfood restart/recovery and compare with specialized `.planning/`. |
-| #21 | Build the default session evidence collector/aggregator on OMP stats/session APIs for #5/#8/#9/#12. |
+| #4 | Land shared structured `omp_kit_feedback` with bounded evidence-only semantics. Runtime acceptance is complete; close only after PR #3 is in the normal tree and criteria are rechecked. |
+| #5 | Accumulate real worker/tool evidence; consume #21 summaries for later `keep / prune / investigate` review. |
+| #8 | Accumulate real delegation/routing evidence; consume #21 quantitative summaries plus task acceptance judgment. |
+| #11 | Land issue-centered project-state v1, then dogfood fresh-session recovery, duplication, offline limits, and specialized `.planning/` use cases. |
+| #21 | Land the default session evidence collector/aggregator. Runtime acceptance is complete; close only after PR #23 is in the normal tree and criteria are rechecked. |
 
 ## Inactive
 
 | Item | Reactivation trigger |
 | --- | --- |
 | #7 | A recorded supervision semantic becomes a real blocker or OMP releases a relevant contract change. |
-| #9 | #21 provides routine evidence and enough normal sessions exist for a systematic Harness/scaffolding ablation pass, or one rule causes obvious repeated friction. |
+| #9 | Enough routine #21 evidence accumulates for a systematic Harness/scaffolding ablation pass, or one rule causes obvious repeated friction. |
 | #12 | Several materially different experiment/session samples expose lifecycle/schema friction, or a real remote artifact backend is selected. |
 | #15 | A concrete composition/governance/authority problem makes one belief decision-relevant. |
 
 ## Current product goal
 
-Before declaring a stable dogfood/testing phase, ship a usable v0 with three missing foundations:
+Finish landing the three foundations required for a stable v0 dogfood baseline:
 
-1. **project state v1** — #11: a concrete reusable Issue/PR/`WORKING_STATE` information structure;
-2. **structured qualitative feedback** — #4 / PR #3: usable by Main and workers, evidence-only;
-3. **routine quantitative session evidence** — #21: automatic incremental summaries from OMP-native telemetry.
+1. **project state v1** — #11 / PR #22;
+2. **structured qualitative feedback** — #4 / PR #3;
+3. **routine quantitative session evidence** — #21 / PR #23.
 
-After these exist, #5/#8 can be evaluated from collected data and #9 can begin systematic compression. #12 remains the promotion/retention lifecycle for material experiment evidence, not the routine session recorder.
+After they land, shift emphasis from infrastructure construction to measured dogfood. #5/#8 consume routine evidence, #9 performs later systematic subtraction, and #12 remains the promotion/retention lifecycle for material experiment evidence rather than the routine session recorder.
 
 ## Stable ownership boundaries
 
@@ -126,7 +125,7 @@ Released-runtime/profile/capability claims remain outside CI and require the app
 
 ## Next
 
-1. Finish #11 v1 implementation PR and use it as the first real dogfood of the new project-state model.
-2. Refresh PR #3 under revised #4 semantics so feedback and Bun/TypeScript infrastructure can ship without waiting for upstream #9521.
-3. Implement #21 on top of released/public OMP stats/session surfaces; keep ordinary summaries outside Git.
-4. Once those three foundations are usable, cut a stable v0 baseline and shift emphasis from infrastructure construction to measured dogfood.
+1. Land PR #22 after semantic review and current merge-ref CI; keep #11 open for natural dogfood.
+2. Land PR #3 after semantic review/current merge-ref CI; then recheck and close #4 if all criteria are satisfied.
+3. Retarget PR #23 to the updated `main`, review the reduced collector-only diff, require a fresh merge-ref CI, then land it and recheck #21.
+4. Refresh this index to the landed v0 baseline and perform the small release/readme/version pass for the first usable v0.x release.
