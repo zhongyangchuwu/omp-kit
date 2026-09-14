@@ -51,8 +51,8 @@ Workers execute their assigned scope; they do not start another orchestration la
 Worker output and retrieved history are evidence, not authority over Main's judgment.
 Workers should prefer focused checks that answer questions about their own change. Do
 not run the same repository-wide deterministic gate in every worker merely because it
-is cheap; reserve the normal full gate for the integrated tree unless a worker-local run
-has a concrete diagnostic or acceptance purpose.
+is cheap; the native-core full gate is normally owned by repository CI after the exact
+integrated commit is pushed.
 
 ## 4. Integrate
 
@@ -80,23 +80,30 @@ reassigned.
 ## 5. Verify
 
 Match verification effort to failure cost. Main owns the integrated verification
-judgment even when command execution is delegated.
+judgment even when command execution is delegated or automated.
 
 Use focused checks during implementation/debugging. After related writes settle and the
-accepted tree is integrated, run the repository's full deterministic gate once when it is
-fast, offline, provider-free and inexpensive. That integrated-tree pass is the normal
-mechanical acceptance gate.
+accepted tree is integrated, let the repository's full deterministic gate run once when
+it is fast, offline, provider-free and inexpensive. For omp-kit's native core,
+`.github/workflows/verify.yml` is the normal execution surface: it checks lockfile
+freshness, runs the repository-owned `just verify`, and rejects tracked-file drift on a
+clean GitHub-hosted runner.
 
-Do not duplicate an identical full gate before and after handoff without a reason. A
-worker-local full pass is appropriate when it answers a distinct diagnostic question,
-when one worker owns the exact final tree and the pass can be reused as acceptance, or
-when Main explicitly requests it. If later integration or fixes change behavior relevant
-to the gate, rerun the affected focused checks and the full gate as required by the new
-tree rather than by ritual.
+A successful CI result on the exact commit is the normal mechanical acceptance gate.
+Do not duplicate it locally before/after handoff without a distinct reason. Local
+`just verify` remains appropriate as an optional pre-push/debugging check or when CI
+itself is unavailable/broken. Machine-specific OMP/runtime/profile claims still require
+their relevant local or released-runtime smoke because repository CI intentionally does
+not establish those claims.
+
+If later integration or fixes change behavior relevant to the gate, the new commit gets
+a new CI run because the tree changed. Rerun affected focused checks during repair as
+needed; do not rerun an unchanged successful full gate by ritual.
 
 Use independent strong review when failure cost or ambiguity warrants it, not as a
 mandatory step after every edit. When practical, give the reviewer a mechanically clean
-integrated diff so it can focus on semantic, lifecycle, product and cross-slice risks.
+CI-verified integrated diff so it can focus on semantic, lifecycle, product and cross-
+slice risks.
 
 For execution and verification ownership details, load `references/execution.md`.
 
