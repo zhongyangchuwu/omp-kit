@@ -27,7 +27,7 @@ feedback branch:  omp-native-foundation
 feedback PR:      #3 feat: add self-hosting feedback extension (Draft / blocked)
 normal runtime:   OMP 18.1.20
 split record:     #16 closed completed
-deterministic CI: .github/workflows/verify.yml
+deterministic CI: .github/workflows/verify.yml (#18 closed completed)
 ```
 
 The native-foundation core and feedback extension have separate review ownership. PR #17 targets `main`. PR #3 is stacked on `omp-native-foundation-core` and owns only the feedback-specific delta.
@@ -50,7 +50,7 @@ Exact current PR readiness and the latest accepted tested HEAD belong in PR #17 
 | #11 | deferred design/dogfood | Decide issue-centered state vs `.planning/` coexistence after genuine recovery/offline evidence. |
 | #12 | long-lived dogfood | Experiment artifact lifecycle; remote replication/schema helper remain optional. |
 
-Completed maintenance record #16 documents the core/feedback PR split and its acceptance evidence. Issue #18 owns the GitHub Actions rollout until its CI acceptance criteria are closed; it does not change Issue #9's verification policy.
+Completed maintenance records #16 and #18 document the core/feedback ownership split and the GitHub Actions deterministic gate. Neither is an active implementation owner.
 
 ## Current worker dogfood surfaces
 
@@ -107,9 +107,9 @@ related writes settle
 -> one full deterministic gate on the accepted integrated tree
 ```
 
-A worker-local full gate is reserved for a distinct purpose such as isolated pre-merge safety, cross-slice diagnosis, explicit Main request, or a worker that owns the exact final tree whose result can be reused as acceptance evidence.
+A worker-local full gate is reserved for a distinct purpose such as isolated pre-merge safety, cross-slice diagnosis, explicit Main request, CI diagnosis, or an isolated worker-owned final tree whose result can be reused as acceptance evidence.
 
-For the native core, GitHub Actions now owns the routine integrated full gate. A successful CI run on the exact commit replaces the local-agent copy of the same deterministic check. Local `just verify` is optional pre-push/debugging evidence; runtime/profile claims outside CI still require their appropriate local or released-runtime smoke.
+For CI-supported repository work, GitHub Actions owns the routine integrated full gate. A successful CI run on the exact commit replaces the local-agent copy of the same deterministic check. Local `just verify` is optional pre-push/debugging evidence; runtime/profile claims outside CI still require their appropriate local or released-runtime smoke.
 
 Do not rerun an unchanged full gate merely because work crossed a handoff or phase label. If later integration or fixes materially change the covered tree, the new commit gets a new CI run because the tree changed.
 
@@ -138,12 +138,15 @@ See Issue #7 and `docs/design/supervision.md`.
 
 The core split intentionally excludes the feedback-only Bun/TypeScript surface. Core `just verify` covers the Python repository suite, harness validation, registry freshness/validation, and `git diff --check`.
 
-`.github/workflows/verify.yml` runs that repository-owned gate on GitHub-hosted runners after first checking `uv.lock` freshness and then checking for tracked-file drift. It uses pinned setup actions, Python 3.12, read-only contents permission, and no project secrets. The initial push and PR runs succeeded with 98 Python tests and clean harness/registry/diff results.
+`.github/workflows/verify.yml` runs the repository-owned gate on GitHub-hosted runners after checking `uv.lock` freshness and then checks for tracked-file drift. It uses pinned setup actions, Python 3.12, read-only contents permission, and no project secrets.
 
-Current-tree acceptance is now read from the Actions/check status for PR #17. Do not add a local handoff merely to rerun the identical deterministic gate. Feedback-specific TypeScript/Bun verification and any future released-runtime feedback smoke remain owned by PR #3 / Issue #4.
+When a tree contains `bun.lock`, the same workflow enables Bun/TypeScript verification, installs frozen dependencies, and derives the Bun version from the repository `packageManager` declaration. Core trees without `bun.lock` skip Bun entirely.
+
+Current-tree mechanical acceptance is read from the Actions/check status for the owning PR. Do not add a local handoff merely to rerun the identical deterministic gate. Released-runtime capability claims remain outside CI and require their appropriate runtime smoke.
 
 ## Recently completed
 
+- **#18 deterministic GitHub Actions gate** — completed; routine repository-wide mechanical acceptance no longer requires a local-agent handoff.
 - **#16 core/feedback PR split** — completed; independent core work no longer waits on the feedback blocker.
 - **#10 context authority/provenance** — completed and locally verified. Claim-type-specific authority is wired into design and `omp-workflow`.
 - **#14 parser retirement** — completed. The local OMP JSONL parser/tests were removed; OMP-native telemetry owns generic session ingestion/normalization.
@@ -159,8 +162,8 @@ Current-tree acceptance is now read from the Actions/check status for PR #17. Do
 
 ## Next action
 
-1. Let GitHub Actions verify the settled current PR #17 core HEAD; do not duplicate the same deterministic gate locally.
-2. If CI is clean, record the exact result in PR #17 / #18 metadata and mark PR #17 ready without another tree-changing bookkeeping commit.
-3. Keep PR #3 stacked and Draft until Issue #4's released-runtime criteria are satisfied.
-4. Resume normal omp-kit development after the core review boundary is clean; let #5/#8 evidence accumulate passively from real sessions.
+1. Let GitHub Actions verify the settled PR #17 review-fix head; do not duplicate the same deterministic gate locally.
+2. If CI is clean, keep PR #17 review-ready and record exact acceptance evidence only in PR/Actions metadata, with no tree-changing bookkeeping commit.
+3. Keep PR #3 stacked and Draft until Issue #4's released-runtime criteria are satisfied; its deterministic Python/TypeScript gate is automated, but that does not close the runtime blocker.
+4. Resume normal omp-kit development after the PR #17 review boundary is clean; let #5/#8 evidence accumulate passively from real sessions.
 5. Do not manufacture #11's fresh-session recovery test merely to satisfy its checklist.
