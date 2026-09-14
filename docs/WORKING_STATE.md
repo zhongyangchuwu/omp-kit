@@ -26,21 +26,20 @@ core PR:          #17 feat: establish OMP-native foundation core
 feedback branch:  omp-native-foundation
 feedback PR:      #3 feat: add self-hosting feedback extension (Draft / blocked)
 normal runtime:   OMP 18.1.20
-split owner:      #16
+split record:     #16 closed completed
 ```
 
-The native-foundation core and feedback extension now have separate review ownership. PR #17 targets `main`. PR #3 is stacked on `omp-native-foundation-core` and owns only the feedback-specific delta.
+The native-foundation core and feedback extension have separate review ownership. PR #17 targets `main`. PR #3 is stacked on `omp-native-foundation-core` and owns only the feedback-specific delta.
 
 PR #3 remains blocked because released OMP 18.1.20 does not contain the hard child capability boundary required for Main-only feedback. Upstream PR #9521 remains open; Issue #4 owns released-runtime closure. Do not re-couple unrelated core work to that blocker.
 
-For exact current PR readiness and the latest accepted tested HEAD, prefer PR #17 / Issue #16 over embedding a self-invalidating latest-SHA marker in this file.
+Exact current PR readiness and the latest accepted tested HEAD belong in PR #17 / PR #3 and their owning Issues. Do not create a new git commit solely to copy the just-tested SHA into this file.
 
 ## Active work
 
 | Item | State | Purpose |
 | --- | --- | --- |
-| PR #17 | independent core | Native OMP foundation without feedback-only runtime/tooling surface. |
-| #16 | maintenance record | Preserve the core/feedback ownership split and verification evidence. |
+| PR #17 | independent core review | Native OMP foundation without feedback-only runtime/tooling surface. |
 | PR #3 | Draft / blocked | Feedback-only stacked PR; do not make review-ready until #4 closes. |
 | #4 | blocked upstream | Hard Main/worker capability boundary on a supported release. |
 | #5 | observational dogfood | Learn worker-tool value from real omp-kit sessions and OMP-native telemetry. |
@@ -49,6 +48,8 @@ For exact current PR readiness and the latest accepted tested HEAD, prefer PR #1
 | #9 | active recurring audit | Remove/simplify model-compensation and repeated-process overhead. |
 | #11 | deferred design/dogfood | Decide issue-centered state vs `.planning/` coexistence after genuine recovery/offline evidence. |
 | #12 | long-lived dogfood | Experiment artifact lifecycle; remote replication/schema helper remain optional. |
+
+Completed maintenance record #16 documents the core/feedback PR split and its acceptance evidence; it is not an active implementation owner.
 
 ## Current worker dogfood surfaces
 
@@ -80,11 +81,9 @@ OMP ordinary session persistence is the recorder. Prefer `/api/sessions`, `/api/
 
 ## Current Issue #9 ablation state
 
-Two current-generation simplifications are represented in workflow/design policy.
+Two current-generation simplifications are accepted.
 
-### Accepted: generic reflection removal
-
-Mandatory generic end-of-task self-improvement reflection was removed:
+### Generic reflection removal
 
 ```text
 reusable friction already observed
@@ -97,9 +96,7 @@ no observed friction
 
 The feedback sink and `report != self-modify` invariant remain.
 
-### Accepted: duplicate full-gate removal
-
-Default verification is:
+### Duplicate full-gate removal
 
 ```text
 worker implementation / debugging
@@ -111,13 +108,13 @@ related writes settle
 
 A worker-local full gate is reserved for a distinct purpose such as isolated pre-merge safety, cross-slice diagnosis, explicit Main request, or a worker that owns the exact final tree whose result can be reused as acceptance evidence.
 
-The split-core work supplied real evidence for this policy: one integrated provider-free gate was sufficient on the settled core tree; no unchanged second full gate was required. If later integration or fixes change the covered tree, the prior evidence is stale and one new integrated gate is justified.
+Do not rerun an unchanged full gate merely because work crossed a handoff or phase label. If later integration or fixes materially change the covered tree, the prior evidence is stale and one new integrated gate is justified.
 
 Issue #11 still owns `.planning/` replacement/coexistence; #9 does not pre-empt that decision.
 
 ## OMP 18.1.20 supervision audit — Issue #7
 
-One earlier gap is now resolved by released OMP:
+Released OMP now provides:
 
 ```text
 agent://<id>   -> saved final subagent output
@@ -134,27 +131,22 @@ Three active gaps remain:
 
 See Issue #7 and `docs/design/supervision.md`.
 
+## Validation handling
+
+The core split intentionally excludes the feedback-only Bun/TypeScript surface. Core `just verify` therefore covers the Python repository suite, harness validation, registry freshness/validation, and `git diff --check`.
+
+The settled pre-review-cleanup core tree passed one provider-free integrated gate with 98 Python tests and clean harness/registry/diff checks. The subsequent review cleanup changes current documentation, so its final exact tree needs one new integrated gate before PR #17 is marked ready again.
+
+After that gate, record the exact HEAD/results in PR #17. Do not change this file solely to mirror the new SHA and thereby invalidate the just-tested tree.
+
+Feedback-specific TypeScript/Bun verification and any future released-runtime feedback smoke remain owned by PR #3 / Issue #4.
+
 ## Recently completed
 
+- **#16 core/feedback PR split** — completed; independent core work no longer waits on the feedback blocker.
 - **#10 context authority/provenance** — completed and locally verified. Claim-type-specific authority is wired into design and `omp-workflow`.
 - **#14 parser retirement** — completed. The local OMP JSONL parser/tests were removed; OMP-native telemetry owns generic session ingestion/normalization.
 - **#13 OMP-native telemetry** — completed. OMP stats/session trace plus omp-kit-owned experiment semantics is the accepted observability boundary.
-
-## Verification evidence
-
-The split core was locally verified provider-free at the exact pre-coordination-update head recorded in PR #17 / Issue #16:
-
-```text
-31e743a0c7876e67d3c3e07f0c02ba9e5d269d67
-98 Python tests passed
-harness validation PASS
-registry freshness PASS
-registry validation PASS
-git diff --check HEAD PASS
-worktree clean
-```
-
-That evidence established the split itself. Any later commit changes the exact tested tree and must be judged under the normal verification policy. Exact latest accepted HEAD/results belong in the owning PR/Issue; do not create a new commit whose only purpose is to copy the just-tested SHA into this file.
 
 ## Accepted ownership / evidence boundaries
 
@@ -166,7 +158,9 @@ That evidence established the split itself. Any later commit changes the exact t
 
 ## Next action
 
-1. For PR #17, compare the current branch HEAD with the exact accepted HEAD recorded in PR #17 / #16. If the tree changed since the last accepted gate, run one provider-free integrated `just verify`; do not duplicate the gate on an unchanged tree.
-2. Keep PR #3 stacked and Draft until Issue #4's released-runtime acceptance criteria are satisfied; do not manufacture a closure smoke while the required upstream implementation is absent.
-3. After the independent core is review-ready, resume normal omp-kit development and let #5/#8 evidence accumulate passively from real sessions.
-4. Do not manufacture #11's fresh-session recovery test merely to satisfy its checklist.
+1. Finish the current PR #17 documentation-review cleanup.
+2. If the current core HEAD differs from the exact accepted HEAD in PR #17, run one provider-free integrated `just verify`; do not duplicate the gate on an unchanged tree.
+3. If clean, record the exact result in PR #17 and mark it ready for review without another tree-changing bookkeeping commit.
+4. Keep PR #3 stacked and Draft until Issue #4's released-runtime criteria are satisfied.
+5. Resume normal omp-kit development after the core review boundary is clean; let #5/#8 evidence accumulate passively from real sessions.
+6. Do not manufacture #11's fresh-session recovery test merely to satisfy its checklist.
