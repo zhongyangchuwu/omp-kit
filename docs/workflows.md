@@ -1,101 +1,44 @@
-# Maintenance workflows
+# Maintenance and usage workflows
 
-## Install and update
+## Install/update
 
-For the native core plugin, use `omp plugin link .`. OMP discovers the package's
-agents, active skills and Main-only rule while leaving user configuration untouched.
-Use `omp plugin uninstall omp-kit` to remove the link.
+Use the [native plugin workflow](omp-installation.md). Install the committed Bun graph, link the checkout, inspect registration and restart affected sessions. Model/provider/MCP configuration remains user-owned. The retired config-copy installer is not the update path.
 
-Use `install.sh`, `install.ps1` or `uv run --script scripts/install_harness.py` only for
-the legacy/compatibility path that intentionally copies the Harness v2 configuration,
-agents and registry-selected skills. Preview existing machines first and explicitly
-adopt collisions with `--force` after reviewing planned paths. See
-`omp-installation.md` for backups, drift and rollback.
+## Maintain Skills
 
-Native plugin policy changes go into `package.json`, agents, skills, rules, or genuine
-runtime extensions. Legacy settings changes go into tracked config; host URLs/UI
-deviations belong in private local overlays or named profiles. Credentials remain in
-the launching environment or agent-root `.env`, never tracked YAML.
+Keep the user's useful Skills, references, templates, scripts, tests and provenance. Review third-party material in ignored `references/`, stage a new resource in `drafts/` when useful, and use the existing promotion/metadata helpers. Drafts are not active resources.
 
-## Skill lifecycle
+```sh
+just build-registry
+just check-registry
+just validate-registry
+just build-index
+```
 
-Review third-party material in gitignored references/, extract maintained work into
-drafts/, and promote deliberately using the existing promote-skill helper. Preserve
-resource.yaml provenance/risk/verification metadata. Regenerate registry.yaml with
-scripts/build_registry.py after resource metadata changes; do not hand-maintain it.
-Drafts are never installed. The existing registry validation and risk scan remain.
+`resource.yaml` owns local provenance/risk/activation metadata; `registry.yaml` is generated. These are maintained library tools, not an OMP runtime registry. A risk scan is a review aid, not a sandbox or a substitute for checking side effects.
 
-## Verification and integration
+Consult `skill-authoring` for content review. Correct concrete errors and duplicated obligations. Do not remove personal design or code-quality experience simply because the guidance is general-purpose.
 
-Optimize accepted evidence per unit of work, not the raw number of verification
-commands. Focused checks answer implementation/debugging questions; the integrated
-repository gate answers whether the accepted final tree satisfies broad mechanical
-contracts.
+## Implement, integrate, verify
 
-A worker normally runs the narrowest relevant checks for its own change and hands those
-results to Main. Do not duplicate the repository-wide full gate in every worker merely
-because it is offline or cheap. A worker-local full gate is reserved for a distinct
-purpose such as an isolated pre-merge check, cross-slice diagnosis, explicit Main
-request, or a worker that owns the exact final tree whose result can be reused as final
-acceptance evidence.
+Use focused tests while making a change. Main reconciles writable scopes and shared consumers before accepting the combined tree. Workers report out-of-scope findings rather than expanding their task.
 
-After related workstreams settle, Main/integration ownership reconciles the actual
-changed files with declared scopes and integrates the combined tree. If a shared type,
-schema, catalog, interface, or other cross-slice contract changed, inspect its likely
-consumers before acceptance:
+`just verify` is the repository's provider-free gate. It runs retained Python/native-plugin/metadata checks, Skill-authoring tests, isolated AutoDL mocked tests, TypeScript typecheck/tests and registry consistency. CI checks lockfile freshness, the candidate diff and tracked-file drift as well.
 
-- production call sites;
-- tests and fixtures;
-- mocks and fakes;
-- contract-facing docs/examples;
-- the explicit owner responsible for cross-slice integration.
+PR merge-ref CI is the normal pre-merge mechanical evidence. Post-landing `main` CI answers the distinct landed-tree question. Do not repeat a successful unchanged full gate merely because another worker or phase received ownership. A focused repair, changed candidate, local-runtime claim or CI diagnosis can justify new checks.
 
-Out-of-scope consumers return to Main/integration ownership; workers do not silently
-expand writable scope merely because they discovered one.
+Review judges semantics, intent and risk; tests prove only exercised properties. No documentation cleanup authorizes live cloud resources, provider calls or user-profile mutation.
 
-When the repository's full deterministic gate is fast, offline, provider-free and
-relevant, run it once on the accepted integrated tree. For CI-supported repository work,
-the default mechanical acceptance path is `.github/workflows/verify.yml`: pull requests
-run the gate against GitHub's current PR merge-ref, while pushes to `main` verify the
-landed commit. The workflow checks the committed `uv.lock`, runs the repository-owned
-`just verify` entry point, and rejects tracked-file drift on a clean hosted runner. It
-requires only read access to repository contents and no project secrets.
+## Normal runtime use
 
-A successful current PR gate (or `main` push gate after landing) replaces the routine
-local-agent full gate for CI-supported repository work. Local `just verify` remains
-useful as an optional pre-push check or when diagnosing CI itself; local OMP/runtime/
-profile smokes remain necessary when the claim depends on machine-specific or released-
-runtime behavior that CI does not exercise.
+Main uses `omp-workflow` and chooses direct work or bounded delegation. The various maintained design, research, test and quality Skills contribute when their task boundary matches; they do not all need to be loaded for every task.
 
-If later review/integration fixes materially change behavior covered by the gate, the
-updated PR receives a new CI run because the candidate tree changed — not because the
-workflow crossed another phase label. Do not rerun an unchanged successful candidate
-merely to repeat the same evidence.
+Use issue-centered project state for ordinary multi-session work. Keep accepted behavior and rationale in current docs/design records, not only in Issues. Use the preserved `.planning/` workflow only when deliberately selected for a project needing that specialized dossier.
 
-Independent strong review remains selective by failure cost. When practical, give the
-reviewer a mechanically clean integrated diff so model judgment is spent on semantics,
-lifecycle, product behavior, ambiguity, accessibility/security concerns, and other risks
-that cheap automation does not already decide.
+## Observe and preserve
 
-If a repository-wide gate is slow, externally metered, destructive, or otherwise
-expensive, choose an integrated acceptance strategy proportionate to that cost instead
-of duplicating the expensive gate.
+Main or a worker may record reusable friction already encountered through `omp_kit_feedback`. Do not manufacture a reflection turn to find something to log.
 
-## Runtime use
+After normal work, use `evidence:collect` and `evidence:report` for quantitative session summaries. The CLI does not install a background scheduler. Routine data stays outside Git; select compact decision evidence into `evidence/experiments/` only when useful. See [session evidence](session-evidence.md) and [experiment lifecycle](experiments.md).
 
-For repository work in Main, use `omp-workflow` as the default operating workflow.
-Entering the workflow does not imply delegation. Route inside the workflow between
-Main-direct execution, one bounded delegate, or parallel independent delegates.
-Delegate when the work is cheaper to specify and verify than to perform in Main; retain
-high-context judgment, integration, verification judgment, and final reporting in Main.
-
-Select discovered custom agents by task shape and give delegated work clear intent,
-boundaries, context references, and completion evidence. Reuse a coherent owner when
-supported. Use bounded-executor for implementation and selective strong review for
-important risks. Durable planning state is needed only when it supports continuity.
-
-Self-hosting feedback is event-triggered, not a mandatory completion phase. If real work
-already exposed concrete reusable omp-kit/OMP friction, Main may record the smallest
-evidence-backed finding through the feedback mechanism when available. Do not create an
-extra model turn, worker, scan, or tool call merely to look for feedback. Reporting
-feedback never authorizes self-modification.
+Preserve stable accepted decisions in their owning docs. Keep current navigation short, unfinished work in Issues, review/CI in PRs, and pure historical chronology in Git rather than duplicate archive files.

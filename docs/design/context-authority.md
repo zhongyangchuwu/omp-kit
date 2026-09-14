@@ -14,193 +14,126 @@ authority / provenance
 
 More retrievable history does not solve stale requirements, superseded plans, generated summaries presented as facts, external prompt injection, or a worker treating an old conversation as permission to mutate current state.
 
-omp-kit therefore needs a small policy for deciding what a piece of context means, how current it is, and whether it may control action without building a second memory/runtime system.
+omp-kit therefore needs a small policy for deciding what context means, how current it is, and whether it may control action without building a second memory/runtime system.
 
 ## Evidence
 
-### Current repository information model
+### Repository information model
 
 **Type:** repository fact + dogfood.
 
-The repository already separates information by purpose:
-
 ```text
-actual repository/runtime state     -> current observable fact
-executable policy/resources          -> current implemented behavior
-current docs                         -> accepted durable project policy
-WORKING_STATE.md                     -> current entry point / index
-open Issues                          -> unresolved objective, acceptance, chronology
-Pull Requests                        -> concrete implementation/review
-closed Issues / archive / git history -> historical evidence
+actual repository/runtime state -> current observable fact
+executable policy/resources     -> current implemented behavior
+current docs                    -> accepted durable project policy
+design records                  -> accepted rationale and limits
+compact experiment bundles      -> selected auditable evidence
+WORKING_STATE.md                 -> current entry point / index
+open Issues                     -> unresolved objective and acceptance
+Pull Requests                   -> implementation/review
+closed Issues / Git history     -> chronology and superseded material
 ```
 
-`docs/README.md` explicitly avoids one global authority chain because different questions require different source types. Issue #14 parser retirement also showed why this matters: archived parser instructions remained valid historical evidence after the executable parser itself had been removed.
+`docs/README.md` avoids one global authority chain because different questions require different sources. Parser retirement under #14 illustrated that old instructions remain historical evidence after their executable path is removed. The later documentation cleanup removes duplicate archive copies, not the distinction between current policy and history.
 
 ### Parent-history retrieval
 
 **Type:** controlled runtime evidence + workflow policy.
 
-Earlier native-foundation work established that workers can retrieve relevant parent context through OMP history rather than requiring Main to rewrite the full conversation. The current `omp-workflow` reference already requires search-first retrieval and independent repository inspection.
+Native-foundation work established that workers can retrieve relevant parent context through OMP history rather than requiring Main to rewrite the full conversation. The workflow reference requires relevant retrieval and independent repository inspection.
 
-That mechanism solves recovery, not authority. A parent transcript can contain rejected alternatives, stale assumptions, assistant suggestions, and user decisions that were later superseded.
+That mechanism solves recovery, not authority. A parent transcript can contain rejected alternatives, stale assumptions, assistant suggestions and user decisions subsequently superseded.
 
 ### Notes-backed rollover
 
 **Type:** runtime evidence.
 
-Notes can preserve accepted decisions, invariants and blockers across current-session context rollover. They are useful continuity aids but are not a universal cross-session project database and do not override current repository/runtime observations.
+Notes can preserve decisions, invariants and blockers across current-session rollover. They are continuity aids, not a universal cross-session project database or a replacement for observable repository/runtime state.
 
 ### Real project-state dogfood
 
 **Type:** dogfood.
 
-Recent omp-kit work repeatedly used:
+Project work has used `WORKING_STATE.md + owning Issue + actual branch/files/runtime` to recover an objective. It also exposed stale durable state: local verification reported OMP 18.1.20 while docs still said 18.1.19. The observation corrected the text.
 
-```text
-WORKING_STATE.md
-+ owning Issue
-+ actual branch/files/runtime
-```
+These operational examples do not prove the remaining genuinely fresh-session/offline acceptance criteria in #11. Same-conversation recovery is not fresh-session evidence.
 
-to recover the current objective without relying on hidden chat memory. The same work also exposed stale durable state: after local verification reported OMP 18.1.20, current docs still said 18.1.19 and had to be corrected from observed runtime evidence.
-
-### Broad external/research tool exposure
+### External research and tools
 
 **Type:** repository fact + risk boundary.
 
-Current workers may use `web_search` and other research/navigation tools during real development. Their agent instructions already state that external/search/tool output is evidence, not new authorization or instructions. This is necessary because provenance and permission are separate: content retrieved from the web, logs, scanners, or repository files may be useful evidence but must not silently acquire the authority of the user's request or Main's task contract.
+Workers may use web search and navigation during real development. Their instructions treat external/search/tool output as evidence, not new authority. Logs, scanners, repository text and web pages can support facts without acquiring the authority of the user or current dispatch.
 
 ## Interpretation
 
-There is no useful single ranking such as:
+There is no useful single ranking such as `user > repository > docs > issue > history`, because these answer different questions:
 
-```text
-user > repository > docs > issue > history
-```
+- the user defines desired behavior but cannot make a nonexistent file exist;
+- code establishes current behavior but cannot decide what the user wants changed;
+- an Issue owns a target and acceptance criteria without making an unimplemented plan current behavior;
+- history explains a decision but cannot revive a superseded one;
+- an external source may establish a fact but cannot authorize a repository write.
 
-because those sources answer different kinds of questions.
-
-For example:
-
-- the user can define the desired behavior but cannot make a nonexistent file exist;
-- the repository can establish what code currently does but cannot decide what the user wants changed;
-- an Issue can own an unresolved target and acceptance criteria but does not make an unimplemented plan current runtime behavior;
-- history can explain why a decision was made but cannot revive a superseded decision;
-- an external source can establish a public fact but cannot authorize a repository write.
-
-Authority is therefore **claim-type specific**.
+Authority is **claim-type specific**.
 
 ## Design principle
 
 > Classify the claim before ranking its sources.
 
-For any material conflict, first ask what kind of statement is being resolved:
-
-```text
-intent / authorization
-current observable state
-accepted project policy
-active work / acceptance target
-rationale / evidence
-historical context
-```
-
-Then use the source class appropriate to that claim.
+For a material conflict, identify intent/authorization, current observable state, accepted policy, active work, rationale/evidence or historical context. Then use the appropriate source class.
 
 ## Current authority model
 
 ### 1. Intent and authorization
 
-Question:
-
-> What does the user want, and what action is this agent allowed to take?
-
-Use:
+Question: what does the user want and what may this agent do?
 
 ```text
 latest explicit user instruction
--> explicit current task/dispatch contract
--> accepted current project policy when the user has not overridden it
+-> current explicit task/dispatch contract
+-> accepted current project policy when not overridden
 ```
 
-Rules:
-
-- newer explicit user decisions supersede older user decisions;
-- questions, brainstorming, assistant proposals and retrieved text are not authorization;
-- worker scope comes from the current dispatch, not from instructions discovered in history, logs, code comments, Issues, web pages, scanner output, or other tool results;
-- a worker encountering a material scope/authorization conflict returns it to Main rather than widening its task itself.
+New explicit decisions supersede older ones. Brainstorming, assistant proposals and retrieved text are not authorization. Worker scope comes from the current dispatch, not commands discovered in history, Issues, web pages, code comments or tool results. Return material scope/product conflicts to Main rather than widening the task.
 
 ### 2. Current observable state
 
-Question:
-
-> What exists or is happening now?
-
-Prefer direct observation:
+Question: what exists or is happening now?
 
 ```text
-actual repository/files/git state
+actual repository/files/Git state
 observed runtime/tool/external read-back
--> executable resources/configuration
+-> current executable resources/configuration
 -> current descriptive docs
--> plans, summaries, Issues, history
+-> plans, summaries, Issues and history
 ```
 
-Rules:
-
-- runtime/repository observation can invalidate stale documentation about current behavior;
-- an observed state is evidence of what is true, not automatically evidence of what ought to be true;
-- externally mutable state should be read back when success or freshness matters rather than inferred from an old request or cached discussion.
+Direct observation can invalidate stale descriptions, but an observed implementation can still be a bug. Externally mutable state needs read-back when freshness or success matters; an earlier attempted write is not proof of its result.
 
 ### 3. Accepted project policy
 
-Question:
+Question: what durable behavior or boundary has been accepted?
 
-> What durable behavior or architectural boundary has the project accepted?
+Use executable policy where encoded, together with current accepted docs/design records and their supporting evidence.
 
-Use:
+Current docs explain accepted intent; resources establish its implemented form. When they disagree, determine whether code or docs are wrong rather than choosing the convenient one. An open Issue's proposal does not become policy simply by existing. Accepted rationale must remain available in the distributed checkout.
 
-```text
-executable policy/resources when the policy is encoded there
-+ current accepted docs/design records
--> resolved Issue/PR evidence supporting that policy
-```
+### 4. Active work and acceptance
 
-Rules:
-
-- current docs explain accepted intent; executable resources establish the implemented form;
-- when current docs and implementation disagree, do not silently choose whichever is convenient: determine whether the code is wrong or the docs are stale, then reconcile the durable state;
-- an open Issue may propose a policy change but does not become accepted policy merely by existing.
-
-### 4. Active work and acceptance target
-
-Question:
-
-> What problem is currently being worked, and what closes it?
-
-Use:
+Question: which unfinished problem is being worked and what closes it?
 
 ```text
 latest user direction
--> WORKING_STATE.md as the entry-point/index
--> owning open Issue body + current comments
--> active PR for implementation/review state
+-> WORKING_STATE.md navigation
+-> owning Issue body and material current comments
+-> active PR implementation/review state
 ```
 
-Rules:
-
-- `WORKING_STATE.md` points to the owner; it should not duplicate the full chronology;
-- the owning Issue can define unresolved acceptance criteria without claiming they are already implemented;
-- comments are chronological evidence and may supersede an older body only until the body/current docs are deliberately reconciled;
-- actual branch/runtime state still wins for claims about what has already happened.
+The index points to the owner, not the full chronology. Comments can supersede a stale body until it is reconciled. Actual branch/runtime observations still decide what already happened. Merging, pausing or superseding a proposal is not proof that every acceptance criterion is complete.
 
 ### 5. Rationale and evidence
 
-Question:
-
-> Why does this mechanism or decision exist, and what supports it?
-
-Use:
+Question: why does the mechanism exist and what supports it?
 
 ```text
 docs/design/*.md
@@ -209,37 +142,17 @@ docs/design/*.md
 -> original external or runtime evidence
 ```
 
-Rules:
-
-- preserve evidence type and limitations;
-- prefer the original observation/source over a generated summary when exact wording or provenance matters;
-- community reports and external analysis can motivate hypotheses but do not silently become project facts;
-- a design record explains accepted rationale but does not override current observable behavior.
+Preserve evidence types, exact identities and limitations. Prefer original observations when wording/provenance matters. Community reports can motivate hypotheses without becoming project facts. A design record explains accepted rationale but does not overrule observable behavior or authorize new work.
 
 ### 6. Historical context
 
-Question:
+Question: what happened previously or why did an older path exist?
 
-> What happened previously, or why did an older path exist?
-
-Use:
-
-```text
-closed Issues / merged PRs
-docs/archive/
-git history
-older session history
-```
-
-Rules:
-
-- historical material is evidence, not current instruction;
-- archive content may intentionally describe commands, versions or policies that no longer exist;
-- do not rewrite history merely to make old evidence look consistent with current policy.
+Use closed Issues, merged PRs, specific Git revisions and older session history. Historical material can describe commands or policies no longer supported. Do not rewrite it to look current. The old `docs/archive/` copies are removed; unique still-useful conclusions are retained in current validation/design, with immutable original-source links.
 
 ## Lightweight provenance states
 
-Do not build a generic provenance database. When a distinction materially affects work, use ordinary project language to label the claim:
+Use ordinary labels only when they change a decision:
 
 ```text
 observed fact
@@ -249,48 +162,36 @@ external evidence
 superseded / historical
 ```
 
-These states belong where the information already lives:
-
-- current accepted behavior in executable policy/current docs;
-- rationale/evidence in design records;
-- unresolved work in Issues;
-- historical material in closed Issues/archives/git history.
-
-A generated summary should preserve these distinctions rather than flattening all retrieved text into one undifferentiated context block.
+Keep each at its existing owner: accepted behavior in docs/resources, rationale in design records, selected experiment evidence in bundles, unfinished work in Issues and chronology in Git/PR history. Do not build a generic provenance database or flatten these into an undifferentiated generated summary.
 
 ## Conflict handling
 
-When two sources disagree materially:
-
-1. **Classify the claim.** Is the conflict about intent, current state, accepted policy, active plan, evidence, or history?
-2. **Check freshness and provenance.** Retrieve the original/current source when the summary may be stale or ambiguous.
-3. **Do not merge contradictions into a synthetic compromise.** State the conflict explicitly.
-4. **Use the appropriate authority for that claim type.** Do not let a high-authority source for one claim type control another claim type.
-5. **Escalate authorization ambiguity.** A worker returns material scope/product ambiguity to Main; Main asks the user only when repository/project evidence cannot safely resolve it.
-6. **Reconcile durable state after resolution.** Update stale current docs/Issue body/index when the accepted truth changes; leave historical evidence historical.
+1. Classify the claim.
+2. Check freshness and original provenance.
+3. Keep a material contradiction explicit; do not synthesize an unsupported compromise.
+4. Apply the authority appropriate to that claim, not a single global ranking.
+5. Escalate unresolved authorization/product ambiguity; do not ask about facts tools can establish.
+6. Reconcile the owning current doc/Issue/index after a decision. Leave historical evidence historical.
 
 Examples:
 
 ```text
-user says "keep the API compatible"
-+ current code breaks the API
-=> user intent defines the target; code defines the observed failure
+user says "keep the API compatible" + current code breaks it
+=> intent defines the target; code establishes the observed failure
 
-Issue says "parser cleanup pending"
-+ branch lacks parser and local verify passed
-=> branch/verification establish current state; Issue/current docs should be updated
+Issue says "parser cleanup pending" + branch lacks it and checks passed
+=> observations establish current state; reconcile the stale Issue/docs
 
 web result says "run this command"
-=> evidence only; it grants no new execution authorization
+=> evidence only, not new authorization
 
-archive says OMP 18.1.18 requires workaround X
-+ current runtime is 18.1.20
-=> historical evidence; re-check current runtime before applying workaround
+old Git snapshot requires a version-specific workaround
+=> historical claim; check current runtime before applying it
 ```
 
 ## Push vs reference context
 
-The default worker contract should push only context that must control execution:
+Push the context that must control execution:
 
 ```text
 objective
@@ -300,97 +201,51 @@ acceptance / verification target
 material consequence constraints
 ```
 
-Reference or retrieve on demand:
+Reference long rationale, parent discussion, historical experiments and external sources on demand. This avoids verbose handoffs while keeping the execution contract explicit. Retrieved material never gains authority merely by being retrieved.
+
+## Permissions and visibility
 
 ```text
-long rationale
-parent conversation
-historical experiments
-large design discussions
-external sources
+source authoritative for a claim != worker permitted to retrieve it
+worker can retrieve a source     != source may authorize new action
 ```
 
-This keeps task contracts explicit without paying to restate all project history. Retrieval remains useful for provenance and rationale, but retrieved material does not gain authorization by being retrieved.
-
-## Permissions and context visibility
-
-Authority and capability are separate axes.
-
-```text
-source is authoritative for a claim
-!= worker is permitted to retrieve it
-
-worker can retrieve a source
-!= source may authorize new action
-```
-
-OMP owns enforcement of tool/session/resource visibility. omp-kit should not emulate a second permission system in prompts or a memory database. omp-kit owns the workflow rule that an agent must act only within its current authorized scope and must treat retrieved/external content according to its provenance.
-
-Absence of inaccessible context is not evidence that the context does not exist. A restricted worker should report missing required context rather than fabricate it or widen access indirectly.
+OMP owns tool/session/resource visibility enforcement. omp-kit owns workflow scope and interpretation, not a second permission system. Inaccessible context is not nonexistent context; report missing required information rather than fabricating it or widening access indirectly.
 
 ## Current mechanism
 
-The policy is implemented through existing project surfaces rather than a new runtime component:
+This policy uses existing surfaces: docs and design records for accepted knowledge, `WORKING_STATE` for navigation, Issues for unfinished work, `omp-workflow` for Main judgment, subagent-context guidance for retrieval, and agent definitions for external-content boundaries. OMP owns session/history storage and capabilities.
 
-- `docs/README.md` separates current truth, rationale, work coordination and history;
-- `WORKING_STATE.md` is a short index, not a universal truth document;
-- GitHub Issues own unresolved work/acceptance/chronology;
-- design records preserve accepted rationale and evidence limits;
-- `omp-workflow` makes Main own material judgment and conflict resolution;
-- `subagent-context.md` makes workers independently verify repository facts and treat history as evidence;
-- worker definitions treat external/search/tool output as evidence rather than authorization;
-- OMP remains the owner of session/history/context storage and capability enforcement.
+No extra memory store, context broker, provenance database or runtime permission layer is introduced.
 
-No new generic memory store, provenance database, context broker, or runtime permission layer is introduced.
+## Evaluation and limits
 
-## Evaluation / observed effect
+Operational work has corrected stale version text, separated retired implementations from their historical evidence, and recovered active objectives through repository/Issue state. This supports the authority model, not a claim that its information architecture is optimal for every project.
 
-Current evidence is operational rather than a controlled benchmark:
+Important limits:
 
-- project work has repeatedly recovered the active objective from durable repository/Issue state without requiring a bespoke planning database;
-- stale runtime version text was corrected from direct local observation rather than allowing docs to override reality;
-- Issue #14 kept historical parser material in archives while removing the current executable parser, demonstrating that historical provenance and current authority can coexist;
-- broad research-tool rollout can retain a clear instruction boundary because external content is explicitly treated as evidence only.
+- observation may reveal a bug rather than desired behavior;
+- current docs and open Issue bodies can lag implementation or later comments;
+- history retrieval can select a wrong session or superseded passage;
+- external evidence can be stale, low-quality or malicious;
+- source separation is guidance, not runtime sandboxing;
+- offline users cannot rely on reaching GitHub, so accepted truth and rationale must ship in the repository.
 
-This is enough to adopt a small authority policy. It does not prove that the current information architecture is optimal for every project shape.
-
-## Counter-evidence and limits
-
-- Direct repository/runtime observation can reveal a bug; it does not make the bug desired policy.
-- User intent can intentionally supersede project policy, but user statements about current external state may still require read-back.
-- Open Issue bodies can become stale relative to later comments until reconciled.
-- Current docs can lag a web-authored or local change between implementation and verification.
-- History retrieval may recover the wrong session or a superseded passage if the parent identity/range is not verified.
-- External evidence may itself be stale, low-quality or malicious.
-- Offline/local workflows cannot always reach GitHub Issues; current docs and repository state must remain sufficient to avoid a GitHub-only source of accepted truth.
-
-Issue #11 continues to evaluate whether the current docs + Issues/PR information model should replace, coexist with, or specialize alongside richer `.planning/` workflows. This record does not pre-decide that migration.
+#11 evaluates real recovery, duplication and offline behavior. `.planning/` remains a deliberately selected specialized workflow; its maintained Skill is not obsolete merely because this repository uses issue-centered state.
 
 ## Current status
 
-**Accepted authority/provenance policy; no new runtime subsystem required.**
-
-The remaining work is dogfood: keep the policy small, watch for concrete contradictions or retrieval failures, and change the mechanism only when real work exposes a gap.
+**Accepted authority/provenance policy; no new runtime subsystem required.** Change the mechanism only when real work exposes a concrete gap.
 
 ## Related implementation / Issues
 
-- `../README.md`
-- `../WORKING_STATE.md`
-- `../design-foundations.md`
-- `../../skills/omp-workflow/SKILL.md`
-- `../../skills/omp-workflow/references/subagent-context.md`
-- Issue #10 — authority/provenance design
-- Issue #11 — repository/Issue workflow information model
-- Issue #5 — broad worker capability observation
-- Issue #7 — OMP-owned context/runtime gaps
+- [Documentation map](../README.md)
+- [Working state](../WORKING_STATE.md)
+- [Design foundations](../design-foundations.md)
+- [OMP workflow](../../skills/omp-workflow/SKILL.md)
+- [Subagent context](../../skills/omp-workflow/references/subagent-context.md)
+- #10 authority/provenance; #11 state recovery; #5 capability observation; #7 runtime gaps.
 
 ## Revisit triggers
 
-Revisit this policy when:
-
-- real work repeatedly acts on stale/superseded context despite the current source separation;
-- a fresh session cannot recover the current objective without hidden conversation memory;
-- GitHub-unavailable/offline work exposes an accepted-truth dependency that exists only in Issues;
-- OMP introduces first-class provenance/authority metadata or changes history/notes semantics;
-- capability changes materially alter which context workers can retrieve;
-- the project adopts or removes a richer `.planning/` mode under Issue #11.
+Repeated stale-context actions, failed fresh-session recovery, GitHub-offline dependence, changed OMP history/notes/provenance primitives, or visibility changes warrant review. Preserve accepted knowledge while changing only the layer that owns the demonstrated failure.

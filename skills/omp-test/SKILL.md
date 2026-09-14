@@ -27,7 +27,7 @@ Use this skill when the task involves:
 2. Choose the narrowest meaningful execution boundary: CLI, API, component, function, persisted data, or integration path.
 3. Cover representative cases, edge values, and failure behavior that would catch real regressions.
 4. Use real code by default; mock only slow, external, nondeterministic, paid, or OS-level boundaries.
-5. For non-trivial test authoring, delegate test writing to a task subagent with a test-authoring role, behavior contract, files, non-goals, and acceptance criteria.
+5. Main may delegate test authoring when independent coverage or parallelism justifies it. Otherwise write the tests directly. A worker follows its existing scope and spawn restrictions rather than starting another delegation layer.
 6. Run the smallest command that exercises the new or changed tests and record the observed result.
 
 ## Rules
@@ -38,6 +38,7 @@ Use this skill when the task involves:
 - Regression tests should fail for the original bug when practical; if the fix already exists, state the observed reason red/green could not be captured.
 - Fake data must match the real shape consumed by downstream code.
 - A skipped test needs a concrete blocker and the narrowest replacement evidence available.
+- Reuse applicable current-tree evidence and repository CI; do not repeat an unchanged passing full gate simply because a test handoff occurred.
 
 ## Support files
 

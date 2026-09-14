@@ -7,7 +7,7 @@ description: Use when managing AutoDL Pro GPU instances, checking AutoDL balance
 
 ## Overview
 
-Use this skill to operate AutoDL Pro instances safely across projects. The default control plane is a local `secrets.json` with named servers; every resource-changing command is dry-run unless explicitly confirmed.
+Use this skill to operate AutoDL Pro instances safely across projects. The control plane is a local `secrets.json` with named servers. Resource API mutations (`create-pro`, `power-pro`, `release-pro`) preview unless explicitly confirmed. **SSH, sync and run commands have different defaults and can execute immediately**; inspect the command class before use.
 
 For server setup, lifecycle, storage, logging, disk, and smoke-gate guidance, read **Server Best Practices** in `docs/server-best-practices.md` before starting paid or long-running work.
 
@@ -22,12 +22,11 @@ For server setup, lifecycle, storage, logging, disk, and smoke-gate guidance, re
 
 ## Safety Red Lines
 
-
 - Never expose `AUTODL_TOKEN`, real SSH host/port, private key path, Pro instance UUID, image UUID, password, Jupyter token, or full SSH command.
 - Never run `create-pro`, `power-pro start`, or `release-pro` with `--confirm` unless the user explicitly approved that paid/destructive action.
-- Always dry-run resource changes first.
+- Dry-run resource changes first. Use `--dry-run` for sync previews or the redacted `--print-command` for supported SSH/run previews; do not assume these commands inherit the resource API confirmation gate.
 - Before release, verify the instance is stopped and important project artifacts are on persistent storage.
-- If waiting for user input while a paid instance is running, stop it first when safe and verify stopped status.
+- Stop an idle paid instance only within the user's shutdown authorization and after checking job/resource ownership. Waiting for user input is not permission to terminate unrelated work. Verify stopped status after an authorized stop.
 
 ## Quick Commands
 
@@ -41,7 +40,7 @@ uv run --project skills/autodl autodl --secrets-file secrets.json --server gpu0 
 uv run --project skills/autodl autodl --secrets-file secrets.json --server gpu0 gpu-stock --region-sign westDC2
 ```
 
-Resource changes:
+Resource API previews:
 
 ```bash
 uv run --project skills/autodl autodl --server gpu0 create-pro --gpu-spec-uuid 5090-p --image-uuid <image-uuid>
@@ -50,7 +49,7 @@ uv run --project skills/autodl autodl --server gpu0 power-pro stop
 uv run --project skills/autodl autodl --server gpu0 release-pro --instance-uuid <pro-instance-uuid>
 ```
 
-Real execution requires explicit flags:
+Authorized resource API execution:
 
 ```bash
 uv run --project skills/autodl autodl --server gpu0 power-pro start --confirm --yes-i-have-user-confirmation --update-secrets-ssh
@@ -58,7 +57,7 @@ uv run --project skills/autodl autodl --server gpu0 power-pro stop --confirm
 uv run --project skills/autodl autodl --server gpu0 release-pro --instance-uuid <pro-instance-uuid> --confirm --yes-i-have-user-confirmation
 ```
 
-SSH smoke tests:
+SSH smoke commands execute immediately unless `--print-command` is supplied:
 
 ```bash
 uv run --project skills/autodl autodl --server gpu0 ssh -- hostname
@@ -72,16 +71,17 @@ uv run --project skills/autodl autodl --server gpu0 ssh --print-command -- hostn
 | --- | --- | --- |
 | Know configured targets | `servers`, `server-info` | Redacted local summaries only |
 | Know account/resource state | `balance`, `list`, `status`, `snapshot`, `gpu-stock` | Read-only API calls |
-| Start paid compute | `power-pro start` | Dry-run first; real start needs user confirmation flag |
-| Stop compute | `power-pro stop` | Confirmed stop should be followed by `status` |
+| Start paid compute | `power-pro start` | Preview first; real start needs user confirmation flags |
+| Stop compute | `power-pro stop` | Authorized confirmed stop, then read back status |
 | Delete system disk | `release-pro` | Only after stopped-state and artifact checks |
-| Run project command remotely | `ssh -- <cmd>` | Project owns the command; skill owns connection safety |
-| Prepare long run | `ssh -- <project-smoke>` then project wrapper | Follow `docs/server-best-practices.md`: smoke, logs, progress, disk, artifacts |
+| Run project command remotely | `ssh -- <cmd>` | Executes by default; project owns command consequences |
+| Transfer files | `sync up`, `sync down-run` | Executes by default; preview with `--dry-run`; review delete/overwrite scope |
+| Submit or kill a run | `run submit`, `run kill` | Executes by default; require task/resource authority |
+| Prepare long run | project smoke then logged wrapper | Check logs, progress, disk and artifacts |
 
 ## Configuration
 
-Default file: `secrets.json`.
-Default server: `gpu0`.
+Default file: `secrets.json`. Default server: `gpu0`.
 Precedence: CLI option > environment variable > `servers.<server>` > `shared` > safe default.
 
 See `examples/secrets.example.json` for shape. Use placeholders in docs and chat; keep real values local and untracked.
@@ -90,10 +90,11 @@ See `examples/secrets.example.json` for shape. Use placeholders in docs and chat
 
 | Mistake | Fix |
 | --- | --- |
-| Using `.env` as the primary config | Use `secrets.json`; `.env` is only compatibility glue if a project needs it |
-| Starting without checking balance/status | Run read-only checks first |
-| Treating `release` like `stop` | Release clears system disk; stop preserves it |
-| Copying qwen-specific `just` commands to another project | Read that project's workflow and run only its own commands |
-| Printing snapshot output raw | Always use the CLI redacted output |
-| Running long work in an interactive SSH session | Use tmux or screen, or the project's logged remote-run wrapper |
-| Ignoring disk before checkpoint-heavy jobs | Check `/` and `/root/autodl-tmp`; clean stale uv cache if needed |
+| Using `.env` as the primary config | Use `secrets.json`; `.env` is compatibility glue only |
+| Starting without balance/status checks | Run read-only checks first |
+| Treating release like stop | Release clears system disk; stop preserves it |
+| Assuming every command is a dry-run | Distinguish resource APIs from SSH/sync/run execution |
+| Copying another project's commands | Read the target project's workflow |
+| Printing snapshot output raw | Use CLI redacted output |
+| Running long work in interactive SSH | Use tmux/screen or the project's logged wrapper |
+| Ignoring disk before checkpoint-heavy jobs | Check relevant filesystems and review cleanup scope |

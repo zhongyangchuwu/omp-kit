@@ -2,7 +2,7 @@
 
 This directory explains **why each meaningful omp-kit mechanism exists, what evidence supports it, what has actually been observed, and when it should be reconsidered**.
 
-It is intentionally not one large philosophy document. `../design-foundations.md` is the short project-level summary; files here are mechanism-level evidence records.
+It is intentionally not one large philosophy document. `../design-foundations.md` is the short project-level summary; files here are mechanism-level evidence records. Accepted rationale travels with the checkout and is not delegated entirely to Issues.
 
 ## Record contract
 
@@ -38,55 +38,48 @@ Use plain categories rather than a fake numeric confidence score.
 | `anecdote / hypothesis` | Plausible design input without enough evidence to treat as established. |
 | `counter-evidence` | Observation that limits, contradicts, or narrows a design claim. |
 
-Always preserve material limitations. A one-user wait trace is not a universal cost ratio. A personal bake-off is not a public benchmark. A preview branch is not a released-runtime compatibility guarantee.
+Always preserve material limitations. A one-user trace is not a universal cost ratio. A personal bake-off is not a public benchmark. A preview branch is not a released-runtime compatibility guarantee.
 
 ## Persistence rule
-
-Unresolved design work must not exist only in a chat transcript or model memory.
-
-Use this routing rule:
 
 ```text
 accepted rationale/evidence      -> docs/design/*.md
 unresolved question/experiment   -> GitHub Issue
 chronological experiment updates -> Issue comments
 implementation/review            -> Pull Request
-old phase-specific long evidence -> docs/archive/
+routine session observations     -> local session-evidence store
+material durable experiment      -> evidence/experiments/
+superseded phase chronology      -> Git and Issue/PR history
 ```
 
-If a design record names an open question that could change implementation or policy, it should link to an Issue with a closure condition. When that Issue resolves, promote the durable conclusion back into the record.
+If a record names an open question that could change implementation or policy, link its Issue. When resolved, promote the durable conclusion into current docs; preserve evidence limitations. Removing duplicate archive copies does not justify deleting the design records or compact experiments themselves.
 
 ## Current records
 
-| Record | Current status | Main persistent work |
+| Record | Current status | Persistent work |
 | --- | --- | --- |
-| [`harness-boundary.md`](harness-boundary.md) | accepted principle, recurring audit | #9 model-compensation ablation |
-| [`delegation.md`](delegation.md) | accepted routing shape, economics still evolving | #8 delegation economics; #5 worker tools; #6 integration |
-| [`verification.md`](verification.md) | accepted principle, policy refinement open | #6 parallel integration/verification |
-| [`supervision.md`](supervision.md) | accepted local policy, upstream-limited runtime | #7 OMP coordination gaps |
-| [`context-authority.md`](context-authority.md) | accepted authority/provenance policy, dogfood ongoing | #11 information-model dogfood; runtime/context changes |
+| [Harness boundary](harness-boundary.md) | accepted boundary principle; systematic audit not yet run | #9 later scaffolding ablation; #5/#8 evidence |
+| [Delegation](delegation.md) | accepted routing shape; economics evolving | #8 delegation economics; #5 worker tools |
+| [Verification](verification.md) | accepted CI/review/runtime evidence architecture | #9 later process ablation |
+| [Supervision](supervision.md) | accepted local policy; runtime semantics remain OMP-owned | #7 coordination gaps |
+| [Context authority](context-authority.md) | accepted authority/provenance policy | #11 project-state dogfood |
 
-## Coverage backlog
+## Coverage and boundaries
 
-The following topics are real and persistent but do not yet have a full design record. Their unresolved state is stored in Issues rather than model memory:
+Worker capability conclusions (#5), routing economics (#8), and project-state experience (#11) should update the relevant existing record when accepted. Split a new mechanism-level record only when it provides a useful independent explanation, not to fill an architecture checklist.
 
-- **Worker capability surface** — Issue #5. Future record should explain why each worker tool exists, what its capability cost is, and which boundaries OMP must enforce.
-- **Model routing / delegation economics** — Issue #8. Currently kept inside `delegation.md` because task shape and routing economics are tightly coupled; split only if the evidence becomes large enough.
-- **Independent parallelism / ownership** — currently part of `delegation.md` and Issue #6. Split when it develops mechanisms/evidence distinct from delegation itself.
-- **Self-hosting feedback** — implementation exists and Phase 1.5 is documented in current validation/Issue #4. Add a dedicated design record when the Main-only capability boundary is available on a supported OMP release and the mechanism can be evaluated end-to-end.
+Shared feedback (#4) is bounded qualitative evidence, not mutation authority. Routine session collection (#21) is documented in [session evidence](../session-evidence.md). These do not require duplicate dedicated records until their accepted design needs a separate explanation.
 
-Do not create empty placeholder files merely to make the list look complete. A new record should begin when there is enough real problem/evidence content to review.
+Keep useful personal Skill knowledge as maintained resources. Repository cleanup is not an experiment proving that code-taste, product design or specialized planning guidance is unnecessary. #9 owns systematic behavioral analysis and remains unfinished.
 
 ## Source discipline
 
-External articles, posts, and community projects are design inputs, not automatically project truth. Summarize the relevant claim, link the original/available source, label its evidence type, and preserve important counterarguments.
+External articles and community projects are design inputs, not automatically project truth. Label their evidence type, link the source and preserve counterarguments. Re-check source claims before strengthening them.
 
-The initial 2026-09-13 design pass drew particularly from:
+Existing inputs include:
 
 - OMP Hashline/edit contract and first-party benchmark material: https://github.com/can1357/oh-my-pi
-- `GPT-6 Astra 之后，哪些 Harness 还值得做？` mirror: https://www.iconb.cn/article/0eec42eaeef142c5df5c5e1f88864592
+- Strong-model Harness discussion: https://www.iconb.cn/article/0eec42eaeef142c5df5c5e1f88864592
 - Doug Colkitt discussion mirror: https://zamantika.com/0xShual/status/2096440481630585128
-- Maker Jackie Astra usage notes: https://www.makerjackie.com/blog/2026-09-07-gpt6-astra
+- Maker Jackie usage notes: https://www.makerjackie.com/blog/2026-09-07-gpt6-astra
 - LINUX DO wait/subagent discussion: https://linux.do/t/topic/2894195
-
-Future reviewers should re-check original sources before turning time-sensitive or quantitative external claims into stronger project assertions.

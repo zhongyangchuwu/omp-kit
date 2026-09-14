@@ -1,6 +1,6 @@
 {
   "name": "omp-kit",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "packageManager": "bun@1.3.14",
@@ -9,7 +9,9 @@
     "skills",
     "rules",
     "extensions",
-    "scripts/session_evidence.ts"
+    "scripts/session_evidence.ts",
+    "docs",
+    "evidence"
   ],
   "bin": {
     "omp-kit-evidence": "./scripts/session_evidence.ts"
@@ -29,7 +31,7 @@
   },
   "omp": {
     "name": "OMP Kit",
-    "description": "Model-neutral workers, workflow skills, session evidence, and main-session policy for Oh My Pi",
+    "description": "Model-neutral workers, maintained skills, session evidence, and main-session policy for Oh My Pi",
     "extensions": ["./extensions/feedback.ts"]
   }
 }

@@ -2,21 +2,19 @@
 
 ## Problem
 
-Agent projects can accumulate layers that look architectural but actually compensate for a weakness of one model generation: forced planning, generic reflection, repeated reviewer passes, verbose handoffs, or context workarounds. Once the underlying model/runtime improves, those layers can become pure overhead or even destroy useful information through extra handoffs.
+Agent projects can accumulate layers that compensate for one model/runtime generation: forced planning, generic reflection, repeated reviewer passes, verbose handoffs, or context workarounds. Once the underlying capability improves, those layers can become pure overhead.
 
-At the same time, some failures cannot be removed by model intelligence alone. A smarter model still cannot infer whether an external write succeeded after a lost response, recover permissions it was never granted, make an unsafe tool disappear, or prove a state transition without external evidence.
+At the same time, some failures cannot be removed by model intelligence alone. A stronger model still cannot prove an external write happened after a lost response, recover a permission it was never granted, make an unsafe capability disappear, or reconstruct authoritative state without evidence.
 
-omp-kit therefore needs a durable rule for deciding what belongs in the harness and what should be left to the model or OMP runtime.
+omp-kit therefore needs a durable rule for deciding what belongs in the Harness, what belongs in OMP, and what should be left to the model.
 
 ## Evidence
 
-### OMP Hashline: interface design can change effective model performance
+### OMP Hashline: interface design changes effective model performance
 
 **Type:** repository/runtime contract + first-party benchmark.
 
-OMP's default Hashline edit mode anchors edits to tagged snapshots and validates stale/unknown anchors instead of requiring the model to reproduce old text exactly. OMP publishes first-party benchmark text reporting Grok Code Fast 1 moving from 6.7% to 68.3% and Grok 4 Fast using 61% fewer output tokens on the same work.
-
-This does not establish that one edit protocol is optimal for every model. It establishes the more general point that some apparent `model failures` are interaction/interface failures and can change sharply when the harness contract changes.
+OMP's default Hashline edit mode anchors edits to tagged snapshots and rejects stale/unknown anchors instead of requiring the model to reproduce old text exactly. OMP publishes first-party benchmark text reporting large improvements for some models. This does not prove one edit protocol is universally optimal; it shows that apparent `model failures` can be interaction-contract failures.
 
 References:
 
@@ -27,35 +25,34 @@ References:
 
 **Type:** external analysis / hypothesis.
 
-`GPT-6 Astra 之后，哪些 Harness 还值得做？` argues that model-compensation scaffolding should be repeatedly ablated while runtime/evidence mechanisms remain durable. Its central distinction is between things model scaling can plausibly absorb (generic reasoning/planning/self-correction rituals) and things that depend on external state (permissions, idempotency, cancellation, recovery, read-back, objective acceptance).
+External strong-model discussions argue that model-compensation scaffolding should be repeatedly ablated while runtime/evidence mechanisms remain durable. This is design input rather than benchmark truth.
 
-Reference: https://www.iconb.cn/article/0eec42eaeef142c5df5c5e1f88864592
+References:
 
-### Real-user reports of over-harnessing
+- https://www.iconb.cn/article/0eec42eaeef142c5df5c5e1f88864592
+- https://www.makerjackie.com/blog/2026-09-07-gpt6-astra
 
-**Type:** community report / anecdote.
+### omp-kit dogfood
 
-Maker Jackie's Astra usage notes report moving toward a simpler plan -> implementation -> acceptance workflow and recommend re-auditing old `AGENTS.md` / Skills after model upgrades. This is useful field evidence, not a controlled benchmark.
+**Type:** repository fact + real development.
 
-Reference: https://www.makerjackie.com/blog/2026-09-07-gpt6-astra
-
-### omp-kit architecture choices
-
-**Type:** repository fact + dogfood.
-
-omp-kit already follows this boundary in several places:
+omp-kit already follows this boundary:
 
 - native OMP task/hub/session behavior is reused instead of implementing a second orchestration runtime;
 - core agents remain model-neutral instead of encoding one provider generation as architecture;
 - delegation is optional rather than mandatory;
-- the Phase 1.5 feedback capability leak is treated as an OMP runtime blocker rather than patched with prompt-only `do not write` conventions;
-- deterministic validation is separated from live runtime/provider evidence.
+- generic end-of-task reflection was removed after review showed it added recurring obligation without a demonstrated need;
+- duplicate unchanged full repository gates were removed while retaining one current integrated CI gate;
+- OMP-native session/stats APIs replaced the obsolete local raw-session parser;
+- a real OMP capability-isolation audit demonstrated that prompt-described read-only intent is not a hard runtime boundary;
+- the feedback product was later deliberately narrowed in consequence rather than withheld: `omp_kit_feedback` is a shared evidence sink that cannot authorize or perform repository/policy/Issue mutation;
+- routine session evidence now derives compact summaries from OMP public stats/trace surfaces rather than rebuilding raw telemetry ownership.
 
-See `../architecture.md`, `../VALIDATION.md`, and Issues #4/#9.
+See `../architecture.md`, `../VALIDATION.md`, completed Issues #4/#13/#14/#18/#21, and open Issues #5/#8/#9/#11.
 
 ## Interpretation
 
-The useful distinction is not `Harness vs no Harness`. It is:
+The useful distinction is not `Harness vs no Harness`:
 
 ```text
 model-compensation
@@ -74,11 +71,11 @@ evidence boundary
 A strong model creates two opposite risks:
 
 ```text
-model too weak  -> insufficient external structure -> missed steps
-model very strong -> excessive external structure -> artificial steps and overhead
+model too weak     -> insufficient external structure -> missed obligations
+model very strong  -> excessive external structure -> artificial steps/overhead
 ```
 
-The target is not maximum process. It is the minimum external structure required for reliable real-world work.
+The target is the minimum external structure required for reliable real-world work.
 
 ## Design principle
 
@@ -92,9 +89,9 @@ Before adding a workflow/agent mechanism:
 4. add omp-kit policy only when it is reusable and not already owned upstream;
 5. define how the mechanism will be evaluated and when it can be removed.
 
-## Current mechanism
+Capability decisions also consider **consequence**. A write-shaped evidence append is not equivalent to repository mutation or policy authority. Hard runtime scoping remains necessary when the consequence requires a security boundary; it is not automatically required for every bounded reporting surface.
 
-omp-kit currently uses this ownership split:
+## Current ownership
 
 ```text
 OMP owns:
@@ -103,14 +100,17 @@ OMP owns:
   model selection mechanics
   task/subagent lifecycle
   generic stats/RPC/session handling
+  raw session persistence and generic telemetry normalization
 
 omp-kit owns:
   workflow policy
   task-shaped agents
+  project-state conventions
   context/delegation/supervision policy
-  Harness assertions
-  optional integrations
-  genuinely new OMP extensions
+  Harness-specific assertions
+  bounded structured feedback
+  compact derived dogfood summaries
+  optional integrations / genuinely new extensions
 ```
 
 Reuse priority:
@@ -122,94 +122,88 @@ OMP CLI/public behavior
 -> small local fallback only for genuinely omp-kit-owned semantics
 ```
 
-The project deliberately avoids a second SessionManager, scheduler, task executor, result store, session parser, telemetry database, or profile/runtime clone.
+The project deliberately avoids a second SessionManager, scheduler, task executor, worker-result store, raw-session parser, trace database, pricing layer, or profile/runtime clone.
 
 ## Current-generation scaffolding inventory
 
-Issue #9 periodically audits rules that can consume model attention, handoffs, extra turns, or repeated tool work. The current inventory distinguishes default policy from deliberately opt-in workflow modes.
+Issue #9 owns the future **systematic** audit. The rows below record current known mechanisms and two opportunistic accepted ablations; they do not mean #9 has been completed.
 
-| Mechanism | Current classification | Current decision |
+| Mechanism | Classification | Current decision |
 | --- | --- | --- |
 | Mandatory planner/architect/reviewer chain | model-compensation | absent; keep absent |
 | Delegation for every task | model-compensation | absent; Main-direct remains valid |
-| Independent strong review after every edit | model-compensation | absent; review remains conditional on risk/ambiguity |
-| Generic end-of-task self-improvement reflection | model-compensation | removed; feedback is event-triggered by friction already observed during real work |
-| Repository-wide full verification in every worker plus again after integration | repeated evidence/process overhead | removed as default; focused worker checks + one integrated gate, with worker full gate only for a distinct purpose |
-| Rewriting long parent context into every worker brief | model-compensation / context overhead | avoid; push the execution contract and retrieve rationale/history on demand |
-| Search-first history retrieval as a hard gate | model-compensation | not a hard gate; it is relevance guidance and broader concise reads remain valid when appropriate |
-| Durable `.planning/` phase lifecycle | specialized persistence/workflow mode | retain as deliberate opt-in pending Issue #11; missing `.planning/` is not a reason to initialize it |
-| Integrated deterministic repository verification | evidence boundary | keep; GitHub Actions executes the repository-owned gate once on the accepted CI-supported tree |
-| Runtime capability enforcement | runtime boundary | keep OMP-owned; never replace with prompt conventions |
-| OMP-native session/stats telemetry | runtime/evidence boundary | keep and reuse; do not rebuild a parser/database/collector |
+| Independent strong review after every edit | model-compensation | absent; review remains consequence/ambiguity-driven |
+| Generic end-of-task self-improvement reflection | model-compensation | removed; feedback is triggered by friction already observed |
+| Full repository verification in every worker plus again after integration | repeated evidence/process overhead | removed as default; focused checks + current PR merge-ref gate |
+| Rewriting long parent context into every worker brief | context overhead | avoid; push bounded execution contract and retrieve rationale on demand |
+| Search-first history retrieval as a hard gate | model-compensation | not a hard gate; retrieve when relevant |
+| Issue-centered project state | state/context boundary | landed in PR #22; dogfood under #11 |
+| Durable `.planning/` lifecycle | specialized workflow mode | explicit optional/offline dossier mode pending #11 dogfood conclusion |
+| Integrated deterministic repository verification | evidence boundary | keep; GitHub Actions runs repository-owned gate on PR merge-ref + landed main |
+| Runtime capability enforcement | runtime boundary | keep OMP-owned; never fake security with prompt conventions |
+| Structured feedback | evidence boundary | keep bounded/shared; `feedback != authorization` |
+| OMP-native raw session/stats recording | runtime/evidence boundary | keep OMP-owned |
+| omp-kit compact session summaries | project evidence semantics | keep as derived local layer; do not copy raw transcript/trace ownership |
 
-This inventory intentionally does not delete every old reference file. A mechanism can be useful as an explicit specialized mode without belonging in the default workflow. Issue #11 owns the broader `.planning/` coexistence/replacement decision.
+## Accepted opportunistic ablations
 
-### Ablation 1: generic end-of-task reflection
+### Generic end-of-task reflection
 
-The default `omp-workflow` previously told Main to check for omp-kit friction before every repository task completed. That rule did not require an extra model call, but it imposed a generic reflection obligation even when no relevant friction had appeared.
-
-The default is now event-triggered:
+Current default:
 
 ```text
-friction observed during real work
--> load self-improvement guidance
+reusable friction observed during real work
 -> record the smallest evidence-backed finding when useful
 
 no observed friction
 -> no feedback/reflection phase
 ```
 
-This removes a recurring model-compensation obligation without weakening the durable feedback sink or the `report != self-modify` boundary. It was accepted through the normal provider-free repository gate.
+This removes a recurring model-compensation obligation without weakening the durable evidence sink.
 
-### Ablation 2: duplicate repository-wide verification
-
-The earlier verification workflow encouraged a worker to run the entire cheap deterministic suite before handoff and then required another full pass on the integrated tree. The second pass is necessary when the tree changes; the first is not automatically useful merely because CPU execution is cheap. It still costs orchestration/tool turns, produces repeated output, and can describe a transient shared tree.
+### Duplicate repository-wide verification
 
 Current default:
 
 ```text
-worker implementation/debugging
--> focused checks that answer the worker's change
+implementation/debugging
+-> focused checks relevant to the change
 
-related writes settle
--> one full deterministic gate on the accepted integrated tree
+settled candidate
+-> one deterministic PR merge-ref gate
+-> post-landing main gate for the distinct landed-tree question
 ```
 
-A worker full gate remains available for a distinct question: isolated pre-merge safety, cross-slice diagnosis, explicit Main request, CI diagnosis, or an isolated worker-owned final tree whose result can be reused as acceptance evidence.
-
-This preserves the evidence boundary while removing duplicate collection of the same evidence. The split-core sequence supplied real dogfood: unchanged handoffs did not justify repeated full runs, while later tree changes correctly made earlier evidence stale. Issue #18 then moved the routine integrated gate to GitHub Actions so repository mechanical acceptance no longer requires a local-agent handoff.
+A local/worker full gate remains available for a distinct purpose: isolated pre-merge safety, cross-slice diagnosis, explicit request, CI diagnosis, or a genuinely local/runtime claim.
 
 ## Evaluation / observed effect
 
-The strongest current evidence is architectural and real-work based rather than a requirement for a controlled A/B on every policy edit:
+Current real-work evidence includes:
 
-- Phase 1 moved the project toward native OMP plugin/resources instead of expanding the legacy custom Harness runtime.
-- Phase 1.5 exposed a real capability-boundary problem. The project stopped at the upstream boundary instead of disguising it with a local heuristic.
-- The current workflow has only three routing shapes (Main direct, one bounded worker, parallel independent workers) rather than a mandatory planner/architect/reviewer chain.
-- The obsolete local OMP session parser was removed after OMP-native telemetry proved sufficient for the exercised use case.
-- Generic end-of-task self-improvement reflection is no longer mandatory; feedback is a by-product of observed friction rather than a workflow phase.
-- Repository-wide deterministic verification remains an acceptance boundary, but repeated equivalent full-gate runs are no longer a default worker ritual.
-- GitHub Actions now executes the settled-tree deterministic gate automatically; local execution is reserved for focused debugging or genuinely local/runtime-specific claims.
+- the project moved toward OMP-native plugin/resources instead of expanding a custom runtime;
+- the capability audit exposed a real distinction between role intent and runtime enforcement;
+- shared feedback runtime acceptance on OMP 18.1.21 showed bounded Main/worker reporting can ship without treating it as policy authority;
+- the obsolete local raw-session parser was removed after OMP-native observability proved sufficient;
+- the v0 session-evidence collector now supplies routine model/tool/delegation/timing observations for future #5/#8/#9 decisions;
+- deterministic repository acceptance moved to GitHub Actions while released-runtime claims remain separate.
 
-Recurring dogfood should reveal whether these simplifications preserve useful findings while reducing workflow/tool overhead. #5/#8 telemetry can supply natural evidence without a separate synthetic experiment.
+The next phase is measured dogfood, not more speculative architecture. #5/#8/#11 should produce natural evidence; #9 reactivates when enough evidence exists for systematic subtraction.
 
 ## Counter-evidence and limits
 
-- Stronger models can become more likely to skip steps they consider obvious. Some harness constraints remain useful when they enforce obligations or external evidence rather than compensate for weak reasoning.
-- A mechanism that looks like model compensation may also encode valuable organizational or safety semantics. Remove the recurring obligation, not the underlying evidence boundary, unless evidence supports that stronger change.
-- Removing generic reflection could reduce the rate at which weak but recurring friction is noticed. Revisit if real dogfood stops surfacing issues that were previously caught reliably.
-- A worker full gate can still be the cheapest useful evidence before a risky isolated merge or while diagnosing a broad breakage. The policy removes automatic duplication, not the ability to run it.
-- Reducing test repetition must not become permission to ignore a failed or missing final integrated gate merely to save tokens/time.
-- CI cannot replace an installed-runtime/profile smoke when the claim actually depends on local OMP state.
-- External strong-model discussion is design input, not benchmark truth.
+- Stronger models can skip obligations they consider obvious; some external structure remains useful when it enforces state/evidence rather than weak-model reasoning rituals.
+- A mechanism that looks like model compensation may encode organizational or safety semantics. Remove the recurring obligation, not the underlying evidence boundary, unless evidence supports that stronger change.
+- Shared feedback is safe only because its consequences are deliberately bounded. This conclusion must not be generalized to arbitrary worker write/mutation capabilities.
+- OMP 18.1.21 still lacks some desired per-agent capability/read-only contracts; future upstream hardening may justify narrower surfaces.
+- The session-evidence v1 provider field is sampled, not an exact per-request routing ledger.
+- CI cannot replace an installed-runtime/profile smoke when the claim depends on local OMP state.
+- External strong-model discussion remains design input rather than benchmark truth.
 
 ## Current status
 
-**Accepted project principle; current-generation inventory established; recurring evaluation remains open.**
+**Accepted boundary principle; two opportunistic ablations accepted; systematic #9 audit not yet performed.**
 
-Ablations 1 and 2 are accepted. Issue #18 completed routine CI execution of the integrated deterministic gate. Issue #9 remains open as a recurring audit for future model/runtime changes rather than because either current ablation is awaiting verification.
-
-Do not create synthetic experiments solely to fill the inventory; prefer real omp-kit work and OMP-native telemetry.
+Issue #9 remains inactive until routine session evidence is sufficient to inventory and evaluate current model-compensation scaffolding, or until repeated friction makes a specific rule decision-relevant.
 
 ## Related implementation / Issues
 
@@ -221,13 +215,13 @@ Do not create synthetic experiments solely to fill the inventory; prefer real om
 - `../../skills/omp-workflow/SKILL.md`
 - `../../skills/omp-workflow/references/execution.md`
 - `../../skills/omp-workflow/references/self-improvement.md`
-- Issue #4 — Main-only feedback capability boundary
+- completed Issue #4 — shared feedback acceptance and historical capability-boundary evidence
 - Issue #5 — natural worker-tool observations
 - Issue #8 — delegation economics
-- Issue #9 — recurring model-compensation/process ablation
-- Issue #10 — completed context authority/provenance design
-- Issue #11 — `.planning/` / issue-centered workflow coexistence
-- Issue #18 — completed GitHub Actions deterministic gate
+- Issue #9 — systematic model-compensation/process ablation
+- completed Issue #10 — context authority/provenance design
+- Issue #11 — project-state / `.planning/` dogfood
+- completed Issue #21 — routine session evidence product
 
 ## Revisit triggers
 
@@ -236,7 +230,8 @@ Re-audit this record when:
 - a major model generation materially changes planning, tool use, context recovery, or instruction following;
 - OMP introduces a native capability that duplicates omp-kit policy/runtime logic;
 - dogfood shows a rule adds latency/tokens/handoffs without new evidence;
-- repeated failures show the current harness is under-constraining a mechanical or external-state obligation;
+- repeated failures show the current Harness under-constrains a mechanical or external-state obligation;
 - event-triggered feedback misses reusable friction that the previous default reflection reliably surfaced;
-- focused worker checks repeatedly miss failures that an early worker full gate would have caught materially sooner;
-- CI becomes materially unreliable or diverges from repository-declared toolchain semantics.
+- focused checks repeatedly miss failures an earlier broad gate would materially catch;
+- stronger OMP capability scoping changes the consequence/benefit tradeoff for worker tools;
+- routine session evidence proves insufficient for #5/#8/#9 decisions.

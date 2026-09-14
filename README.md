@@ -1,179 +1,82 @@
 # OMP Kit
 
-A personal Oh My Pi harness with model-neutral custom agents, workflow skills, a
-native plugin distribution path, and a legacy portable installer.
+OMP Kit combines a model-neutral workflow for Oh My Pi (OMP) with a personally maintained Skill library and the design knowledge behind it. The repository is intended for people as well as agents: accepted decisions and compact supporting evidence travel with the code.
 
-## Native core plugin trial
+## What is included
 
-Normal development currently runs on **OMP 18.1.20**. The last isolated released-runtime
-native plugin smoke retained for this development line was performed on OMP 18.1.19;
-18.1.20 has since been audited for the current source/documented runtime contracts, but
-that does not imply a new feedback-capability closure smoke. From a clone of this
-repository:
+- Four task-shaped agents: `luna-code`, `luna-deep`, `luna-doc`, and `sol-review`.
+- Fifteen maintained Skills covering workflow, code taste, product design, debugging, research, testing, verification, language tooling, Skill authoring, specialized planning, AutoDL and document parsing.
+- A Main-session workflow rule, bounded shared feedback, and a local session-evidence collector.
+- Current usage documentation, mechanism-level design records, and compact experiment evidence.
+
+Core workflow, maintained experience Skills, and service integrations are responsibility categories, not a ranking of value or a requirement to split repositories. Skills such as `code-taste` and `omp-design` preserve the maintainer's practical experience even when they are useful outside omp-kit. See [architecture](docs/architecture.md).
+
+## Install from a checkout
+
+Use an existing released OMP installation and Bun matching `package.json`:
 
 ```sh
+git clone https://github.com/zhongyangchuwu/omp-kit.git
+cd omp-kit
+bun install --frozen-lockfile
 omp plugin link .
 omp plugin list
 ```
 
-The plugin exposes the existing `luna-code`, `luna-deep`, `luna-doc`, and `sol-review`
-agents, active skills, and a Main-only workflow rule. The agents are model-neutral:
-use `/agents` to set a native per-agent override, or let them inherit the normal
-task/session model. This path does not install CPA, copy `config.yml`/`models.yml`, or
-change ordinary OMP preferences.
-
-To remove the linked checkout:
+Restart the OMP session after changing installed resources. Linking a plugin does not configure your providers or replace `config.yml`, `models.yml`, or MCP settings. All maintained Skills remain in the existing native discovery path; service-specific Skills run only for their relevant requests and do not authorize cloud spending or document uploads by being installed.
 
 ```sh
 omp plugin uninstall omp-kit
 ```
 
-## Legacy/compatibility installer
+The retired Harness v2 config-copy installer is no longer a supported install path. Existing machine files are not removed automatically. Read [installation and migration](docs/omp-installation.md) before changing a previously managed setup. A skill-only linking helper remains available for deliberate library use; do not duplicate native plugin discovery with it.
 
-The existing Python installer remains available for Harness v2 migration and machines
-that intentionally want the managed configuration snapshot. It requires **OMP and uv on
-PATH**, a reachable CPA service/account, and a CPA key available to OMP. The installer
-does not provision subscriptions, deploy CPA, transfer OAuth databases, install
-browsers/LSPs or authenticate GitHub for you. `uv run --script` manages the installer's
-Python and PyYAML dependency separately from the repository's development environment.
+## Normal work
 
-Clone this repository using your normal GitHub access, then:
+Main chooses direct execution, one bounded delegate, or independent parallel delegates according to the work. Delegation is not mandatory. Workers have scoped responsibilities; Main owns product decisions, integration and final acceptance.
 
-```sh
-# Linux / macOS / WSL; installs into OMP's native default agent root
-bash install.sh --dry-run
-bash install.sh
-```
-
-The native default is normally `~/.omp/agent`. If `PI_CONFIG_DIR` is set, the
-installer follows OMP's home-relative config-root semantics and uses
-`~/<PI_CONFIG_DIR>/agent` instead.
-
-For a full native OMP named profile:
-
-```sh
-bash install.sh --omp-profile harness-v2-test --dry-run
-bash install.sh --omp-profile harness-v2-test
-omp --profile harness-v2-test
-```
-
-```powershell
-# Native Windows; no symlink privileges required
-.\install.ps1 --dry-run
-.\install.ps1
-```
-
-The same entry point works everywhere, from any working directory:
-
-```sh
-uv run --script /path/to/omp-kit/scripts/install_harness.py
-```
-
-Supply `CPA_API_KEY` in the environment used to launch OMP or in the selected
-`<agent-root>/.env` (for example `~/.omp/agent/.env` or a native profile root).
-See `config/secrets.env.example`; never put real keys in Git. `DEEPSEEK_API_KEY`
-is optional unless you assign a DeepSeek role.
-
-For an existing setup, preview the explicitly authorized migration:
-
-```sh
-bash install.sh --force --dry-run
-bash install.sh --force
-```
-
-All replaced objects are backed up before replacement. Close active OMP sessions
-first; the installer does not lock OMP's own configuration writer.
-
-## What is installed
+For multi-session projects, the default is:
 
 ```text
-config/config.yml             -> <agent-root>/config.yml
-config/models.yml             -> <agent-root>/models.yml
-config/APPEND_SYSTEM.md        -> <agent-root>/APPEND_SYSTEM.md
-agents/*.md                   -> <agent-root>/agents/*.md
-registry-selected active skills -> <agent-root>/skills/<name>/
+actual repository state
+-> current docs and accepted design
+-> WORKING_STATE navigation
+-> owning Issue and active PR
 ```
 
-Default installation **copies** resources. Checkout changes do not silently alter
-running workers, and native Windows does not require symlinks. Drafts, references,
-credentials, caches and unrelated runtime resources are not imported.
+Accepted knowledge belongs in the checkout, not only in GitHub discussion. The specialized `.planning/` Skill remains available for deliberately selected phase/offline dossiers; it is not initialized merely because work spans sessions. See [workflows](docs/workflows.md) and [design foundations](docs/design-foundations.md).
 
-The manifest and private backups live in `<agent-root>/.omp-kit/`. A normal update
-replaces unchanged managed resources, but refuses unknown collisions and local
-edits. `--force` explicitly adopts/replaces conflicts with backups. Removed managed
-resources are retired only from the previous manifest, never by sweeping the directory.
+## Feedback and session evidence
 
-## Machine differences and recovery
+`omp_kit_feedback` records bounded observations encountered during real work. Main and workers may report; recording feedback does not authorize repository, configuration, policy or Issue mutation. There is no mandatory end-of-task reflection.
+
+OMP saves the raw sessions. Run the incremental collector after normal work, manually or through an operator-owned schedule:
 
 ```sh
-bash install.sh --config-profile headless       # kit overlay: ASCII UI, no browser/relay
-bash install.sh --config-profile legacy-context # kit overlay: opt out of experimental notes
-bash install.sh --config-profile default        # clear stored overlay selection
-bash install.sh --profile headless              # compatibility alias for --config-profile
-bash install.sh --omp-profile harness-v2-test   # native OMP profile root
-bash install.sh --omp-profile default           # explicitly select native default root
-bash install.sh --cpa-url https://my-host.example/v1
-bash install.sh --doctor                        # offline readiness/drift check
-bash install.sh --rollback                      # undo latest install, preserving newer work
+bun run evidence:collect -- --folder /absolute/path/to/project
+bun run evidence:report -- --folder /absolute/path/to/project
+bun run evidence:report -- --folder /absolute/path/to/project --json
 ```
 
-`--config-profile`/`--profile` are omp-kit config overlays. `--omp-profile` is the
-native OMP profile selector and is distinct from them. OMP profile names follow OMP's
-own grammar, including `.` and `_`; the special value `default` selects the native
-default root.
+Collection is not a new model turn or an automatically installed daemon. Derived summaries stay outside Git. Selected material decision evidence may be committed under `evidence/experiments/`; full transcripts and raw telemetry do not belong there.
 
-If `OMP_PROFILE` or legacy `PI_PROFILE` selects a non-default profile and no explicit
-`--omp-profile`/`--agent-root` is given, the installer refuses to guess. Use
-`--omp-profile <name>` to target that profile or `--omp-profile default` to make the
-default-root choice explicit.
-
-Full custom-agent discovery requires OMP's native default/profile topology. An
-arbitrary `PI_CODING_AGENT_DIR` can relocate OMP state but is not treated as a full
-Harness v2 root in the historically validated 18.1.18 installer path. Local YAML
-overrides live in `<agent-root>/.omp-kit/local/`; templates are in
-`config/local.example/`. Mappings merge, arrays replace, and secret values belong in
-the environment or `.env`, not those YAML files.
-
-## Layout and policies
-
-```text
-package.json     OMP plugin package metadata and published resource roots
-agents/          Model-neutral custom task agents with bounded tool surfaces
-skills/          Maintained active skills; registry.yaml remains generated
-rules/           Main-session workflow entry point for native plugin discovery
-config/          Legacy managed settings, profiles and non-installed references
-drafts/          Inactive work before promotion
-scripts/         Legacy installer, static checks and maintenance tools
-docs/            Current docs plus clearly separated historical archives
-tests/           Repository, plugin-contract and isolated installer tests
-```
-
-Main owns intent, routing, integration, verification judgment, final reporting, and
-self-hosting feedback judgment. `omp-workflow` is the default Main operating workflow
-for repository work; it decides whether Main should execute directly, delegate one
-bounded task, or run independent delegated work in parallel. Concrete Sol/Luna routing
-remains user-owned model configuration rather than a plugin contract.
-
-For active development, start with the [documentation map](docs/README.md) and
-[shared working state](docs/WORKING_STATE.md). Current design is documented in
-[architecture](docs/architecture.md), [workflows](docs/workflows.md),
-[configuration](docs/omp-configuration.md), and [validation](docs/VALIDATION.md).
-The [installation guide](docs/omp-installation.md) documents the supported legacy/
-compatibility installer. Completed Harness v2 and native-foundation phase records live
-under `docs/archive/` and are historical evidence rather than current handoffs.
+OMP 18.1.21 has claim-specific Main/worker feedback and collector runtime evidence. Folder filtering uses public trace `cwd` to handle the stats storage-key mismatch. Provider identity is sampled per track/model, not an exact request-routing ledger. See [session evidence](docs/session-evidence.md) and [validation](docs/VALIDATION.md) for limits.
 
 ## Maintenance
 
+Python/uv remain necessary for the maintained Skill-library tooling and tests; Bun owns the TypeScript runtime/test surface. AutoDL retains its own dependency environment.
+
 ```sh
-just verify                     # combined deterministic repository gate
-just install                    # equivalent portable installer
-just validate-harness           # static config and agent/skill references
-just doctor
-just build-registry             # only after skill metadata changes
-just check-registry
-just validate-registry
-just test                       # combined repository tests
+bun install --frozen-lockfile
+just verify
 ```
 
-`just` is optional for installation. Skill-local tools may need their own dependencies.
-Passing static checks does not establish provider connectivity or live OMP compatibility.
+CI runs the same provider-free gate on PR merge refs and on `main` after landing. It covers repository/native-plugin consistency, Skill support files, metadata/registry checks, AutoDL mocked tests, TypeScript typecheck/tests, changed-line hygiene and tracked-file drift. It does not run paid providers, cloud operations or live OMP acceptance scenarios.
+
+Do not delete a maintained Skill, accepted design, or compact experiment simply because it is not needed for the smallest runtime. Remove confirmed obsolete material, or make a targeted correction supported by a concrete defect.
+
+## Documentation
+
+Start with the [documentation map](docs/README.md). It separates current usage, design rationale, evidence and maintenance. [WORKING_STATE](docs/WORKING_STATE.md) is only the current work index; Issues own unfinished problems and PRs own implementation/review. Closed Issues mean completed acceptance criteria, not merely deferred work.
+
+`0.1.0` is the release candidate version. The package remains private; a green candidate is not a published release.

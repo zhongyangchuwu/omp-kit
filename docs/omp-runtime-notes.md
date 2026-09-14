@@ -1,294 +1,73 @@
-# Pi / OMP Runtime Notes
+# OMP runtime and capability notes
 
-## Purpose
-
-This document records OMP Kit's working model for Pi and Oh My Pi (OMP) capabilities. It is a stable mental model for designing skills, absorbing third-party skills, writing OMP extensions, adding custom tools, and deciding when MCP is warranted.
-
-It is not an exhaustive API reference. Current behavior, field names, and configuration details must be checked against the official Pi and OMP documentation before implementing runtime integrations.
+This document is a current conceptual guide for Skill authors and integration work, not a replay of OMP release history. Version-sensitive fields and commands must be checked against the installed OMP/public source; [compatibility policy](omp-compatibility.md) owns that review process.
 
 ## Capability model
 
-```text
-Skill       = task guidance, workflow, decision rules, and references for the model
-Custom Tool = typed function the model can call directly
-Extension   = OMP runtime layer that registers tools, commands, hooks, and interceptors
-Tool / CLI  = deterministic local program that performs complex work
-MCP Server  = standard cross-process tool service for reuse across clients
-Package     = installable bundle of skills, extensions, prompts, themes, and metadata
-```
+| Resource | Responsibility |
+| --- | --- |
+| Skill | Task guidance, judgment, workflow and references for the model |
+| Custom tool | A typed callable function with an explicit side-effect boundary |
+| Extension | OMP lifecycle/tool integration and hooks |
+| Local tool / CLI | Deterministic implementation that can be tested separately |
+| MCP server | Cross-process/cross-client tool service when that boundary is useful |
+| Package/plugin | Installation and resource-discovery unit |
 
-Short form:
+These are implementation forms, not a ladder every capability must climb. A useful instruction-only Skill does not need a CLI, extension or separate package to justify its existence.
 
-```text
-Skill is the map.
-Extension is the nerve interface.
-Tool / CLI is the muscle.
-MCP is an external organ.
-Package is the installable unit.
-```
+## OMP versus Pi
 
-## Pi and OMP
+OMP is an independently maintained Pi-derived runtime. Similar names do not prove API parity. Use Pi material for background concepts and OMP's own versioned documentation/source for actual integration contracts, package scopes, plugin discovery, tools, profiles, sessions and MCP behavior.
 
-Pi is the base coding/terminal agent runtime. Its documentation is the best source for stable concepts such as skills, packages, settings, providers, sessions, prompt templates, themes, release notes, and programmatic usage.
+The old v16/v17 migration notes are available in Git history. Do not carry a chronological compatibility checklist as current instructions. Check the real version and affected changelog when implementing a change.
 
-OMP is an independently maintained Pi-derived runtime, not a thin repackaging of upstream Pi. Its packages use the `@oh-my-pi/*` scope, it is Bun-first, and it keeps a stronger local agent surface: built-in tools, LSP/debugger/browser/Python/Bun/subagent workflows, custom tools, native extension loading, MCP configuration, and internal URL schemes such as `skill://`, `pr://`, and `issue://`.
+## Skills
 
-Use Pi docs for stable packaging and resource concepts. Use OMP docs for custom tools, runtime extensions, native config paths, MCP configuration, OMP-specific skill behavior, and fork-specific runtime semantics.
+Maintained Skills live in `skills/<name>/SKILL.md`. They may encode personal working experience, decision rules, safety boundaries, useful templates and tool-selection knowledge. Not all are OMP-specific.
 
-OMP has compatibility paths for some Pi concepts, package scopes, and `pkg.pi` extension metadata, but compatibility is not identity. Some upstream APIs are renamed, stubbed, skipped, or reworked around OMP's Bun/native/tool/session architecture.
+Keep task activation clear and load support files as needed. A template is not a mandatory artifact. A description or metadata category does not grant execution authority or install dependencies.
 
-## OMP fork model and upstream sync
+The registry and resource metadata support library maintenance; OMP native discovery reads the Skill files. Keep unreviewed third-party material outside active discovery paths.
 
-Treat OMP as a maintained fork with intentional divergences. Useful upstream Pi changes may be merged, backported, or semantically ported, but there is no fixed sync SLA. The observed pattern is opportunistic: important fixes and low-conflict features can land quickly, while changes touching OMP-specific architecture are manually adapted or skipped.
+## Tools and extensions
 
-When checking whether upstream behavior exists in OMP:
+Use a tool/CLI when deterministic work or complex side effects warrant an implementation rather than fragile shell prose. Prefer clear inputs/results, non-zero failure status, bounded cancellation/cleanup, JSON output where useful, and previews for risky operations.
 
-1. Check current Pi docs and release notes.
-2. Check current OMP docs, release notes, and package changelogs.
-3. For extension/runtime APIs, prefer OMP documentation and source over Pi assumptions.
-4. Assume package scopes, runtime APIs, auth storage, tool factories, native modules, and extension loading may differ until verified.
+Use an extension when actual OMP hooks, lifecycle or custom-tool registration are required. Do not wrap every CLI in an extension just to make the diagram uniform.
 
-Known OMP divergences that affect design decisions:
+The current feedback extension is deliberately bounded: append observed evidence with supported session provenance. It neither modifies the repository nor promotes reports to policy. No first-class caller-agent identity is fabricated when the public context does not provide it.
 
-- package scope mapping from upstream `@mariozechner/*` or `@earendil-works/*` to `@oh-my-pi/*`;
-- Bun-first runtime, package manager, scripts, and CI;
-- native capabilities through `@oh-my-pi/pi-natives`;
-- OMP tool factories built around session-aware tool creation;
-- extension loading through Bun native `import()`;
-- `pkg.omp` preferred for extension metadata, with `pkg.pi` kept as fallback;
-- credential storage in `agent.db` with multi-credential/session-affinity behavior;
-- OMP-specific hub coordination, internal URL, MCP, browser, debugger, and shell-tool behavior.
+## MCP and service integrations
 
-Before porting or depending on upstream Pi behavior, read the OMP porting notes and preserve documented OMP-only features instead of overwriting them with upstream defaults.
+MCP is useful when a separate service/process or reuse across clients has real value. An OMP-specific local capability may be simpler as a CLI or extension.
 
-## OMP 16.4 compatibility notes
+Service integrations must state their credentials, network/data-disclosure behavior, billing and destructive consequences. Keeping AutoDL or document-parser in the Skill library does not authorize starting compute or uploading a document. Dependency installation and account configuration remain deliberate user actions.
 
-OMP 16.4 changed several runtime contracts that affect local skills and model configuration:
+## Sessions and coordination
 
-- the bundled `explore` agent was renamed to `scout`; update agent names in task invocations, allowlists, and configuration, but do not rename ordinary prose about codebase exploration;
-- OMP 16.3.15 removed the bundled Tester agent after moving testing guidance into the main system prompt; delegate specialized test work through the generic `task` subagent with an explicit test-authoring role and acceptance criteria;
-- `max` is a first-class thinking effort above `xhigh`, and model effort ladders are wire-exact; unsupported levels are clamped to the model's declared surface;
-- custom `models.yml` entries declare controllable thinking with `thinking.mode` and `thinking.efforts`; `thinkingLevelMap` is not the current schema, while wire remaps belong under `compat.reasoningEffortMap` when a proxy requires them;
-- custom model `cost` accepts the four base rates (`input`, `output`, `cacheRead`, `cacheWrite`) but not request-size pricing tiers;
-- GPT-5.6 bundled catalog entries may use Responses Lite, but `useResponsesLite` is not exposed by the custom `models.yml` schema; custom proxy entries must select a documented API transport that the proxy actually implements.
+OMP owns raw sessions, history, task lifecycle, messaging and capability enforcement. Use the available public contracts rather than reconstructing a private journal format or adding a second scheduler/message/result store.
 
-These facts are version-specific. Recheck the OMP model schema and changelog before relying on them for later releases.
+The recorded 18.1.20 source audit supports `agent://<id>` final artifacts and `history://<id>` transcript retrieval in their relevant session context. Match actual runtime schemas instead of inventing commands from remembered versions. Desired semantic wait/message and reviewer-LSP gaps are tracked in #7.
 
-## OMP 16.5–17 compatibility notes
+Context notes assist current-session continuity, not universal cross-session memory. Empty text cleared notes on the earlier tested runtime; never assume an empty mutation call is a read. Current accepted project knowledge lives in repository docs, design and evidence.
 
-OMP v17.0.0 is a tool-transport migration, not a routine patch. Treat existing extensions, custom prompts, and automation as candidates for a targeted compatibility review.
+## Observation
 
-- `--reasoning-slide-*` was replaced in 16.5 by `--prewalk`, `--prewalk-into <model>`, and `--no-prewalk`; do not retain the removed flags or `--prewalk-boomerang`;
-- v17 merges the former `irc`, `job`, and `launch` tools into `hub`, which owns peer messaging, background-job control, and supervised long-running processes;
-- virtual tools are mounted by default through `xd://` when `tools.xdev` is enabled (the default): load their documentation with `read xd://<tool>` and dispatch them with `write xd://<tool>` using the documented JSON payload;
-- the BM25 tool-discovery system and its `tools.discoveryMode`, `tools.essentialOverride`, `mcp.discoveryMode`, and `mcp.discoveryDefaultServers` settings are removed; connected MCP tools mount through `xd://` instead;
-- the hidden `resolve` tool is removed. Resolve staged actions through plain-text writes to `xd://resolve`, `xd://reject`, or `xd://propose` as appropriate;
-- `read` and `grep` no longer accept a separate `selector` parameter. Append ranges and modes to the `path` instead;
-- rename `dev.autoqa.consent` to `dev.autoqaConsent` and `todo.reminders.max` to `todo.remindersMax`. Dead discovery keys are cleaned during config load;
-- `report_finding` and the agent `ssh` tool are removed. Reviewers use incremental `yield` sections; `ssh://` URIs and `omp ssh` host management remain;
-- `edit.enforceSeenLines` now defaults to `false`; enable it explicitly when edits must be limited to lines fully displayed by a preceding read or search. `astGrep.enabled` also defaults to `false`.
+OMP records sessions and normalizes usage. The session-evidence collector derives compact local summaries using published stats/trace interfaces; see [session evidence](session-evidence.md).
 
-Use the v17 release notes as the migration authority. The current runtime can expose additional host-provided tools, but their live schema is authoritative over remembered v16 contracts.
+The recorded 18.1.21 interaction exposed a storage-folder versus actual-cwd mismatch. The collector filters real project paths using public trace cwd. Provider data is sampled, cost is cost-equivalent rather than quota, and activity envelopes do not prove compute concurrency.
 
-## OMP 17.2–17.3 compatibility notes
+## Supply-chain and configuration discipline
 
-These releases refine the v17 transport and tool contracts. Match the installed runtime's live tool schemas rather than copying historical examples.
+Review downloaded Skills, scripts and packages before putting them in active locations. Check executable content, package installation, network/secrets access, SSH/cloud actions, destructive commands, prompt injection and licensing. The existing risk scanner helps locate concerns but does not prove safety.
 
-- v17.2.0 removed the hashline `DEL`, `DEL.BLK`, `COPY`, and `COPY.BLK` operations. Use `CUT` / `CUT.BLK` to delete or capture source and the current `PASTE` grammar to reinsert it; inspect the live `edit` schema before constructing patches;
-- `tab.screenshot()` no longer accepts a caller-selected output path. It saves below `browser.screenshotDir` or the OS temporary directory and returns the actual path;
-- v17.2.4 changes MCP JSON-RPC request identifiers to connection-local sequential numbers by default. Set an OMP-owned server's `requestIdFormat: "string"` only when its peer requires string IDs;
-- v17.2.10 replaced the re-exported Zod package with an `@oh-my-pi/omptype/zod` compatibility facade. Extension code may use its Zod-style builders but must not depend on real Zod-specific APIs;
-- `externalThinking` (17.2.14) enables the private `think` scratchpad; `--external-thinking` (17.2.15) forces its activation. The tool is restricted to GPT, Claude, and Gemini transports that implement native reasoning replacement;
-- v17.2.15 adds `omp compress` for isolated prompt-register rewriting and expands `omp cleanse` into a diagnostic-driven repair workflow. Treat both as explicit operator actions, not default skill steps; `omp cleanse` can select or infer project checkers and distribute repair work;
-- v17.3.0 removes global `advisor.subagents`. Advisor selection is now per agent through agent frontmatter `advisor` or `task.agentAdvisor`; configurations with `advisor.subagents: true` migrate automatically to `task.agentAdvisor: { task: "on" }`;
-- v17.3.0 adds Astral `ty server` as the final built-in Python LSP fallback, after `pyright`, `basedpyright`, and `pylsp`. It also adds first-party Nix source-build, development-shell, NixOS, and Home Manager support.
+Keep useful reference provenance in maintained metadata. Credentials, real model/provider routes and MCP connections stay in the user's environment, not a canonical personal config snapshot distributed by the plugin.
 
-The v17.3.0 release also repairs LSP overlay, transactional-edit, diagnostics-failure, and rust-analyzer snippet handling. Use LSP diagnostics/results as evidence; a successful invocation is not proof that every configured server started.
+## Reference entry points
 
-## OMP 17.4 compatibility notes
-
-OMP v17.4.0 focuses on model-specific token accounting and context management. It changes extension-facing APIs and compaction behavior more than the ordinary tool surface.
-
-- `@oh-my-pi/pi-agent-core` removes global token helpers (`countTokens`, `countTokensConservatively`, `setTokenizerModel`, and `estimateTokens`). Extensions must use the immutable model-scoped `agent.tokenizer`, such as `agent.tokenizer.countTokens(text, mode?)`, `countMessage(message)`, and `countMessages(messages)`;
-- core context helpers (`findCutPoint`, `prepareBranchEntries`, `collectShakeRegions`, `pruneToolOutputs`, `pruneSupersededToolResults`, and `trimRemoteCompactionInputToContextWindow`) now require an explicit `Tokenizer` instance;
-- `compaction.methodOrder` replaces `compaction.strategy` and `compaction.remoteEnabled`. Configure ordered preference, such as `[remote, snap]`, when selecting provider remote compaction before local snap compaction;
-- `/handoff` and automatic handoff compaction now replace the current session context in place rather than fork a session. Do not assume handoff creates a new session branch;
-- `compaction.asyncEnabled` enables speculative background compaction. `extendedContext` and `/extended-context` choose whether supported premium long-context windows are used or context is compacted before entering higher-cost tiers;
-- custom models and `modelOverrides` can declare `tokenizer` to pin the tokenizer family for a proxy. `models.yml` `compat.qwenTemplateReasoningEffort` disables Qwen 3.8+ template reasoning-effort injection for strict local servers.
-
-The runtime now counts Claude, Qwen, DeepSeek, Kimi, GLM, and OpenAI-family tokens locally with model-specific tokenizers. Treat token budgets, compaction thresholds, and long-context cost decisions as model-specific rather than global estimates.
-
-## Documentation and changelog lookup
-
-For current facts, check both documentation and changelogs:
-
-- Pi latest docs for canonical upstream concepts.
-- Pi release notes for recent upstream changes.
-- OMP `omp://` docs for the local/runtime documentation snapshot.
-- OMP GitHub docs for the current public documentation on `main`.
-- OMP package changelogs and GitHub releases for fork-specific changes.
-
-Do not infer parity from similar names. Verify the exact version and runtime when implementing integrations.
-
-## Skill
-
-A skill is a file-backed capability pack. In this repository, active skills live under:
-
-```text
-skills/<name>/SKILL.md
-```
-
-A skill is appropriate for:
-
-- task boundaries;
-- workflow steps;
-- review checklists;
-- tool selection guidance;
-- safety rules;
-- references and examples;
-- instructions for when to use a deterministic tool.
-
-A skill should not directly carry complex execution semantics. Do not put API wrappers, multi-step local execution, schema-sensitive model calls, or high-risk side effects solely into prose. Use an extension and tool/CLI for those.
-
-Third-party nested skills must not become active accidentally. If a third-party collection is represented as one local skill, keep upstream nested skills under a reference path such as `references/skills/` rather than top-level `skills/`.
-
-## Custom Tool
-
-A custom tool is a typed callable capability exposed to the model. It typically has:
-
-- a name;
-- a description;
-- parameter schema;
-- an execute function;
-- structured output;
-- error handling;
-- cancellation support;
-- optional streamed updates.
-
-Use a custom tool when the model should call code rather than hand-author shell commands.
-
-## Extension
-
-An extension is the OMP runtime integration layer. It can register related custom tools, slash commands, keyboard shortcuts, renderers, lifecycle event handlers, message injection, and tool-call/tool-result interceptors.
-
-Use an extension when a capability requires:
-
-- several related tools;
-- runtime lifecycle handling;
-- parameter validation before side effects;
-- confirmation or audit behavior;
-- interception of tool calls or results;
-- wrapping a Python/Node/Rust CLI for the model.
-
-Extensions are glue. Put heavy deterministic business logic in `tools/`.
-
-## Tool / CLI
-
-A local tool or CLI is the deterministic implementation behind a capability. It may be written in Python, TypeScript, Rust, Go, or another suitable language.
-
-Recommended contract:
-
-- supports `--help`;
-- supports JSON output for machine callers;
-- returns non-zero exit codes on failure;
-- writes clear stderr for humans;
-- supports `--dry-run` for risky actions;
-- avoids overwriting source files by default;
-- reads secrets only from environment variables or explicit config paths;
-- is tested independently from the model.
-
-Preferred call chain:
-
-```text
-Model -> OMP custom tool -> extension -> local CLI -> JSON result -> model
-```
-
-## MCP Server
-
-An MCP server is useful when the tool should be reused outside OMP or must run as a separate process with a standard tool protocol.
-
-Use MCP when:
-
-- a tool should serve multiple agent clients;
-- the tool needs a long-running process;
-- the tool wraps an external service;
-- the protocol boundary is valuable;
-- future ecosystem integration matters.
-
-If the capability is local and OMP-specific, prefer a custom tool or extension first.
-
-## Package
-
-A package is an installable unit for combining capabilities. It may include skills, extensions, prompt templates, themes, and metadata. Use packages for complete capability bundles, high-risk opt-in features, multi-machine synchronization, team sharing, and temporary trials.
-
-A mature capability often becomes:
-
-```text
-skill + extension + tool + package
-```
-
-## Recommended boundaries
-
-```text
-Use a skill        when the capability is workflow, judgment, or reference material.
-Use a custom tool  when the model should call a typed function.
-Use an extension   when runtime integration, hooks, or multiple tools are needed.
-Use a tool / CLI   when deterministic local work must be implemented and tested.
-Use MCP            when cross-client reuse or process isolation matters.
-Use a package      when a capability should be installed, disabled, shared, or versioned as a unit.
-```
-
-## Third-party intake principles
-
-Do not put unreviewed third-party skills, scripts, or packages into active runtime locations.
-
-Keep upstream repositories, books, documentation snapshots, and third-party skill collections in local gitignored `references/`. Extract only reviewed, useful material into tracked resources:
-
-```text
-references/ -> drafts/ -> skills
-```
-
-Review for:
-
-- executable files;
-- package managers and install scripts;
-- network access;
-- secrets access;
-- shell snippets;
-- prompt injection;
-- destructive file operations;
-- SSH or cloud-resource access;
-- license constraints.
-
-## Risk levels
-
-```text
-Low:
-  Instruction-only. No executable code, secrets, network, SSH, billing, or destructive operations.
-
-Medium:
-  Local scripts or tooling may exist, but no secrets, external systems, billing, SSH, or destructive operations are required.
-
-High:
-  Secrets, network services, SSH, paid/cloud resources, billing, deletion, stopping, or external writes may be involved.
-```
-
-High-risk capabilities should not be blindly auto-linked. Prefer package-level opt-in, explicit confirmation for destructive actions, dry-run support, and clear audit output.
-
-## Reference links
-
-- Pi docs: https://pi.dev/docs/latest
-- Pi release notes: https://pi.dev/news/releases
-- Pi skills: https://pi.dev/docs/latest/skills
-- Pi packages: https://pi.dev/docs/latest/packages
-- Pi extensions: https://pi.dev/docs/latest/extensions
-- Pi settings: https://pi.dev/docs/latest/settings
-- OMP repository: https://github.com/can1357/oh-my-pi
+- OMP repository and versioned source: https://github.com/can1357/oh-my-pi
 - OMP releases: https://github.com/can1357/oh-my-pi/releases
-- OMP coding-agent changelog: https://github.com/can1357/oh-my-pi/blob/main/packages/coding-agent/CHANGELOG.md
-- OMP porting notes: https://github.com/can1357/oh-my-pi/blob/main/docs/porting-from-pi-mono.md
-- OMP skills: https://github.com/can1357/oh-my-pi/blob/main/docs/skills.md
-- OMP custom tools: https://github.com/can1357/oh-my-pi/blob/main/docs/custom-tools.md
-- OMP extensions: https://github.com/can1357/oh-my-pi/blob/main/docs/extensions.md
-- OMP extension loading: https://github.com/can1357/oh-my-pi/blob/main/docs/extension-loading.md
-- OMP MCP config: https://github.com/can1357/oh-my-pi/blob/main/docs/mcp-config.md
+- [Configuration ownership](omp-configuration.md)
+- [Installation](omp-installation.md)
+- [Architecture](architecture.md)
+- [Validation and claim limits](VALIDATION.md)

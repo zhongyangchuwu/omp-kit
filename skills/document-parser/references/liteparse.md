@@ -1,66 +1,45 @@
 # liteparse Reference
 
-liteparse is a fast local document parser (Rust + PDFium). It is the **offline backend** — use it when MinerU is unavailable, the document is simple, or privacy requires local processing.
+liteparse is a local Rust/PDFium document parser. Prefer it when local processing fits the task or privacy excludes a cloud service. Verify installed-version capabilities rather than assuming old output limitations still apply.
 
 ## Installation
 
+Use one appropriate installation route, only when dependency installation is authorized:
+
 ```bash
-# Python (recommended)
-pip install liteparse
-# Or: uv tool install liteparse
-
-# Node.js
-npm i -g @llamaindex/liteparse
-
-# Rust
-cargo install liteparse
+uv tool install liteparse
+# Alternatives:
+# pip install liteparse
+# npm i -g @llamaindex/liteparse
+# cargo install liteparse
 ```
 
-All methods install the same `lit` CLI. No API key, no registration.
+Inspect `lit --help` and `lit parse --help` for the installed build.
 
-## When to use liteparse over MinerU
+## Dependencies and offline operation
 
-| Use liteparse | Use MinerU |
-|---|---|
-| Offline / air-gapped | Cloud OK, need best quality |
-| Simple single-column PDFs | Multi-column academic papers |
-| No token / API key | Formulas, tables matter |
-| DOCX, PPTX, XLSX (fast local) | Scanned documents with complex layouts |
-| Privacy-sensitive documents | Figure/chart extraction needed |
+PDF processing uses PDFium. Office documents use LibreOffice for conversion; it must be available locally. A Skill file alone does not install that dependency.
+
+OCR needs language data. Provision it in advance for an offline/air-gapped environment, using `TESSDATA_PREFIX` or supported tessdata-path configuration. A first-run language-data download is network activity, and an explicitly configured HTTP OCR service is not local-only processing.
 
 ## Common commands
 
 ```bash
-# Basic parsing (outputs layout-preserved plain text)
 lit parse document.pdf -o /tmp/liteparse-out/output.txt
-
-# Parse specific pages
 lit parse document.pdf --target-pages "1-5,10-15" -o /tmp/liteparse-out/output.txt
-
-# Disable OCR (faster, for digital PDFs only)
 lit parse document.pdf --no-ocr -o /tmp/liteparse-out/output.txt
-
-# Batch parse a directory
 lit batch-parse ./input-dir ./output-dir
 ```
 
-## How it works
+Use the actual output path/result. Preserve source files. Select supported output formats through the installed CLI rather than assuming only plain text exists.
 
-1. **PDFium** (same C library Chrome uses) extracts text with precise x,y coordinates from each page.
-2. Optional **Tesseract OCR** for scanned pages (no text layer).
-3. **Grid Projection** reconstructs spatial layout — separates columns, preserves reading order.
-4. Output: layout-preserved plain text with `--- Page N ---` markers.
+## Output checks and limits
 
-## Limitations
+Inspect representative text order, tables, equations and scanned regions. Local extraction can preserve spatial information without proving faithful semantic reconstruction. Newer versions expose additional Markdown/layout/structure data, so the former blanket claims of no headings or tables are not portable limits.
 
-- **No formula rendering** — LaTeX equations output as raw text.
-- **No heading hierarchy** — flat text, no `#`/`##` marks (use MinerU for structure).
-- **No image extraction** — use `lit screenshot` for page images if needed.
-- **No table extraction** — tables appear as spatial text, not structured.
-- OCR requires Tesseract (bundled; first run downloads language data ~36MB).
+Use OCR only where needed. Do not report complete faithful conversion merely because a command succeeded. Remote MinerU can be considered for a difficult layout only within the document-upload authorization boundary; it is not automatically better for every file.
 
-## Output behavior
+## Sources
 
-- `-o <path>`: saves to file. Without it, prints to stdout.
-- Output format is plain text with page markers and layout preservation.
-- Tesseract OCR triggers automatically when a page has no extractable text layer.
+- Official implementation and current CLI: https://github.com/run-llama/liteparse
+- Office conversion/offline setup: https://github.com/run-llama/liteparse/blob/main/README.zh-CN.md

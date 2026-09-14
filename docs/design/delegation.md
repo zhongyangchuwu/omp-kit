@@ -43,9 +43,9 @@ These are useful mechanisms/hypotheses, not universal cost ratios.
 
 **Type:** controlled project experiment (limited scope).
 
-Archived Phase 1 experiments compared bundled `sonic` with custom `luna-code` on five deterministic Python fixtures. Both arms passed 5/5 independent correctness checks; the custom worker showed lower observed total-token/tool/wall-time activity in that sample. The token difference was dominated by cache-read tokens and was explicitly not treated as a Business-quota claim.
+Phase 1 experiments compared bundled `sonic` with custom `luna-code` on five deterministic Python fixtures. Both arms passed 5/5 independent correctness checks; the custom worker showed lower observed total-token/tool/wall-time activity in that sample. The token difference was dominated by cache-read tokens and was explicitly not treated as a Business-quota claim.
 
-Reference: `../archive/native-foundation/VALIDATION_PHASE1_2026-09-13.md`.
+The useful conclusions remain in [current validation](../VALIDATION.md). The complete original report is preserved at its [pre-cleanup Git revision](https://github.com/zhongyangchuwu/omp-kit/blob/47a2951f47c9c55ce8f8cb020220288f9e28f871/docs/archive/native-foundation/VALIDATION_PHASE1_2026-09-13.md).
 
 This supports the viability of a restricted task-shaped worker. It does not establish that delegation beats Main-direct execution generally.
 
@@ -53,7 +53,7 @@ This supports the viability of a restricted task-shaped worker. It does not esta
 
 **Type:** controlled project runtime experiments.
 
-The same archived validation established:
+The same validation established:
 
 - a real `history://Main` worker could recover requirements correctly;
 - one `luna-code` session successfully handled three related tasks across wakeups;
