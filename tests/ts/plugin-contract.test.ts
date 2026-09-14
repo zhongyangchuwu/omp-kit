@@ -61,7 +61,10 @@ describe("native plugin contract", () => {
 		}
 	});
 
-	test("core skills carry only current references", async () => {
+	test("core skills carry only current support files", async () => {
+		expect(await fileNames(join(root, "skills", "bounded-executor"))).toEqual(["SKILL.md"]);
+		expect(await fileNames(join(root, "skills", "git-workflow"))).toEqual(["SKILL.md"]);
+
 		expect(await fileNames(join(root, "skills", "omp-workflow", "references"))).toEqual(workflowReferences);
 		const workflow = await text("skills/omp-workflow/SKILL.md");
 		for (const reference of workflowReferences) {
