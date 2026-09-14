@@ -44,7 +44,7 @@ feedback-only package.json wiring
 feedback-only justfile TypeScript gates
 ```
 
-Therefore the core `just verify` contract is provider-free and currently covers:
+The provider-free core `just verify` contract covers:
 
 ```text
 Python repository tests
@@ -54,26 +54,26 @@ registry validation
 git diff --check
 ```
 
-The settled core tree at `cce588908d7c59e35bc05da1e1bf82c9dce8e640` was observed once
-with:
+Issue #18 moved routine execution of this gate to `.github/workflows/verify.yml`.
+The GitHub-hosted workflow:
 
-```text
-98 Python tests passed
-harness validation PASS
-registry freshness/check PASS
-registry validation PASS
-git diff --check HEAD PASS
-worktree clean
-```
+- uses read-only repository contents permission and no project secrets;
+- pins the checkout / uv / just setup actions to exact revisions;
+- installs Python 3.12, uv 0.12.13 and just 1.58.0;
+- checks `uv.lock` freshness with `uv lock --check`;
+- runs the repository-owned `just verify` entry point rather than duplicating its checks;
+- rejects tracked-file drift after the gate.
 
-No provider/model calls, subagents, capability experiments, telemetry work, repair
-commits, file modifications, pushes, or second unchanged full gate occurred during that
-verification.
+The first exact-head push run and the corresponding PR merge-ref run both completed
+successfully after the workflow was introduced. The run log observed 98 Python tests,
+valid harness/static references, fresh/valid registry state and a clean tracked diff.
+Exact current commit status remains in GitHub Actions / PR #17 and is not copied into this
+file solely for bookkeeping.
 
-Subsequent review-only documentation corrections change the exact tree and therefore
-require one new integrated gate before PR #17 is marked ready again. After that gate,
-record the exact accepted HEAD/results in PR #17 rather than editing this file solely to
-copy the new SHA.
+A successful GitHub Actions run on the exact commit now replaces the routine local-agent
+full deterministic gate for CI-supported repository work. Local `just verify` remains an
+optional pre-push/debugging tool; local OMP/runtime/profile smokes remain necessary when
+the claim depends on machine-specific or released-runtime behavior outside this CI gate.
 
 ## Feedback extension and released-runtime blocker
 
@@ -184,11 +184,9 @@ Two current-generation simplifications are accepted:
    full gate only when the covered tree materially changes or a distinct verification
    question requires it.
 
-The core split/review sequence supplied direct dogfood evidence for the second rule: an
-unchanged handoff did not justify another full gate, while later documentation commits did
-change the tree and therefore made the prior exact-tree evidence stale. Issue #9 remains
-open as a recurring model/process audit, not because this unchanged policy needs repeated
-verification.
+GitHub Actions changes the execution location, not this policy. A new commit receives a
+new automated gate because its tree changed; an unchanged successful commit does not
+need a second local full gate. Issue #9 remains open as a recurring model/process audit.
 
 ## Context authority / provenance
 
@@ -211,14 +209,14 @@ read-back may correct stale state descriptions without becoming desired policy.
 
 For future validation updates:
 
-- distinguish deterministic repository checks, source/document audits, provider-free
-  runtime probes, observational real-development telemetry, and controlled provider/model
+- distinguish deterministic CI checks, source/document audits, provider-free runtime
+  probes, observational real-development telemetry, and controlled provider/model
   experiments;
 - scope runtime claims to exact released versions or upstream commits;
 - do not convert preview evidence into released-runtime compatibility;
 - keep core validation separate from feedback-specific TypeScript/runtime validation;
-- keep exact mutable acceptance SHA/results in the owning PR/Issue rather than creating a
-  new commit solely to record the SHA that was just tested;
+- keep exact mutable acceptance SHA/results in the owning PR/Actions run rather than
+  creating a new commit solely to record the SHA that was just tested;
 - spend live-model quota on development unless a specific ambiguity genuinely requires a
   controlled experiment;
 - preserve historical evidence rather than rewriting it when policy evolves.
