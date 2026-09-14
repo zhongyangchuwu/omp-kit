@@ -1,11 +1,13 @@
 # Repository guidelines
 
-For active development, read `docs/WORKING_STATE.md` after pulling the latest
-`omp-native-foundation`; it is the shared current-state handoff between ChatGPT and
-local OMP agents. Treat actual repository/runtime evidence as authoritative when it
-differs, and update the working-state document when material project state changes.
-Use `docs/README.md` as the documentation index. Files under `docs/archive/` are
-historical evidence, not active task instructions.
+For active development, pull the branch that owns the current task, inspect its actual
+HEAD, then read `docs/WORKING_STATE.md`. Use `omp-native-foundation-core` for independent
+core work / PR #17 and `omp-native-foundation` only for feedback-specific PR #3 work.
+`docs/WORKING_STATE.md` is the shared current-state handoff between ChatGPT and local OMP
+agents. Treat actual repository/runtime evidence as authoritative when it differs, and
+update current docs when material project state changes. Use `docs/README.md` as the
+documentation index. Files under `docs/archive/` are historical evidence, not active task
+instructions.
 
 OMP Kit provides a model-neutral, plugin-first workflow layer for Oh My Pi: task-shaped
 agents, skills, Main-session policy, optional runtime extensions, and legacy installation
