@@ -179,7 +179,7 @@ extensions/      OMP extensions such as structured feedback
 scripts/         session evidence, legacy installer, maintenance tools
 config/          legacy managed settings/profiles and references
 docs/            current architecture/workflow/design/validation docs
- evidence/       selected durable experiment/decision snapshots
+evidence/        selected durable experiment/decision snapshots
 tests/           repository, plugin-contract, evidence and installer tests
 ```
 
