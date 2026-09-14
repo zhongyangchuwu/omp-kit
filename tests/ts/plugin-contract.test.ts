@@ -12,6 +12,7 @@ const workflowReferences = [
 	"self-improvement.md",
 	"subagent-context.md",
 ];
+const reviewReferences = ["findings.md", "lenses.md", "spec-compliance.md"];
 
 async function namesWithExtension(path: string, extension: string): Promise<string[]> {
 	return (await readdir(path, { withFileTypes: true }))
@@ -60,12 +61,19 @@ describe("native plugin contract", () => {
 		}
 	});
 
-	test("omp-workflow carries only current core references", async () => {
+	test("core skills carry only current references", async () => {
 		expect(await fileNames(join(root, "skills", "omp-workflow", "references"))).toEqual(workflowReferences);
-		const skill = await text("skills/omp-workflow/SKILL.md");
+		const workflow = await text("skills/omp-workflow/SKILL.md");
 		for (const reference of workflowReferences) {
-			expect(skill).toContain(`references/${reference}`);
+			expect(workflow).toContain(`references/${reference}`);
 		}
+
+		expect(await fileNames(join(root, "skills", "omp-review", "references"))).toEqual(reviewReferences);
+		const review = await text("skills/omp-review/SKILL.md");
+		for (const reference of reviewReferences) {
+			expect(review).toContain(`references/${reference}`);
+		}
+		expect(review).not.toContain("REVIEW.md");
 	});
 
 	test("agents stay model-neutral and autoload only core skills", async () => {
