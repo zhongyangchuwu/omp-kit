@@ -23,26 +23,34 @@ that will not be accepted anyway.
 
 A worker-local full gate is justified when it has a distinct purpose, for example:
 
-- one worker owns the exact final tree and its result can serve as the final mechanical gate;
 - the full suite is needed to diagnose a cross-slice failure that focused checks cannot isolate;
 - Main explicitly requests a worker-local full pass before handoff;
-- an isolated worktree needs a full pass before a risky merge/integration decision.
+- an isolated worktree needs a full pass before a risky merge/integration decision;
+- CI itself is unavailable or is the subject of the diagnosis.
 
 Otherwise, after related work settles, Main/integration ownership reconciles the
-combined tree and runs the repository's normal full deterministic gate once. That
-integrated result is the mechanical acceptance gate for the accepted tree.
+combined tree and lets the repository's normal CI full gate evaluate the exact commit.
+For omp-kit's native core, `.github/workflows/verify.yml` checks lockfile freshness,
+runs `just verify`, and rejects tracked-file drift on a clean GitHub-hosted runner. A
+successful run on the exact commit is the normal mechanical acceptance evidence; do not
+repeat the identical full gate locally merely because ownership crossed a handoff.
 
 If later integration, review fixes, or requirement changes alter behavior relevant to
-the gate, rerun the affected focused checks and the full gate when the new tree actually
-requires it. Do not rerun an unchanged full gate solely because another workflow phase
-label was crossed.
+the gate, the new commit receives a new CI run because the tree changed. Rerun affected
+focused checks during repair as needed, but do not rerun an unchanged successful full
+gate solely because another workflow phase label was crossed.
+
+Local `just verify` remains useful as an optional pre-push check or when diagnosing CI.
+Machine-specific OMP/runtime/profile claims still need the relevant local or released-
+runtime verification because the repository CI deliberately does not exercise them.
 
 If full project verification is slow, externally metered, destructive, or otherwise
 expensive, choose a proportionate integrated acceptance strategy and use focused checks
 where possible.
 
-Documentation-only workers without an execution tool report that limit and request a
-suitable verifier rather than implying a check was run.
+Documentation-only workers without an execution tool report that limit; they do not
+need to request a separate local verifier when the repository CI owns the applicable
+full deterministic gate.
 
 ## Integration before strong review
 
@@ -63,10 +71,10 @@ Workers report out-of-scope consumers to Main/integration ownership. They do not
 those consumers with unplanned writes unless Main deliberately reassigns the scope.
 
 Independent strong review is selected by failure cost, ambiguity and the value of a
-second judgment. When practical, run mechanical integration checks first and give the
-reviewer a compile/test-clean integrated diff plus requirements and existing evidence.
-Use strong review for semantics, lifecycle, product behavior, security/accessibility,
-ambiguity and other risks that deterministic checks do not cheaply decide.
+second judgment. When practical, wait for mechanically clean CI evidence and give the
+reviewer the integrated diff plus requirements and existing evidence. Use strong review
+for semantics, lifecycle, product behavior, security/accessibility, ambiguity and other
+risks that deterministic checks do not cheaply decide.
 
 Use the bounded-executor repair and stop contract for implementation. A blocked
 worker should return evidence, attempted approaches and its best diagnosis.
