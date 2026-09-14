@@ -117,9 +117,9 @@ real work / runtime evidence
 
 ## Active coordination
 
-- `WORKING_STATE.md` — short mutable index shared by ChatGPT and local OMP agents. Read it first after pulling `omp-native-foundation`.
+- `WORKING_STATE.md` — short mutable index shared by ChatGPT and local OMP agents. Pull the branch that owns the current task first: `omp-native-foundation-core` for independent core work / PR #17, or `omp-native-foundation` only for feedback-specific PR #3 work.
 - GitHub Issues — detailed active/deferred discussion and experiment state.
-- Active PRs — concrete implementation/review state.
+- Active PRs — concrete implementation/review state; exact current readiness and tested HEAD belong here rather than in a self-invalidating git-tracked marker.
 - `../evidence/` — selected accepted experiment snapshots that should remain auditable independently of Issue availability.
 
 ## Current documentation
