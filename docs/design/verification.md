@@ -25,26 +25,31 @@ Deterministic checks are good at falsifying mechanical contracts such as tests, 
 
 Repeating either layer without changed state or a new question does not automatically add independence.
 
-### Current omp-kit deterministic gate is cheap and provider-free
+### Current deterministic gate is cheap, provider-free and CI-executable
 
 **Type:** repository/runtime fact.
 
-The latest accepted local gate before this policy edit ran once at commit `8bbd02c3a2350b0198c454d4ec41666c7cca366f` and passed:
+The independent core `just verify` contract currently covers:
 
 ```text
-98 Python tests
-11 Bun tests / 57 assertions
-TypeScript typecheck
-harness validation
-registry check / validation
+98 Python repository tests
+harness/static validation
+registry freshness / validation
 git diff --check
 ```
 
-OMP remained 18.1.20 before and after, and real profile/config/plugin fingerprints were unchanged.
+The stacked feedback tree adds its checked-in Bun/TypeScript contract:
 
-The older 126-Python-test count is historical; parser-specific tests were later retired under completed Issue #14.
+```text
+TypeScript typecheck
+11 Bun tests / 57 assertions
+```
 
-Reference: `../VALIDATION.md` and Issue #9 verification chronology.
+Issue #18 moved routine execution of the settled-tree gate to `.github/workflows/verify.yml`. The workflow uses read-only repository permission, checks `uv.lock` freshness, runs the repository-owned `just verify`, and rejects tracked-file drift. It needs no project secrets, provider/model calls, OMP runtime, subagents, capability experiments or telemetry work.
+
+When `bun.lock` is present, the workflow installs Bun and frozen dependencies before running the same repository gate. Bun version selection follows the repository's `packageManager` declaration rather than an independent CI-only version pin.
+
+Exact current commit results belong in GitHub Actions / the owning PR rather than in this design record.
 
 ### Issue #6 established integrated acceptance ownership
 
@@ -52,15 +57,15 @@ Reference: `../VALIDATION.md` and Issue #9 verification chronology.
 
 Issue #6 established that a worker's scoped verification is evidence, while the accepted combined tree needs explicit integration ownership and deterministic acceptance. That distinction remains useful.
 
-The current Issue #9 audit narrows one part of the earlier policy: a cheap full gate should not be duplicated mechanically in every worker and then repeated on the integrated tree when the worker run answers no distinct question.
+Issue #9 narrows one part of the earlier policy: a cheap full gate should not be duplicated mechanically in every worker and then repeated on the integrated tree when the worker run answers no distinct question.
 
 ### Current user-directed efficiency constraint
 
 **Type:** project requirement.
 
-Current development deliberately prioritizes real omp-kit work over synthetic capability tests and redundant process. Local Agent time is primarily reserved for deterministic verification that cannot be performed through the web-side repository workflow.
+Current development deliberately prioritizes real omp-kit work over synthetic capability tests and redundant process. GitHub Actions is the normal execution location for repository-wide deterministic acceptance when the claim is CI-supported.
 
-This does **not** lower the final acceptance standard. It changes when identical evidence is collected.
+Local agent/runtime effort is reserved for focused implementation checks, CI diagnosis, and claims that genuinely depend on local OMP/runtime/profile state. This does **not** lower the final acceptance standard; it removes duplicate execution of equivalent evidence.
 
 ### Runtime capability boundary matters for reviewer trust
 
@@ -73,10 +78,10 @@ Released OMP 18.1.20 still does not contain the hard child capability boundary r
 Verification has several layers with different jobs:
 
 ```text
-worker-local evidence
+worker-local / focused evidence
   -> did this scoped change survive the checks relevant to the change?
 
-integrated deterministic gate
+integrated deterministic CI gate
   -> does the accepted final tree mechanically satisfy repository contracts?
 
 strong / independent review
@@ -84,6 +89,9 @@ strong / independent review
 
 external read-back / real-state evidence
   -> did an operation against the external world actually happen as intended?
+
+local/runtime-specific evidence
+  -> did behavior that depends on the installed OMP/profile/machine actually hold?
 ```
 
 The objective is **minimum evidence duplication at the same acceptance strength**, not minimum testing.
@@ -103,14 +111,15 @@ Default flow:
 ```text
 implementation / debugging
 -> focused checks that answer the current change
--> handoff with concrete evidence
+-> handoff with concrete evidence when delegation was used
 
 related writes settle
 -> reconcile actual writes and cross-slice consumers
--> run one full deterministic gate on the accepted integrated tree
+-> push / update the accepted integrated tree
+-> one GitHub Actions deterministic gate on that tree
 -> selective strong review when consequence / ambiguity warrants it
 -> fixes, if any
--> rerun affected checks and full gate only when the changed tree makes prior evidence stale
+-> new CI gate only because the accepted tree changed
 ```
 
 ### Worker-local full gate
@@ -119,18 +128,21 @@ A worker does **not** run the repository-wide full gate merely because it is che
 
 A worker-local full gate is appropriate when it has a distinct purpose, for example:
 
-- one worker owns the exact final tree and its result can be reused as the final mechanical acceptance gate;
+- one worker owns an isolated exact final tree and CI is unavailable or the result is needed before push;
 - an isolated worktree needs a pre-merge safety check;
 - a cross-slice failure cannot be diagnosed with narrower checks;
-- Main explicitly asks for that evidence before integration.
+- Main explicitly asks for that evidence for a distinct reason;
+- CI itself is being debugged.
 
 On a shared changing tree, a worker-level full pass may describe another workstream's partial state and is especially poor evidence for the eventual accepted tree.
 
 ### Integrated full gate
 
-After related writes settle, the integrated tree receives the normal repository-wide deterministic gate when that gate is fast, offline, provider-free and relevant. This is the standard mechanical acceptance point.
+After related writes settle, GitHub Actions is the normal repository-wide deterministic acceptance point for CI-supported work. It executes the repository-owned gate rather than maintaining a second YAML implementation of the test contract.
 
-If integration or review changes behavior covered by the gate, the prior result is stale and should be rerun. If only workflow bookkeeping changes while the tree relevant to the gate does not, there is no ritual rerun requirement.
+If integration or review changes behavior covered by the gate, the prior result is stale and the new commit receives a new CI run. If only workflow bookkeeping changes while the covered tree does not, there is no ritual local rerun requirement.
+
+Local `just verify` remains a useful pre-push/debugging command, not a mandatory duplicate of a passing exact-tree CI result.
 
 ### Shared contracts
 
@@ -148,39 +160,43 @@ Workers report out-of-scope consumers instead of silently widening their write s
 
 Independent review remains selective by failure cost, ambiguity and the value of a second judgment. When practical, give the reviewer a mechanically clean integrated diff so model effort is spent on failure classes automation did not already decide.
 
-### Expensive or external verification
+### Expensive, external or machine-specific verification
 
-If full verification is slow, externally metered, destructive or otherwise expensive, use focused checks plus one proportionate integrated acceptance strategy. External writes still require suitable read-back/idempotency/state evidence; a local test pass cannot substitute for external state observation.
+If full verification is slow, externally metered, destructive or otherwise expensive, use focused checks plus one proportionate integrated acceptance strategy. External writes still require suitable read-back/idempotency/state evidence; a CI test pass cannot substitute for external state observation.
+
+Likewise, CI does not establish installed OMP/profile/plugin behavior that depends on the user's actual machine. Released-runtime capability smokes remain local/runtime evidence and are run only when the claim requires them.
 
 ## Evaluation / observed effect
 
-Issue #6 supplied the accepted distinction between worker evidence and integrated acceptance. Issue #9 now removes two recurring process costs from the current default workflow:
+Issue #6 supplied the accepted distinction between worker evidence and integrated acceptance. Issue #9 has now removed two recurring process costs from the current default workflow:
 
 1. mandatory generic end-of-task self-reflection;
 2. mechanical duplication of the same full deterministic gate across worker handoff and integrated acceptance.
 
-The first ablation is locally verified. The verification-dedup change is web-authored and remains pending the next normal local deterministic gate; do not describe it as verified until that gate passes.
+Real split/review work validated the second rule: an unchanged settled tree did not justify another local full pass, while later tree changes correctly required new acceptance evidence. Issue #18 then moved that routine integrated evidence to GitHub Actions without changing the acceptance policy itself.
 
-Future real omp-kit dogfood should show whether focused worker checks plus one integrated full gate preserve defect detection while reducing repeated tool output and workflow turns. No bespoke A/B is required unless real failures create a decision-critical ambiguity.
+The core and stacked feedback paths have both exercised the Actions design: core skips Bun when no `bun.lock` exists; feedback enables its Bun/TypeScript checks when the lockfile is present. Future dogfood should continue to reveal whether focused local checks plus one automated integrated gate preserve useful defect detection. No bespoke A/B is required unless real failures create a decision-critical ambiguity.
 
 ## Counter-evidence and limits
 
 - A worker-local full run can be high-value before an isolated/risky merge or when it is the only practical way to diagnose cross-slice breakage.
-- Passing tests/typecheck does not establish UI usability, external-service state, security properties or product semantics unless directly covered.
+- Passing CI tests/typecheck does not establish UI usability, external-service state, runtime security properties or product semantics unless directly covered.
 - High-consequence changes may require expensive E2E/manual/external verification even after the normal deterministic gate passes.
-- If a review or integration fix changes code covered by the full suite, rerunning it is new evidence about a new tree, not duplication.
-- Reducing duplicate runs must not become an excuse to skip the final integrated gate merely to save tokens or time.
+- If a review or integration fix changes code covered by the full suite, the resulting CI run is new evidence about a new tree, not duplication.
+- Reducing duplicate runs must not become an excuse to ignore a failed/missing final integrated gate merely to save tokens or time.
+- GitHub-hosted Linux does not replace platform-specific Windows/macOS checks when platform behavior is the actual claim.
 
 ## Current status
 
-**Accepted verification architecture; current-generation duplication policy is being simplified under recurring Issue #9.**
+**Accepted verification architecture.** Issue #18 completed CI execution of the routine deterministic gate; Issue #9 remains the recurring owner for future removal of redundant model/process scaffolding.
 
-Issue #6 remains the historical source for integrated acceptance ownership. Issue #9 owns recurring removal of redundant process as models/workflows evolve.
+Issue #6 remains the historical source for integrated acceptance ownership. CI changes where the mechanical gate executes, not who owns acceptance judgment or which non-mechanical evidence is required.
 
 ## Related implementation / Issues
 
 - `../workflows.md`
 - `../VALIDATION.md`
+- `../../.github/workflows/verify.yml`
 - `../../skills/omp-workflow/SKILL.md`
 - `../../skills/omp-workflow/references/execution.md`
 - `../../skills/omp-workflow/references/delegation.md`
@@ -189,6 +205,7 @@ Issue #6 remains the historical source for integrated acceptance ownership. Issu
 - Issue #6 — completed integration/verification ownership policy
 - Issue #8 — delegation economics / accepted useful work
 - Issue #9 — recurring model-compensation/process ablation
+- Issue #18 — completed GitHub Actions deterministic gate
 
 ## Revisit triggers
 
@@ -196,6 +213,8 @@ Re-audit when:
 
 - focused worker checks repeatedly miss failures that an early worker full gate would have caught materially sooner;
 - repository verification becomes materially slower or gains external/provider dependencies;
+- CI becomes flaky, unavailable, or diverges materially from the repository-declared toolchain;
+- important checks require a platform/runtime that GitHub-hosted CI does not represent;
 - strong review repeatedly duplicates deterministic evidence without distinct findings;
 - a new failure class repeatedly escapes current tests/review;
 - shared-interface integration checks add ceremony without preventing real omissions;
