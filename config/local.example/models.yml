@@ -1,6 +1,0 @@
-# Optional per-machine endpoint. Do not store literal secrets.
-# Copy to <agent-root>/.omp-kit/local/models.yml and uncomment only what differs.
-# providers:
-#   cpa:
-#     baseUrl: https://your-cpa-host.example/v1
-{}

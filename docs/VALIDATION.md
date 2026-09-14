@@ -2,150 +2,86 @@
 
 Date: 2026-09-14
 
-This file records **current accepted validation evidence and its boundaries**. Mutable PR readiness and exact candidate results belong in the owning Pull Request / GitHub Actions. Detailed historical experiments remain in `evidence/`, `docs/archive/`, and completed Issue/PR history.
+This file records current accepted validation evidence and its limits. Mutable candidate readiness belongs in the owning PR / GitHub Actions; chronology belongs in Git and completed Issue/PR history.
 
 ## Current baseline
 
 ```text
-product candidate:             omp-kit 0.1.0
-released runtime used in v0:   OMP 18.1.21
-project-state v1:              PR #22 merged; #11 dogfood remains open
-shared feedback:               PR #3 merged; #4 completed
-session evidence collector:    PR #23 merged; #21 completed
-routine deterministic gate:    .github/workflows/verify.yml
+product candidate:          omp-kit 0.1.0
+runtime evidence baseline:  OMP 18.1.21
+core agents:                luna-code, luna-deep, luna-doc, sol-review
+core Skills:                omp-workflow, git-workflow, bounded-executor, omp-review
+shared feedback:            landed / accepted
+session evidence:           landed / accepted
+repository gate:            Bun typecheck + Bun tests
 ```
 
-OMP 18.1.21 is the latest upstream release seen/changelog-triaged for this baseline. The compatibility policy remains impact-based; a version number alone is not evidence that every runtime surface has been tested.
+The pre-release subtraction removes the legacy installer/config snapshot, generated Skill registry/promotion framework, generic/integration Skills and history-only repository artifacts. Those removals narrow the supported product surface; they do not invalidate the accepted runtime behavior below.
 
 ## Deterministic repository gate
 
-GitHub Actions is the routine full deterministic acceptance location for CI-supported repository changes. The workflow:
+For the reduced native package, GitHub Actions:
 
-- runs on the current PR merge-ref and on pushes to `main` after landing;
-- uses read-only repository contents permission and no project secrets;
-- pins checkout / uv / just / Bun setup actions to exact revisions;
-- does not persist checkout credentials into the worktree;
-- installs Python 3.12, uv 0.12.13 and just 1.58.0;
-- installs Bun/frozen dependencies when `bun.lock` is present, deriving Bun from `packageManager`;
-- checks `uv.lock` freshness;
-- runs the repository-owned `just verify` contract;
-- rejects tracked-file drift after the gate.
+- checks out without persisted credentials;
+- installs Bun from the repository `packageManager` contract;
+- runs `bun install --frozen-lockfile`;
+- runs `bun run verify` (`tsc --noEmit` + all Bun tests);
+- checks changed lines and rejects tracked-file drift.
 
-`just verify` currently covers Python repository tests, TypeScript typecheck/tests, harness/static validation, registry freshness/validation, and diff consistency. Exact suite counts are intentionally left to the current CI run rather than copied here as a self-invalidating constant.
+This gate covers the feedback extension, session-evidence collector and native package/resource contract. It does not call providers/models or prove machine-specific OMP behavior.
 
-A successful current PR gate replaces a routine local duplicate of the same full gate. Local `just verify` remains useful for pre-push/debugging/CI diagnosis. Machine-specific OMP/profile/plugin claims still require released-runtime evidence when the claim depends on them.
+## Native package contract
 
-During v0 landing, transient `setup-just` GitHub HTTP 504 failures occurred before repository tests ran. The unchanged reruns passed. These were classified as external setup failures, not product/test failures.
+The core package intentionally contains only resources required by current omp-kit behavior. The deterministic contract checks:
 
-## Project-state v1
+- package metadata and extension wiring;
+- exactly four model-neutral task agents;
+- exactly four core Skills;
+- worker/reviewer autoload references resolve to those Skills;
+- `omp-workflow` carries only its five current references;
+- the Main-only workflow rule remains present;
+- feedback/session-evidence TypeScript behavior and types remain valid.
 
-PR #22 implemented the issue-centered durable state model:
+OMP itself owns plugin resource discovery. OMP Kit does not mirror the discovered set into `registry.yaml`.
 
-```text
-actual branch / HEAD / worktree
--> current docs/executable policy
--> docs/WORKING_STATE.md as short navigation index
--> open Issues for unfinished work
--> PRs for implementation/review/CI
--> design records for durable rationale
--> Issue/PR history for chronology
-```
+## Shared feedback — OMP 18.1.21
 
-The implementation and deterministic gates passed. Issue #11 remains open because its dogfood criteria require natural multi-session/fresh-session recovery, duplication/offline observations, and a final judgment on the specialized `.planning/` mode. Merge was correctly not treated as Issue completion.
+Released-runtime smoke established that:
 
-## Shared feedback — OMP 18.1.21 runtime acceptance
-
-`omp_kit_feedback` is an intentionally shared bounded evidence sink for Main and task agents, not a Main-only authority primitive.
-
-Runtime acceptance on OMP 18.1.21 established:
-
-- Main can record durable structured feedback;
+- Main can record durable structured `omp_kit_feedback`;
 - a normal `luna-code` worker can record feedback and exit normally;
-- durable records include supported session id/file provenance;
+- records retain supported session id/file provenance;
 - no nonexistent caller-agent identity is fabricated;
-- feedback recording does not authorize repository, Harness, policy, or GitHub/Issue mutation;
-- source/profile/config/plugin state was not unexpectedly mutated by the smoke.
+- recording does not authorize repository, policy, configuration or GitHub/Issue mutation.
 
-The earlier capability-isolation finding remains historically valid: released OMP does not currently provide every desired per-agent hard boundary for custom/extension/MCP tools. That is a future hardening concern, not a prerequisite for this bounded evidence sink. Issue #4 is completed because the accepted v0 feedback contract was fully satisfied and landed.
+The feedback sink is intentionally shared bounded evidence, not a Main-only authority capability. Stronger future per-agent runtime isolation can still be useful but is not part of the v0 acceptance contract.
 
-## Session evidence — OMP 18.1.21 runtime acceptance
+## Session evidence — OMP 18.1.21
 
-Issue #21 / PR #23 added a compact derived evidence layer while keeping OMP as raw recorder.
+Released-runtime acceptance established that:
 
-Released-runtime acceptance established:
+- ordinary saved sessions are summarized through public OMP stats/session surfaces;
+- compact summaries stay outside Git and do not copy full transcripts;
+- unchanged completed sessions are skipped; active sessions may rebuild as their revision changes;
+- model requests, token/cost-equivalent activity, sampled provider provenance, tool calls/errors/durations, timing and Main/subagent tracks are represented;
+- Main and worker feedback correlate through trace-track session files;
+- checked source transcripts remained byte-identical;
+- normal filesystem-path filtering works through public trace `cwd`.
 
-- ordinary saved sessions are discovered through public OMP stats/session surfaces;
-- compact summaries remain outside Git and do not copy full transcripts;
-- completed sessions are skipped on unchanged reruns; active sessions may rebuild while their revision changes;
-- model requests, tokens/cost-equivalent, sampled provider provenance, tool calls/errors/durations, wall/model/tool/idle timing, and Main/subagent tracks are represented;
-- Main and worker feedback records correlate into the appropriate root-session evidence through trace-track session files;
-- checked original session transcripts remained byte-identical;
-- normal filesystem-path project filtering works after the compatibility fix described below.
+Provider identity is sampled per `(track, model)`, not an exact per-request routing ledger. Same-model provider switching may therefore be conflated; request/model/token/tool counts do not depend on the sampled label.
 
-Provider identity in schema v1 is **sampled per `(track, model)`**, not an exact per-request routing ledger. Same-model provider switching may therefore be conflated. Do not use this version to make a provider-fallback decision requiring exact per-request attribution.
+OMP 18.1.21 exposes a stats `folder` vs trace `cwd` representation mismatch, tracked upstream as `can1357/oh-my-pi#12060`. OMP Kit uses trace `cwd` rather than cloning OMP's storage-key encoding.
 
-### OMP stats folder/cwd compatibility finding
+## Worker boundaries
 
-OMP 18.1.21 exposed:
+Current agents are observational surfaces, not permanent capability claims. Workers do not recursively orchestrate. `sol-review` remains intent-level read-only. OMP's combined `github` built-in remains Main-owned because it includes remote mutation.
 
-```text
-/api/sessions.folder   -> -project-omp-kit
-/api/session/trace.cwd -> /home/han/project/omp-kit
-```
-
-The collector now uses public `SessionTrace.cwd` for normal filesystem-path matching and treats summary `folder` as fallback metadata rather than reimplementing OMP's non-reversible session-storage encoding. The upstream inconsistency is tracked as `can1357/oh-my-pi#12060`.
-
-## Supervision/runtime boundaries
-
-Released OMP provides stable subagent output/transcript retrieval:
-
-```text
-agent://<id>   -> saved final subagent output
-history://<id> -> concise subagent transcript
-```
-
-omp-kit therefore does not maintain a second worker-result store.
-
-Issue #7 remains an inactive problem-first tracker for runtime-owned supervision gaps such as completion-relevant waiting, semantic peer-message kinds, and per-agent read-only full-LSP configuration. None blocks the v0.1.0 product.
-
-## Worker capability dogfood boundary
-
-Current broad observational surfaces are intentionally not permanent capability claims:
-
-```text
-luna-code / luna-deep:
-  read grep glob edit write bash
-  web_search lsp ast_grep ast_edit debug eval security_scan todo
-
-luna-doc:
-  read grep glob edit write
-  web_search lsp ast_grep todo
-
-sol-review:
-  read grep glob web_search ast_grep security_scan
-```
-
-Workers do not recursively orchestrate. `sol-review` remains intent-level read-only. OMP's combined `github` built-in remains Main-owned because it includes remote mutation. Issue #5 owns natural-use capability review; Issue #8 owns delegation economics.
-
-Routine evidence for those Issues now comes from the #21 collector plus bounded qualitative feedback rather than bespoke raw-session parsing or mandatory reflection turns.
-
-## Harness subtraction status
-
-Two opportunistic simplifications are already accepted:
-
-1. generic end-of-task self-improvement reflection is removed; feedback is triggered only by reusable friction observed during real work;
-2. duplicate unchanged full repository gates are removed as a default; focused implementation checks feed one current PR merge-ref gate, followed by the distinct post-landing `main` gate.
-
-These examples do **not** complete Issue #9. Systematic current-generation scaffolding inventory/analysis has not yet been performed. #9 remains inactive until enough routine evidence accumulates or one rule causes obvious repeated friction.
+Issues #5 and #8 own later evidence-based pruning/routing decisions. Do not run synthetic tool-use experiments solely to populate telemetry.
 
 ## Evidence discipline
 
-For future validation work:
-
-- distinguish deterministic CI, source/document audit, released-runtime smoke, observational real-development evidence, and controlled provider/model experiments;
-- scope runtime claims to the exact behavior/version actually tested;
-- treat external setup failures separately from repository failures;
-- keep OMP as the owner of raw sessions/stats and runtime semantics;
-- keep routine derived summaries outside Git and promote only decision-relevant samples through #12's experiment evidence lifecycle;
-- preserve historical evidence rather than rewriting old experiment bundles when current product policy changes;
-- spend provider/model quota only when a decision-relevant ambiguity cannot be resolved more cheaply.
+- CI evidence, released-runtime smoke, external read-back and model judgment answer different questions.
+- Do not repeat an unchanged full gate without a new candidate or verification question.
+- Do not retain history-only files in the current tree merely for audit; Git and Issue/PR history preserve them.
+- Keep routine session evidence outside Git.
+- Promote a durable conclusion into current docs/Issues only when it remains relevant to current behavior.
