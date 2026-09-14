@@ -5,9 +5,11 @@ native plugin distribution path, and a legacy portable installer.
 
 ## Native core plugin trial
 
-Current development/runtime smoke target: **OMP 18.1.19**. Previous OMP 18.1.18
-plugin smoke remains historical compatibility evidence; this does not by itself raise
-the minimum supported version. From a clone of this repository:
+Normal development currently runs on **OMP 18.1.20**. The last isolated released-runtime
+native plugin smoke retained for this development line was performed on OMP 18.1.19;
+18.1.20 has since been audited for the current source/documented runtime contracts, but
+that does not imply a new feedback-capability closure smoke. From a clone of this
+repository:
 
 ```sh
 omp plugin link .
