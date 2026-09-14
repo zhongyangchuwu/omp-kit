@@ -10,6 +10,12 @@ finding they directly observed. Recording a finding does not expand the reportin
 agent's task scope and does not grant authority to edit the Harness, repository, policy,
 or Issue state. Main/later project triage owns promotion decisions.
 
+Released-runtime acceptance on OMP 18.1.21 confirmed both Main and a normal `luna-code`
+worker can record feedback and continue/exit normally. Worker availability is therefore
+an intentional v0 product property, not an accidental capability leak that blocks the
+feature. A future OMP hard per-subagent tool boundary may justify narrower scoping, but
+only as a separate evidence-backed hardening decision.
+
 ## What belongs in feedback
 
 Record a finding when it is both:
@@ -83,10 +89,10 @@ not decide whether a report is correct, edit policy, modify configuration, creat
 close GitHub Issues, commit code, call a model, upload telemetry, or trigger any other
 self-modification.
 
-Current released OMP does not expose first-class caller-agent identity in the public
-extension context. Feedback therefore records supported session/file provenance and
-must not guess whether the caller was Main or a particular worker. The session evidence
-collector can later correlate that provenance with OMP trace tracks.
+OMP 18.1.21 does not expose first-class caller-agent identity in the public extension
+context. Feedback therefore records supported session/file provenance and must not guess
+whether the caller was Main or a particular worker. The session evidence collector can
+later correlate that provenance with OMP trace tracks.
 
 Core invariant:
 
