@@ -22,11 +22,11 @@ Escalate when an OMP change touches a contract omp-kit relies on, especially:
 
 - plugin installation, linking, package-root discovery, or sibling capability discovery;
 - task-agent discovery, agent frontmatter, model resolution, task lifecycle, or subagent protocol behavior;
-- per-agent tool activation, allowlists/denylists, mounted tools, extension tools, custom tools, MCP proxy tools, or capability enforcement;
+- per-agent tool activation, allowlists/denylists, mounted tools, extension/custom/MCP tools, or capability enforcement;
 - skill or rule discovery, visibility, activation, or invocation semantics;
 - extension/custom-tool SDK contracts used by omp-kit;
 - configuration, model-role, profile, or service-tier behavior relied on by omp-kit;
-- session, trace, stats, RPC, persistence, or stable subagent output interfaces used as evidence or workflow primitives;
+- session, trace, stats, RPC, persistence, or stable subagent output interfaces used as evidence/workflow primitives;
 - assumptions required by the legacy installer or compatibility snapshot.
 
 Changes limited to unrelated OMP-owned surfaces such as TUI presentation, browser automation, providers, or editor integrations do not require omp-kit compatibility work unless omp-kit has an explicit dependency on the changed contract.
@@ -43,9 +43,9 @@ These are defaults, not ceilings.
 
 ## Impact override
 
-Raise the review depth whenever the changelog or source diff directly intersects an omp-kit compatibility surface.
+Raise review depth whenever changelog/source evidence intersects an omp-kit compatibility surface.
 
-For example, a patch release that changes task-agent `tools:` semantics, plugin discovery, extension loading, session RPCs, or the hard child capability boundary is not treated as a routine patch. It receives targeted source review and runtime verification appropriate to the affected contract.
+For example, a patch release that changes task-agent `tools:` semantics, plugin discovery, extension loading, session/stats APIs, or a hard per-agent capability boundary is not treated as a routine patch. It receives targeted source review and runtime verification appropriate to the affected contract.
 
 Conversely, a minor release whose changes are demonstrably outside all omp-kit dependencies does not need unrelated full-system runtime testing merely because the middle version changed.
 
@@ -53,15 +53,17 @@ Conversely, a minor release whose changes are demonstrably outside all omp-kit d
 
 For each newly observed release:
 
-1. Read the OMP release notes/changelog from the last triaged release through the new release.
-2. Classify every relevant entry against the compatibility surfaces above.
-3. Check directly tracked upstream blockers or contracts even if they are omitted from the release notes. In particular, Issue #4 requires checking whether the hard per-subagent tool boundary represented by upstream PR #9521, or an equivalent released implementation, has landed.
+1. Read OMP release notes/changelog from the last triaged release through the new release.
+2. Classify relevant entries against the compatibility surfaces above.
+3. Check any concrete upstream Issues/PRs that currently shape an omp-kit contract, even when omitted from release notes.
 4. Choose the minimum sufficient verification level:
    - **triage only** — no relevant surface changed;
-   - **targeted audit** — inspect the changed upstream contract and run focused released-runtime smoke when the claim depends on runtime behavior;
+   - **targeted audit** — inspect the changed upstream contract and run a focused released-runtime smoke when the claim depends on behavior;
    - **full audit** — cover all runtime-facing omp-kit contracts after a major compatibility boundary or broad upstream change.
 5. Modify omp-kit only if the accepted OMP contract actually requires a repository change.
-6. Do not manufacture local tests, commits, or Issues for an unrelated upstream patch.
+6. Do not manufacture local tests, bookkeeping commits, or generic release-tracking Issues for an unrelated patch.
+
+Future hardening such as a supported per-subagent custom/extension/MCP tool allowlist should be evaluated when it lands, but it is not automatically a release blocker for bounded evidence-only tools. The consequence of the capability matters.
 
 ## Evidence and state
 
@@ -70,14 +72,14 @@ Keep release observation separate from runtime compatibility evidence. Current s
 ```text
 latest upstream seen
 latest changelog triaged
-latest released-runtime compatibility evidence
+claim-specific released-runtime evidence
 ```
 
 Do not imply that a release was fully tested merely because its changelog was triaged.
 
-Runtime evidence should be claim-specific. A previous compatible smoke remains useful until a later release changes the contract that smoke was proving; unrelated upstream changes do not automatically invalidate it.
+Runtime evidence is claim-specific. A previous compatible smoke remains useful until a later release changes the contract that smoke was proving; unrelated upstream changes do not automatically invalidate it.
 
-GitHub Issues own unresolved concrete compatibility problems. Do not create a recurring Issue for every OMP release. `docs/WORKING_STATE.md` owns the current compact status, while this document owns the stable triage policy.
+GitHub Issues own unresolved concrete compatibility problems. Do not create a recurring Issue for every OMP release. `docs/WORKING_STATE.md` owns the compact current status; this document owns the stable triage policy.
 
 ## Current baseline
 
@@ -86,9 +88,19 @@ As of 2026-09-14:
 ```text
 latest upstream seen:     OMP 18.1.21
 latest changelog triaged: OMP 18.1.21
-18.1.21 disposition:      triage only; no omp-kit compatibility surface changed
+18.1.21 changelog impact: browser/Chromium-only for the previously owned compatibility surfaces
+v0 runtime evidence:      shared feedback + session-evidence behavior accepted on OMP 18.1.21
 ```
 
-OMP 18.1.21 contains Chromium/browser-automation fixes. Those changes do not alter the omp-kit runtime contracts listed above, so no dedicated compatibility smoke is required.
+OMP 18.1.21's release changelog did not change the task/agent/plugin/extension/session contracts then under review, so no generic compatibility test was required solely because 18.1.21 existed.
 
-Issue #4 remains a direct-impact exception: upstream PR #9521 is still open and its hard per-subagent tool allowlist is not present in released OMP 18.1.21. Therefore PR #3 remains Draft until a supported release provides the required boundary and released-runtime smoke satisfies Issue #4's acceptance criteria.
+Later claim-specific runtime acceptance did exercise omp-kit feedback/session-evidence behavior on 18.1.21 and found one stats representation mismatch:
+
+```text
+/api/sessions.folder   -> encoded session-storage key
+/api/session/trace.cwd -> real project cwd
+```
+
+omp-kit adapted by using the public trace cwd for filesystem-path filtering and reported the upstream mismatch as `can1357/oh-my-pi#12060`. This illustrates why changelog triage and runtime evidence are separate layers: a relevant interaction can still be discovered while testing a concrete product claim even when the release changelog did not advertise a change to that surface.
+
+Historical upstream PR #9521 remains useful capability-hardening evidence. It is no longer an omp-kit release blocker because completed Issue #4 accepted shared feedback as a bounded evidence sink for Main/workers rather than an authority-bearing Main-only tool. If OMP later releases stronger per-agent scoping, reassess whether narrower feedback exposure provides enough benefit to justify a change.
