@@ -6,9 +6,11 @@ Short mutable coordination index for ChatGPT and local OMP agents. Detailed rati
 
 Before active development:
 
-1. Pull the latest `omp-native-foundation` and inspect the actual HEAD.
+1. Pull the branch that owns the current task and inspect the actual HEAD.
+   - use `omp-native-foundation-core` for independent native-foundation work / PR #17;
+   - use `omp-native-foundation` only for feedback-specific PR #3 work owned by Issue #4.
 2. Read this file completely.
-3. Open the owning Issue before acting.
+3. Open the owning Issue / PR before acting.
 4. Read only the design/workflow references needed for the current task.
 5. Prefer OMP public/runtime behavior over local runtime reimplementation.
 
@@ -19,20 +21,27 @@ Current project scope is **omp-kit only**. Do not use another repository as a ne
 ## Current status
 
 ```text
-branch:          omp-native-foundation
-normal runtime:  OMP 18.1.20
-phase label:     Phase 1.5 implementation accepted; review blocked upstream
-active PR:       #3 feat: add self-hosting feedback extension (Draft)
-primary problem: verify current workflow-efficiency + OMP 18.1.20 supervision refresh batch
+core branch:      omp-native-foundation-core
+core PR:          #17 feat: establish OMP-native foundation core
+feedback branch:  omp-native-foundation
+feedback PR:      #3 feat: add self-hosting feedback extension (Draft / blocked)
+normal runtime:   OMP 18.1.20
+split owner:      #16
 ```
 
-PR #3 remains blocked because released OMP 18.1.20 does not contain the hard child capability boundary required for Main-only feedback. Upstream PR #9521 remains open; Issue #4 owns released-runtime closure.
+The native-foundation core and feedback extension now have separate review ownership. PR #17 targets `main`. PR #3 is stacked on `omp-native-foundation-core` and owns only the feedback-specific delta.
+
+PR #3 remains blocked because released OMP 18.1.20 does not contain the hard child capability boundary required for Main-only feedback. Upstream PR #9521 remains open; Issue #4 owns released-runtime closure. Do not re-couple unrelated core work to that blocker.
+
+For exact current PR readiness and the latest accepted tested HEAD, prefer PR #17 / Issue #16 over embedding a self-invalidating latest-SHA marker in this file.
 
 ## Active work
 
 | Item | State | Purpose |
 | --- | --- | --- |
-| PR #3 | Draft / blocked | Feedback extension; do not merge until #4 closes. |
+| PR #17 | independent core | Native OMP foundation without feedback-only runtime/tooling surface. |
+| #16 | maintenance record | Preserve the core/feedback ownership split and verification evidence. |
+| PR #3 | Draft / blocked | Feedback-only stacked PR; do not make review-ready until #4 closes. |
 | #4 | blocked upstream | Hard Main/worker capability boundary on a supported release. |
 | #5 | observational dogfood | Learn worker-tool value from real omp-kit sessions and OMP-native telemetry. |
 | #7 | upstream tracking | Three remaining coordination/configuration gaps on OMP 18.1.20. |
@@ -71,9 +80,9 @@ OMP ordinary session persistence is the recorder. Prefer `/api/sessions`, `/api/
 
 ## Current Issue #9 ablation state
 
-Two current-generation simplifications are now represented in workflow/design policy.
+Two current-generation simplifications are represented in workflow/design policy.
 
-### Accepted and locally verified
+### Accepted: generic reflection removal
 
 Mandatory generic end-of-task self-improvement reflection was removed:
 
@@ -88,9 +97,9 @@ no observed friction
 
 The feedback sink and `report != self-modify` invariant remain.
 
-### Web-authored; local gate pending
+### Accepted: duplicate full-gate removal
 
-Full deterministic verification is being deduplicated without weakening final acceptance:
+Default verification is:
 
 ```text
 worker implementation / debugging
@@ -102,7 +111,7 @@ related writes settle
 
 A worker-local full gate is reserved for a distinct purpose such as isolated pre-merge safety, cross-slice diagnosis, explicit Main request, or a worker that owns the exact final tree whose result can be reused as acceptance evidence.
 
-Do not rerun an unchanged full gate merely because work crossed a handoff or phase label. If later integration/fixes materially change the covered tree, the prior evidence is stale and should be rerun.
+The split-core work supplied real evidence for this policy: one integrated provider-free gate was sufficient on the settled core tree; no unchanged second full gate was required. If later integration or fixes change the covered tree, the prior evidence is stale and one new integrated gate is justified.
 
 Issue #11 still owns `.planning/` replacement/coexistence; #9 does not pre-empt that decision.
 
@@ -131,29 +140,21 @@ See Issue #7 and `docs/design/supervision.md`.
 - **#14 parser retirement** — completed. The local OMP JSONL parser/tests were removed; OMP-native telemetry owns generic session ingestion/normalization.
 - **#13 OMP-native telemetry** — completed. OMP stats/session trace plus omp-kit-owned experiment semantics is the accepted observability boundary.
 
-## Last accepted deterministic gate
+## Verification evidence
 
-Exact verified HEAD:
-
-```text
-8bbd02c3a2350b0198c454d4ec41666c7cca366f
-```
-
-Observed once, provider-free:
+The split core was locally verified provider-free at the exact pre-coordination-update head recorded in PR #17 / Issue #16:
 
 ```text
+31e743a0c7876e67d3c3e07f0c02ba9e5d269d67
 98 Python tests passed
-11 Bun tests passed
-57 Bun assertions passed
-TypeScript typecheck PASS
 harness validation PASS
-registry check/validation PASS
-git diff --check PASS
-OMP before/after: 18.1.20
-real profile/config/plugin fingerprints unchanged
+registry freshness PASS
+registry validation PASS
+git diff --check HEAD PASS
+worktree clean
 ```
 
-Commits after that gate are the web-authored verification-dedup and OMP 18.1.20 supervision/current-state changes. Do not describe them as locally verified until the next deterministic gate passes.
+That evidence established the split itself. Any later commit changes the exact tested tree and must be judged under the normal verification policy. Exact latest accepted HEAD/results belong in the owning PR/Issue; do not create a new commit whose only purpose is to copy the just-tested SHA into this file.
 
 ## Accepted ownership / evidence boundaries
 
@@ -165,7 +166,7 @@ Commits after that gate are the web-authored verification-dedup and OMP 18.1.20 
 
 ## Next action
 
-1. Run one provider-free local deterministic gate for the current web-authored batch; no model/provider call, subagent, capability experiment, or telemetry analysis.
-2. If clean, persist the gate in #9/current validation; #7 needs no bespoke runtime experiment for the source/doc audit.
-3. Resume normal omp-kit development and let #5/#8 evidence accumulate passively from real sessions.
+1. For PR #17, compare the current branch HEAD with the exact accepted HEAD recorded in PR #17 / #16. If the tree changed since the last accepted gate, run one provider-free integrated `just verify`; do not duplicate the gate on an unchanged tree.
+2. Keep PR #3 stacked and Draft until Issue #4's released-runtime acceptance criteria are satisfied; do not manufacture a closure smoke while the required upstream implementation is absent.
+3. After the independent core is review-ready, resume normal omp-kit development and let #5/#8 evidence accumulate passively from real sessions.
 4. Do not manufacture #11's fresh-session recovery test merely to satisfy its checklist.
