@@ -38,7 +38,7 @@ Reference: https://www.makerjackie.com/blog/2026-09-07-gpt6-astra
 
 **Type:** released-source inspection.
 
-OMP 18.1.20 still defines unified `hub wait` as returning on the first of:
+OMP 18.1.20 defines unified `hub wait` as returning on the first of:
 
 ```text
 matching peer message
@@ -49,7 +49,7 @@ steering interrupt
 
 Therefore a normal peer progress message can wake Main before the completion-related condition Main was conceptually waiting for.
 
-The released `IrcMessage` structure still carries routing/body/timestamp/reply metadata rather than a general workflow-semantic kind such as:
+The inspected `IrcMessage` structure carries routing/body/timestamp/reply metadata rather than a general workflow-semantic kind such as:
 
 ```text
 progress
@@ -58,13 +58,11 @@ blocker
 final
 ```
 
-Main therefore cannot ask the runtime to ignore routine progress while waking only on material message classes. These remaining runtime gaps stay in Issue #7 rather than being reimplemented in omp-kit.
+Main therefore cannot ask that runtime contract to ignore routine progress while waking only on material message classes. These remaining runtime gaps stay in Issue #7 rather than being reimplemented in omp-kit. The later 18.1.21 changelog triage did not identify a change to this surface; this is not a new full runtime test.
 
 ### OMP 18.1.20 stable final-result retrieval
 
 **Type:** released documentation/source contract.
-
-One earlier coordination concern is now resolved in the supported runtime.
 
 Released OMP 18.1.20 documents:
 
@@ -75,15 +73,15 @@ history://<id> -> concise live/parked subagent transcript
 
 For task subagents with an artifacts directory, OMP writes `<id>.md` and resolves it through `agent://<id>`. IDs are allocated by the session-scoped `AgentOutputManager`; nested outputs retain id-qualified paths.
 
-This is sufficient for omp-kit's stable post-settlement result-retrieval need. A convenient recent `/jobs` row may still be lifecycle-oriented, but omp-kit no longer needs a parallel result ledger merely to recover a final output by stable agent identity.
+This is sufficient for omp-kit's stable post-settlement result-retrieval need. A convenient recent `/jobs` row may still be lifecycle-oriented, but omp-kit does not need a parallel result ledger merely to recover a final output by stable agent identity.
 
 ### omp-kit persistent-worker evidence
 
 **Type:** controlled project runtime evidence.
 
-Archived native-foundation validation demonstrated a persistent `luna-code` workstream continuing across multiple related tasks and direct-message wakeups while preserving local context. This supports coherent worker reuse when task continuity exists.
+Native-foundation validation demonstrated a persistent `luna-code` workstream continuing across multiple related tasks and direct-message wakeups while preserving local context. This supports coherent worker reuse when task continuity exists.
 
-Reference: `../archive/native-foundation/VALIDATION_PHASE1_2026-09-13.md`.
+Current summary: [validation](../VALIDATION.md). Original evidence: [immutable pre-cleanup report](https://github.com/zhongyangchuwu/omp-kit/blob/47a2951f47c9c55ce8f8cb020220288f9e28f871/docs/archive/native-foundation/VALIDATION_PHASE1_2026-09-13.md).
 
 ## Interpretation
 
@@ -101,9 +99,7 @@ user changes intent
 
 Routine progress can be useful for observability without necessarily requiring an immediate Main turn.
 
-The durable boundary is therefore runtime/event semantics, not a prose convention telling Main to be patient.
-
-At the same time, final-result retention should use the released OMP identity/artifact contract now that it exists rather than preserve a local workaround for an older gap.
+The durable boundary is runtime/event semantics, not a prose convention telling Main to be patient. Final-result retention should use the released OMP identity/artifact contract rather than preserve a local workaround for an older gap.
 
 ## Design principle
 
@@ -113,7 +109,7 @@ Prefer OMP-native lifecycle, messaging, result artifacts and waiting semantics. 
 
 ## Current mechanism
 
-Current omp-kit supervision guidance uses bounded first-checkpoint windows roughly aligned with task shape:
+Current workflow guidance offers approximate first-checkpoint windows by task shape:
 
 ```text
 quick    ~2m
@@ -121,51 +117,37 @@ standard ~5m
 deep     ~10m
 ```
 
-Guidance favors:
+These are coordination hints, not completion promises or empirically optimal constants. Guidance favors:
 
-- one coherent bounded wait roughly matching the checkpoint;
+- a coherent bounded wait appropriate to the checkpoint;
 - avoiding short repeated polling;
 - one checkpoint request after a meaningful overrun;
 - stop/split/escalate after repeated comparable overrun or stagnation;
-- reusing a coherent worker when task continuity justifies it;
-- retrieving final output through `agent://<id>` and transcript evidence through `history://<id>` when those released surfaces apply;
-- using actual OMP task/hub/session lifecycle rather than a local clone.
+- coherent worker reuse when task continuity justifies it;
+- final-output retrieval through `agent://<id>` and transcript evidence through `history://<id>` when the released surfaces apply;
+- actual OMP lifecycle rather than a local clone.
 
-These are policy-level mitigations, not a claim that OMP 18.1.20 has ideal event semantics.
+These are policy-level mitigations, not a claim of ideal event semantics.
 
 ## Evaluation / observed effect
 
-Current evidence establishes:
+Current evidence establishes persistent continuation in an exercised scenario, plausible and observed wakeup costs, the inspected wait/message limitations, and released final-output retrieval. Issue #7 narrowed from four gaps to three without an extra result-retrieval layer.
 
-- persistent worker continuation can function correctly;
-- short/repeated supervisor wakeups have plausible and observed cost;
-- OMP 18.1.20 `hub wait` can still wake on any matching peer message;
-- peer messages still lack a general semantic workflow kind;
-- stable settled final-output retrieval by agent id is now a released OMP capability through `agent://<id>`.
-
-Issue #7 therefore narrowed from four tracked gaps to three. No omp-kit compatibility layer was added for the resolved result-retrieval concern.
-
-What remains unestablished is a portable cost curve for different wait durations or orchestration shapes across models/providers. That belongs with delegation economics (Issue #8) and natural real-work telemetry, not a synthetic waiting benchmark by default.
+A portable cost curve for wait durations and orchestration shapes across providers remains unestablished. That belongs with delegation economics (Issue #8) and natural real-work telemetry, not a synthetic waiting benchmark by default.
 
 ## Counter-evidence and limits
 
-- Long waits can reduce polling but delay intervention when a worker is genuinely stuck; bounded checkpoints still matter.
-- Progress messages sometimes contain a real blocker/decision request in prose because message kinds are not structured today.
-- Separate sessions can reduce live-supervisor overhead but increase explicit context-transfer cost and lose local state.
-- `agent://<id>` solves stable final-output retrieval; it does not make recent job snapshots permanent or add semantic wait predicates.
-- Community wait-cost reports are not portable performance constants.
+- Long waits reduce polling but can delay intervention when a worker is stuck.
+- Progress messages sometimes contain a real blocker/decision in prose.
+- Separate sessions can reduce supervision overhead while increasing context-transfer cost and losing local state.
+- `agent://<id>` does not make recent job snapshots permanent or add semantic wait predicates.
+- Community reports and checkpoint buckets are not portable performance constants.
 
 ## Current status
 
-**Accepted local supervision policy; three runtime semantics remain upstream-limited.**
+**Accepted local supervision policy; three runtime semantics remain tracked in inactive Issue #7.**
 
-Active Issue #7 gaps on OMP 18.1.20:
-
-1. wait cannot filter by workflow-semantic message class;
-2. peer messages lack a first-class progress/blocker/decision/final kind;
-3. ordinary custom-agent frontmatter still cannot express per-agent `lspReadOnly`.
-
-Stable settled Agent-ID final-output retrieval is resolved and should not be reimplemented locally.
+They concern semantic wait filtering, typed peer messages and per-agent read-only LSP. Stable settled final-output retrieval is resolved and should not be reimplemented locally.
 
 ## Related implementation / Issues
 
@@ -177,11 +159,4 @@ Stable settled Agent-ID final-output retrieval is resolved and should not be rei
 
 ## Revisit triggers
 
-Re-audit this record when:
-
-- OMP adds terminal-only/event-filtered wait semantics;
-- peer messages gain semantic kinds;
-- ordinary agent configuration gains per-agent read-only LSP;
-- dogfood shows current checkpoint windows cause either excessive polling or unacceptable stuck-worker latency;
-- model/provider economics materially change supervisor-wakeup cost;
-- the `agent://` final-output contract changes materially.
+Re-audit when OMP changes relevant event/message/read-only-LSP contracts, dogfood shows unacceptable checkpoint costs or stuck-worker latency, provider economics change, or the final-output contract changes materially.

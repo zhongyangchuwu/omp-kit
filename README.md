@@ -1,214 +1,82 @@
 # OMP Kit
 
-OMP Kit is a personal, model-neutral workflow layer for [Oh My Pi (OMP)](https://github.com/can1357/oh-my-pi). The v0.1.0 baseline combines task-shaped agents, reusable workflow skills, issue-centered project state, structured qualitative feedback, and compact session evidence while leaving session/runtime mechanics to OMP.
+OMP Kit combines a model-neutral workflow for Oh My Pi (OMP) with a personally maintained Skill library and the design knowledge behind it. The repository is intended for people as well as agents: accepted decisions and compact supporting evidence travel with the code.
 
-## What v0.1.0 provides
+## What is included
 
-```text
-OMP runtime
-  -> model-neutral task agents
-  -> Main-session workflow policy and reusable skills
-  -> issue-centered project-state conventions
-  -> shared structured feedback for observed reusable friction
-  -> compact local session-evidence collection/reporting
-```
+- Four task-shaped agents: `luna-code`, `luna-deep`, `luna-doc`, and `sol-review`.
+- Fifteen maintained Skills covering workflow, code taste, product design, debugging, research, testing, verification, language tooling, Skill authoring, specialized planning, AutoDL and document parsing.
+- A Main-session workflow rule, bounded shared feedback, and a local session-evidence collector.
+- Current usage documentation, mechanism-level design records, and compact experiment evidence.
 
-The product deliberately does **not** include a second agent scheduler, SessionManager, raw-session parser, trace database, model router, cloud telemetry service, or automatic self-modification loop.
+Core workflow, maintained experience Skills, and service integrations are responsibility categories, not a ranking of value or a requirement to split repositories. Skills such as `code-taste` and `omp-design` preserve the maintainer's practical experience even when they are useful outside omp-kit. See [architecture](docs/architecture.md).
 
-Current released-runtime acceptance is based on **OMP 18.1.21**:
+## Install from a checkout
 
-- Main and a normal `luna-code` worker can record `omp_kit_feedback` and exit normally;
-- feedback keeps supported session/file provenance and remains evidence only;
-- the session-evidence collector summarizes ordinary saved sessions, correlates Main/worker feedback, and leaves source transcripts unchanged;
-- normal filesystem-path filtering works despite an OMP 18.1.21 stats folder/cwd inconsistency tracked upstream as `can1357/oh-my-pi#12060`.
-
-These are claim-specific runtime checks, not a statement that every OMP 18.1.21 surface has been exhaustively tested.
-
-## Native plugin path
-
-From a clone of this repository:
+Use an existing released OMP installation and Bun matching `package.json`:
 
 ```sh
+git clone https://github.com/zhongyangchuwu/omp-kit.git
+cd omp-kit
+bun install --frozen-lockfile
 omp plugin link .
 omp plugin list
 ```
 
-The plugin package exposes:
-
-- model-neutral `luna-code`, `luna-deep`, `luna-doc`, and `sol-review` agents;
-- maintained active skills;
-- the Main-session workflow rule;
-- the `omp_kit_feedback` extension.
-
-Agents do not embed a required provider/model assignment. Use OMP's normal model configuration and per-agent overrides, or let task agents inherit the active session model.
-
-To remove the linked checkout:
+Restart the OMP session after changing installed resources. Linking a plugin does not configure your providers or replace `config.yml`, `models.yml`, or MCP settings. All maintained Skills remain in the existing native discovery path; service-specific Skills run only for their relevant requests and do not authorize cloud spending or document uploads by being installed.
 
 ```sh
 omp plugin uninstall omp-kit
 ```
 
-The native plugin path does not install CPA, copy `config.yml`/`models.yml`, or replace ordinary OMP preferences.
+The retired Harness v2 config-copy installer is no longer a supported install path. Existing machine files are not removed automatically. Read [installation and migration](docs/omp-installation.md) before changing a previously managed setup. A skill-only linking helper remains available for deliberate library use; do not duplicate native plugin discovery with it.
 
-## Project-state workflow
+## Normal work
 
-For repositories using the issue-centered workflow, ordinary work starts from actual repository state rather than hidden conversation memory:
+Main chooses direct execution, one bounded delegate, or independent parallel delegates according to the work. Delegation is not mandatory. Workers have scoped responsibilities; Main owns product decisions, integration and final acceptance.
 
-```text
-actual branch / HEAD / worktree
--> docs/WORKING_STATE.md
--> owning open Issue / active PR
--> only the design/workflow references needed for the task
-```
-
-`WORKING_STATE.md` is intentionally a short navigation index. Detailed unresolved work belongs in Issues, implementation/review/CI in PRs, accepted rationale in current design docs, and chronology in Issue/PR history.
-
-Issue state semantics are simple:
+For multi-session projects, the default is:
 
 ```text
-open + active   = unfinished and currently being worked/dogfooded
-open + inactive = unfinished but waiting on a trigger/evidence/dependency
-closed          = acceptance criteria complete
+actual repository state
+-> current docs and accepted design
+-> WORKING_STATE navigation
+-> owning Issue and active PR
 ```
 
-`.planning/` remains available as an explicit specialized/offline phase-dossier mode; it is not the default merely because work spans multiple sessions.
+Accepted knowledge belongs in the checkout, not only in GitHub discussion. The specialized `.planning/` Skill remains available for deliberately selected phase/offline dossiers; it is not initialized merely because work spans sessions. See [workflows](docs/workflows.md) and [design foundations](docs/design-foundations.md).
 
-## Structured feedback
+## Feedback and session evidence
 
-`omp_kit_feedback` is a bounded evidence sink available to Main and task agents when the extension is loaded.
+`omp_kit_feedback` records bounded observations encountered during real work. Main and workers may report; recording feedback does not authorize repository, configuration, policy or Issue mutation. There is no mandatory end-of-task reflection.
 
-```text
-feedback
-!= authorization
-!= repository mutation
-!= Issue mutation
-!= policy promotion
-!= automatic self-modification
-```
-
-A worker may record reusable friction it directly observed. Later human/Main/project triage decides whether that evidence warrants an Issue, design change, or no action.
-
-OMP 18.1.21 does not expose first-class caller-agent identity in the public extension context, so v0.1.0 records supported session/file provenance rather than guessing the caller. The session-evidence collector can later correlate those files with OMP trace tracks.
-
-## Session evidence
-
-OMP remains the raw recorder. OMP Kit derives compact summaries outside Git:
-
-```text
-OMP saved sessions + stats/trace
--> omp-kit evidence collection
--> local compact summaries
--> aggregate reports for later #5/#8/#9 analysis
-```
-
-From the repository:
+OMP saves the raw sessions. Run the incremental collector after normal work, manually or through an operator-owned schedule:
 
 ```sh
-bun run evidence:collect
-bun run evidence:report
+bun run evidence:collect -- --folder /absolute/path/to/project
+bun run evidence:report -- --folder /absolute/path/to/project
+bun run evidence:report -- --folder /absolute/path/to/project --json
 ```
 
-Useful filters:
+Collection is not a new model turn or an automatically installed daemon. Derived summaries stay outside Git. Selected material decision evidence may be committed under `evidence/experiments/`; full transcripts and raw telemetry do not belong there.
+
+OMP 18.1.21 has claim-specific Main/worker feedback and collector runtime evidence. Folder filtering uses public trace `cwd` to handle the stats storage-key mismatch. Provider identity is sampled per track/model, not an exact request-routing ledger. See [session evidence](docs/session-evidence.md) and [validation](docs/VALIDATION.md) for limits.
+
+## Maintenance
+
+Python/uv remain necessary for the maintained Skill-library tooling and tests; Bun owns the TypeScript runtime/test surface. AutoDL retains its own dependency environment.
 
 ```sh
-bun run evidence:collect -- --folder /path/to/project --since 2026-09-01T00:00:00Z
-bun run evidence:report  -- --folder /path/to/project --since 2026-09-01T00:00:00Z
-bun run evidence:report  -- --json
-```
-
-When the package bin is exposed by the package manager, the equivalent CLI is:
-
-```sh
-omp-kit-evidence collect
-omp-kit-evidence report
-```
-
-The v1 evidence schema includes session/project identity, request/token/cost-equivalent activity, sampled provider provenance, tools/errors/durations, Main/subagent/advisor tracks, timing, and linked structured feedback. Provider identity is sampled rather than an exact per-request provider-routing ledger; see [`docs/session-evidence.md`](docs/session-evidence.md) for the precise contract and limits.
-
-## Legacy/compatibility installer
-
-The existing Python installer remains available for Harness v2 migration and machines that intentionally want the managed configuration snapshot. It requires **OMP and uv on PATH** and does not provision subscriptions, deploy CPA, transfer OAuth databases, install browsers/LSPs, or authenticate GitHub.
-
-Linux / macOS / WSL:
-
-```sh
-bash install.sh --dry-run
-bash install.sh
-```
-
-Native Windows:
-
-```powershell
-.\install.ps1 --dry-run
-.\install.ps1
-```
-
-The portable entry point is also available directly:
-
-```sh
-uv run --script /path/to/omp-kit/scripts/install_harness.py
-```
-
-The native default agent root is normally `~/.omp/agent`. For a named OMP profile:
-
-```sh
-bash install.sh --omp-profile harness-v2-test --dry-run
-bash install.sh --omp-profile harness-v2-test
-omp --profile harness-v2-test
-```
-
-For recovery and machine-specific overlays:
-
-```sh
-bash install.sh --config-profile headless
-bash install.sh --doctor
-bash install.sh --rollback
-```
-
-The legacy installer backs up replaced managed objects, refuses unknown collisions/local edits by default, and does not sweep unrelated files. Secrets belong in the environment or selected agent-root `.env`, never in Git.
-
-See [`docs/omp-installation.md`](docs/omp-installation.md) for the full compatibility contract.
-
-## Repository layout
-
-```text
-agents/          model-neutral custom task agents
-skills/          maintained workflow/tool skills
-rules/           Main-session workflow entry point
-extensions/      OMP extensions such as structured feedback
-scripts/         session evidence, legacy installer, maintenance tools
-config/          legacy managed settings/profiles and references
-docs/            current architecture/workflow/design/validation docs
-evidence/        selected durable experiment/decision snapshots
-tests/           repository, plugin-contract, evidence and installer tests
-```
-
-## Development and verification
-
-Start with [`docs/WORKING_STATE.md`](docs/WORKING_STATE.md) and the owning Issue/PR, then use [`docs/README.md`](docs/README.md) as the documentation map.
-
-The routine deterministic repository gate is:
-
-```sh
+bun install --frozen-lockfile
 just verify
 ```
 
-GitHub Actions is the normal full acceptance location for CI-supported changes: one PR merge-ref gate before landing and one `main` push gate after an authorized merge. Local full-gate repetition is optional unless it answers a distinct question.
+CI runs the same provider-free gate on PR merge refs and on `main` after landing. It covers repository/native-plugin consistency, Skill support files, metadata/registry checks, AutoDL mocked tests, TypeScript typecheck/tests, changed-line hygiene and tracked-file drift. It does not run paid providers, cloud operations or live OMP acceptance scenarios.
 
-Other maintenance commands include:
+Do not delete a maintained Skill, accepted design, or compact experiment simply because it is not needed for the smallest runtime. Remove confirmed obsolete material, or make a targeted correction supported by a concrete defect.
 
-```sh
-just install
-just validate-harness
-just doctor
-just build-registry
-just check-registry
-just validate-registry
-just test
-```
+## Documentation
 
-Passing repository CI does not establish provider connectivity or machine-specific OMP behavior. Runtime claims still require the relevant released-runtime smoke.
+Start with the [documentation map](docs/README.md). It separates current usage, design rationale, evidence and maintenance. [WORKING_STATE](docs/WORKING_STATE.md) is only the current work index; Issues own unfinished problems and PRs own implementation/review. Closed Issues mean completed acceptance criteria, not merely deferred work.
 
-## Release status
-
-`0.1.0` is the first usable baseline intended for measured dogfood. The next phase is not feature accumulation: #5/#8/#11 collect real capability/delegation/project-state experience, #9 waits for enough evidence to perform systematic Harness subtraction, and #12 remains the promotion/retention lifecycle for material experiment evidence.
+`0.1.0` is the release candidate version. The package remains private; a green candidate is not a published release.

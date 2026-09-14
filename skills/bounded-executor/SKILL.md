@@ -33,8 +33,9 @@ checkpoint with current evidence, blocker, attempted repairs and the smallest ne
 that would unblock progress.
 
 Use tools actually available to you. Do not bypass a restricted toolset through another
-channel. Request an execution-capable verifier if you cannot run the required checks.
-Broader integrated gates may be explicitly delegated; otherwise report your scoped evidence.
+channel. Report an execution limit; repository CI can supply the normal full gate.
+Request execution-capable help only for a distinct required check CI cannot establish.
+Broader integrated gates may be explicitly delegated; otherwise report scoped evidence.
 Do not repeat a passing check without a relevant intervening change or new evidence.
 For a server, watcher or other long-lived command, require an observable readiness/health
 signal and a bounded wait when the available tool exposes one; do not wait indefinitely

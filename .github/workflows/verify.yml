@@ -25,6 +25,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 2
 
       - name: Install uv and Python
         uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
@@ -38,29 +39,22 @@ jobs:
         with:
           just-version: "1.58.0"
 
-      - name: Detect Bun gate
-        id: bun
-        shell: bash
-        run: |
-          if [[ -f bun.lock ]]; then
-            echo "required=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "required=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Install Bun
-        if: steps.bun.outputs.required == 'true'
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
 
       - name: Install Bun dependencies
-        if: steps.bun.outputs.required == 'true'
         run: bun install --frozen-lockfile
 
       - name: Check Python lockfile freshness
-        run: uv lock --check
+        run: |
+          uv lock --check
+          uv lock --project skills/autodl --check
 
       - name: Run deterministic gate
         run: just verify
+
+      - name: Check candidate changed lines
+        run: git diff --check HEAD^ HEAD
 
       - name: Check tracked-file drift
         run: git diff --exit-code

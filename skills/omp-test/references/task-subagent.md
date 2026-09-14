@@ -1,37 +1,35 @@
 # Task Subagent Test Handoff
 
-Load this reference when delegating test authoring to a generic `task` subagent.
+Load this reference when Main has chosen to delegate test authoring to an available `task` worker. It is not a requirement to delegate every non-trivial test.
 
 ## When to delegate
 
-Use a task subagent with a test-authoring role for non-trivial test work:
+Delegation can be useful when independent coverage judgment or an isolated parallel scope outweighs briefing and integration cost:
 
 - new behavior needs durable tests;
 - a bug fix needs a regression test;
 - coverage boundaries or mock placement are non-obvious;
-- multiple files or fixtures are involved;
-- existing tests are brittle and need reshaping around behavior.
+- multiple files or fixtures form a separable workstream;
+- existing tests need reshaping around behavior.
 
-For trivial changes, direct verification may be enough when no meaningful test can be added without asserting plumbing.
+These are candidates, not an automatic routing rule. Main-direct authoring remains valid. A worker with `spawns: []` writes its assigned tests or returns a blocker; it does not create another worker.
 
 ## Handoff content
 
-A good task assignment includes:
+A useful assignment includes:
 
 - target files and test files to inspect or edit;
 - behavior contract to protect;
-- observed bug or risk, if any;
-- non-goals and behaviors not to freeze;
-- preferred boundary, if known;
-- external systems that must be mocked or avoided;
-- command for the narrow test run, if known;
-- acceptance criteria in observable terms.
+- observed bug or risk;
+- non-goals and behavior not to freeze;
+- preferred execution boundary;
+- external systems to mock or avoid;
+- narrow test command when known;
+- observable acceptance criteria.
 
-Do not ask the subagent to run formatters, project-wide linters, or full test suites. Run broad verification once after integration.
+Prefer focused checks during authoring. Do not request a repository-wide full suite merely because the worker is handing off; use the normal current-candidate CI gate. A distinct cross-slice diagnosis or explicitly assigned isolated verification can justify broader worker checks.
 
 ## Assignment shape
-
-Use this structure:
 
 ```text
 # Target
@@ -41,17 +39,11 @@ Exact source and test files; explicit non-goals.
 Behavior to protect, edge cases, expected mock boundaries, and whether red/green evidence is expected.
 
 # Acceptance
-The test fails for the old bug when practical, passes after the implementation, and is exercised by the narrow command.
+The test fails for the old bug when practical, passes after implementation, and is exercised by the narrow command.
 ```
 
 ## Review returned tests
 
-After the subagent returns, check:
+Check that tests assert meaningful behavior, fake data matches real consumed shapes, mocks stop at suitable boundaries, production APIs were not widened for tests, and the reported command actually exercised the change.
 
-- tests assert behavior rather than implementation plumbing;
-- fake data matches consumed real shapes;
-- mocks are at external or nondeterministic boundaries;
-- production code was not reshaped solely for tests;
-- the narrow command actually exercised the new or modified tests.
-
-Subagent output is evidence, not a substitute for inspecting the final diff and running the relevant command in the parent session.
+Inspect the integrated diff and evidence. Reuse a valid result for the relevant tree; rerun when the tree/question changed or coverage is missing, not automatically in the parent session.

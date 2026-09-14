@@ -1,93 +1,45 @@
 # MinerU CLI Reference
 
-MinerU is the cloud backend for high-quality document parsing. It converts documents to Markdown via the MinerU cloud API (mineru.net), using a Vision Language Model for layout understanding.
+This Skill uses the `mineru-open-api` cloud client. It is not the separately deployable local MinerU engine. Both `extract` and token-free `flash-extract` send documents to a remote service.
 
-## Installation
+## Privacy and authorization
+
+Confirm that service upload is allowed for the actual document. No token does not mean offline or private. Use local liteparse for documents that must remain on the machine. Do not print tokens or place them in command logs; prefer the supported environment/config authentication route.
+
+## Installation and authentication
+
+When installation is authorized:
 
 ```bash
 npm install -g mineru-open-api
+mineru-open-api version
+mineru-open-api --help
 ```
 
-Verify: `mineru-open-api version`
-
-## Authentication
-
-`extract` mode requires a token. Two ways to set it:
+Precision extraction uses a token; use the client's interactive authentication or `MINERU_TOKEN` environment variable. Verify the installed CLI's resolution rules rather than exposing a token in an example command.
 
 ```bash
-mineru-open-api auth          # Interactive — stores in ~/.mineru/config.yaml
-export MINERU_TOKEN="<token>"  # Or pass via environment variable
+mineru-open-api auth
 ```
 
-Token from: https://mineru.net/apiManage/token
+## Modes
 
-`flash-extract` mode does NOT need a token.
-
-## Two modes
-
-| | `extract` (default) | `flash-extract` |
-|---|---|---|
-| Token | Required | No |
-| File size | ≤200 MB | ≤10 MB |
-| Pages | ≤200 | ≤20 |
-| Output | md, json, docx, html, latex | Markdown only |
-| Batch | Yes | No |
-| Model | vlm (best), pipeline (no hallucination) | Fixed pipeline |
-
-**Default to `extract`**. Use `flash-extract` only for small files without a token.
-
-## Common commands
+`extract` provides authenticated precision/batch extraction; `flash-extract` is token-free with smaller service limits. Supported input formats, page/size limits, model choices and output options vary by mode and release. In particular, do not assume that a format supported by flash has the same precision-mode support.
 
 ```bash
-# Parse a document (default: vlm model, auto-detect language)
 mineru-open-api extract paper.pdf -o /tmp/mineru-out/
-
-# English paper, force formulas + tables
-mineru-open-api extract paper.pdf -o /tmp/mineru-out/ --model vlm --language en --formula --table
-
-# Parse specific pages
-mineru-open-api extract report.pdf -o /tmp/mineru-out/ --pages 1-5,8-10
-
-# Batch all PDFs in a directory
-mineru-open-api extract *.pdf -o /tmp/mineru-out/
-
-# Flash mode (no token, small files)
 mineru-open-api flash-extract slides.pptx -o /tmp/mineru-out/
 ```
 
-## Common flags
+Check `extract --help` or `flash-extract --help` before relying on page selection, formula/table flags, language or output-format options. Preserve useful defaults but do not claim that a pipeline model has no hallucinations or that one model is universally best.
 
-| Flag | Default | Use |
-|---|---|---|
-| `--model` | vlm | `vlm` (complex layouts) or `pipeline` (no hallucination) |
-| `--language` | auto | `en`, `ch`. Other languages → web search |
-| `--formula` | on | Disable with `--no-formula` |
-| `--table` | on | Disable with `--no-table` |
-| `--pages` | all | `1-5` or `1,3,7-10` |
-| `--format` / `-f` | md | `md`, `json`, `html`, `latex`, `docx` |
+## Output and failures
 
-## Supported formats (common)
+Prefer explicit output paths to keep large extraction results out of the agent's immediate context. Inspect the actual files returned and representative content. Progress on stderr is not by itself an error; use the exit status and service result together.
 
-PDF, DOCX, PPTX, XLSX, images (png/jpg/jpeg/jp2/webp/gif/bmp), URLs to remote files.
+Use a bounded timeout appropriate to observed job progress. A single historical file's duration is not a promise that every larger file will complete under a fixed timeout. On failure, retain useful diagnostics without copying private documents or tokens into repository evidence.
 
-DOC, PPT, XLS, HTML only in `extract` mode with token. For the full list → web search.
+## Sources
 
-## Output behavior
-
-- With `-o`: result saved to file (`<name>.md`) + extracted images in `images/`.
-- Without `-o`: result to stdout, progress to stderr.
-- Always use `-o` — the agent reads the file afterward.
-
-## Gotchas
-
-### Token resolution order
-
-`--token` flag → `MINERU_TOKEN` env → `~/.mineru/config.yaml`
-
-### Progress output
-
-Progress lines (e.g. "Parsing 13/14 pages") go to stderr. Do not confuse with errors.
-
-### Large files
-
-27MB PDF with VLM model takes ~10 seconds. Larger files or pipeline model may take longer — the default timeout is 900s, which is sufficient.
+- Official CLI/integrations: https://github.com/opendatalab/MinerU-Ecosystem
+- Service documentation: https://mineru.net/apiManage/docs

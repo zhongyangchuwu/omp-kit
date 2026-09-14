@@ -1,151 +1,75 @@
-# Validation summary
+# Validation and evidence boundaries
 
-Date: 2026-09-14
-
-This file records **current accepted validation evidence and its boundaries**. Mutable PR readiness and exact candidate results belong in the owning Pull Request / GitHub Actions. Detailed historical experiments remain in `evidence/`, `docs/archive/`, and completed Issue/PR history.
-
-## Current baseline
-
-```text
-product candidate:             omp-kit 0.1.0
-released runtime used in v0:   OMP 18.1.21
-project-state v1:              PR #22 merged; #11 dogfood remains open
-shared feedback:               PR #3 merged; #4 completed
-session evidence collector:    PR #23 merged; #21 completed
-routine deterministic gate:    .github/workflows/verify.yml
-```
-
-OMP 18.1.21 is the latest upstream release seen/changelog-triaged for this baseline. The compatibility policy remains impact-based; a version number alone is not evidence that every runtime surface has been tested.
+This document records which claims have evidence, not an automatically refreshed CI badge. Exact current candidate SHAs and run results belong in the owning PR/Actions. Accepted design and compact experiment evidence remain distributed in this repository.
 
 ## Deterministic repository gate
 
-GitHub Actions is the routine full deterministic acceptance location for CI-supported repository changes. The workflow:
-
-- runs on the current PR merge-ref and on pushes to `main` after landing;
-- uses read-only repository contents permission and no project secrets;
-- pins checkout / uv / just / Bun setup actions to exact revisions;
-- does not persist checkout credentials into the worktree;
-- installs Python 3.12, uv 0.12.13 and just 1.58.0;
-- installs Bun/frozen dependencies when `bun.lock` is present, deriving Bun from `packageManager`;
-- checks `uv.lock` freshness;
-- runs the repository-owned `just verify` contract;
-- rejects tracked-file drift after the gate.
-
-`just verify` currently covers Python repository tests, TypeScript typecheck/tests, harness/static validation, registry freshness/validation, and diff consistency. Exact suite counts are intentionally left to the current CI run rather than copied here as a self-invalidating constant.
-
-A successful current PR gate replaces a routine local duplicate of the same full gate. Local `just verify` remains useful for pre-push/debugging/CI diagnosis. Machine-specific OMP/profile/plugin claims still require released-runtime evidence when the claim depends on them.
-
-During v0 landing, transient `setup-just` GitHub HTTP 504 failures occurred before repository tests ran. The unchanged reruns passed. These were classified as external setup failures, not product/test failures.
-
-## Project-state v1
-
-PR #22 implemented the issue-centered durable state model:
-
-```text
-actual branch / HEAD / worktree
--> current docs/executable policy
--> docs/WORKING_STATE.md as short navigation index
--> open Issues for unfinished work
--> PRs for implementation/review/CI
--> design records for durable rationale
--> Issue/PR history for chronology
+```sh
+bun install --frozen-lockfile
+just verify
 ```
 
-The implementation and deterministic gates passed. Issue #11 remains open because its dogfood criteria require natural multi-session/fresh-session recovery, duplication/offline observations, and a final judgment on the specialized `.planning/` mode. Merge was correctly not treated as Issue completion.
+The retained gate covers:
 
-## Shared feedback — OMP 18.1.21 runtime acceptance
+- Python tests for native plugin wiring, agents/Skills, metadata/registry, promotion, risk/index/link helpers and documentation integrity;
+- Skill-authoring guide/template tests;
+- AutoDL tests in its own frozen uv environment, with APIs and SSH mocked;
+- TypeScript typecheck and feedback/session-evidence tests;
+- registry freshness and validation.
 
-`omp_kit_feedback` is an intentionally shared bounded evidence sink for Main and task agents, not a Main-only authority primitive.
+CI also checks both Python lockfiles, candidate changed lines and tracked-file drift. PR merge-ref and landed-main checks answer different questions. The retired config-copy installer and its exclusive tests are no longer part of the gate; useful Skill-library tests are retained.
 
-Runtime acceptance on OMP 18.1.21 established:
+No cloud spending, external document upload, real model call or user-profile write is part of deterministic acceptance. The gate is not an upstream OMP schema/runtime test.
 
-- Main can record durable structured feedback;
-- a normal `luna-code` worker can record feedback and exit normally;
-- durable records include supported session id/file provenance;
-- no nonexistent caller-agent identity is fabricated;
-- feedback recording does not authorize repository, Harness, policy, or GitHub/Issue mutation;
-- source/profile/config/plugin state was not unexpectedly mutated by the smoke.
+## OMP 18.1.21 feedback acceptance
 
-The earlier capability-isolation finding remains historically valid: released OMP does not currently provide every desired per-agent hard boundary for custom/extension/MCP tools. That is a future hardening concern, not a prerequisite for this bounded evidence sink. Issue #4 is completed because the accepted v0 feedback contract was fully satisfied and landed.
+The user supplied released-runtime evidence for PR #3 at `1cd5de1f1d8d0bb90e063d2a8eced0026b55990c`:
 
-## Session evidence — OMP 18.1.21 runtime acceptance
+- Main recorded durable feedback with id/time/cwd/session/file provenance.
+- One actual `luna-code` worker read package metadata, recorded feedback, yielded and exited normally.
+- Worker provenance used its child session file; no caller-agent identity was fabricated.
+- No repository, policy, Issue, profile or configuration mutation occurred.
 
-Issue #21 / PR #23 added a compact derived evidence layer while keeping OMP as raw recorder.
+The test used public explicit extension loading against the checkout because `--plugin-dir` alone did not expose the tool in that environment. This proves that loading path, not every possible installation topology.
 
-Released-runtime acceptance established:
+Evidence: [Issue #4 runtime report](https://github.com/zhongyangchuwu/omp-kit/issues/4#issuecomment-5665260086).
 
-- ordinary saved sessions are discovered through public OMP stats/session surfaces;
-- compact summaries remain outside Git and do not copy full transcripts;
-- completed sessions are skipped on unchanged reruns; active sessions may rebuild while their revision changes;
-- model requests, tokens/cost-equivalent, sampled provider provenance, tool calls/errors/durations, wall/model/tool/idle timing, and Main/subagent tracks are represented;
-- Main and worker feedback records correlate into the appropriate root-session evidence through trace-track session files;
-- checked original session transcripts remained byte-identical;
-- normal filesystem-path project filtering works after the compatibility fix described below.
+## OMP 18.1.21 collector acceptance
 
-Provider identity in schema v1 is **sampled per `(track, model)`**, not an exact per-request routing ledger. Same-model provider switching may therefore be conflated. Do not use this version to make a provider-fallback decision requiring exact per-request attribution.
+Initial acceptance at `baa192eec186aa8fbfda5b36da0d993ad199dced` found a real bug: the documented filesystem-path filter returned zero sessions because OMP `/api/sessions.folder` was an encoded storage key. Bounded diagnostic collection showed that summary generation, completed-session skipping, Main/child feedback correlation and raw-session integrity worked.
 
-### OMP stats folder/cwd compatibility finding
+The fix uses public trace `cwd` for actual-path filtering, with a regression test. A subsequent user retest reported no errors. That brief retest did not include full counters, so it must not be rewritten as a new detailed quantitative acceptance report. The earlier diagnostic report and deterministic regression tests supply the more specific evidence.
 
-OMP 18.1.21 exposed:
+Evidence: [Issue #21 runtime report](https://github.com/zhongyangchuwu/omp-kit/issues/21#issuecomment-5665260067); upstream `can1357/oh-my-pi#12060`.
 
-```text
-/api/sessions.folder   -> -project-omp-kit
-/api/session/trace.cwd -> /home/han/project/omp-kit
-```
+Current limits:
 
-The collector now uses public `SessionTrace.cwd` for normal filesystem-path matching and treats summary `folder` as fallback metadata rather than reimplementing OMP's non-reversible session-storage encoding. The upstream inconsistency is tracked as `can1357/oh-my-pi#12060`.
+- provider is sampled per `(track, model)`, not an exact per-request routing ledger;
+- child activity-envelope overlap is not CPU/GPU concurrency;
+- counters do not determine task quality, human effort or business quota;
+- collector invocation is manual/operator-scheduled; no default daemon is installed;
+- derived summaries stay outside Git and do not replace selected reproducibility evidence.
 
-## Supervision/runtime boundaries
+## Earlier native-foundation evidence retained as context
 
-Released OMP provides stable subagent output/transcript retrieval:
+The former archive's unique useful conclusions remain here, with original provenance:
 
-```text
-agent://<id>   -> saved final subagent output
-history://<id> -> concise subagent transcript
-```
+[Exact native-foundation report before archive removal](https://github.com/zhongyangchuwu/omp-kit/blob/47a2951f47c9c55ce8f8cb020220288f9e28f871/docs/archive/native-foundation/VALIDATION_PHASE1_2026-09-13.md).
 
-omp-kit therefore does not maintain a second worker-result store.
+On OMP 18.1.18, isolated native link/discovery/uninstall exercised four agents and fifteen Skills without modifying the real user profile. Old parser-hiding wording in that report was subsequently corrected; it is not current activation policy.
 
-Issue #7 remains an inactive problem-first tracker for runtime-owned supervision gaps such as completion-relevant waiting, semantic peer-message kinds, and per-agent read-only full-LSP configuration. None blocks the v0.1.0 product.
+Five deterministic fixtures compared bundled `sonic` and custom `luna-code` at `eebeb1ac1b992cf754930cf50b1a29c547867187`. Both arms passed 5/5 checks. Observed total tokens were 634,708 versus 454,638 and mean wall time 54.65 versus 48.13 seconds, with the token difference dominated by cache reads. This supports worker viability in that sample, not universal delegation or quota savings.
 
-## Worker capability dogfood boundary
+A real parent-history smoke recovered accepted requirements (3/3), rejected superseded/tentative alternatives and checked repository facts. Same-session persistence exercised three related tasks across two wakeups, **not** a general parked-to-revived/restart guarantee. Notes-backed rollover recovered the accepted decision and passed two checks; an empty-string `context_notes` call cleared notes on that tested version and must not be used as a read surrogate.
 
-Current broad observational surfaces are intentionally not permanent capability claims:
+A later search-first smoke remained correct but used 642,661 total child tokens versus 200,731 in an earlier whole-history smoke with different histories. This is explicitly not a controlled efficiency comparison.
 
-```text
-luna-code / luna-deep:
-  read grep glob edit write bash
-  web_search lsp ast_grep ast_edit debug eval security_scan todo
+## Compact controlled experiments
 
-luna-doc:
-  read grep glob edit write
-  web_search lsp ast_grep todo
+The original Phase-A, B1 web-search and B2 LSP bundles remain under [evidence/experiments](../evidence/experiments/) with original identities and limitations. Phase A was preview hard-scoping evidence, not released-runtime support. B1 was a limited useful-use observation; B2's natural zero LSP calls did not show that LSP is globally useless.
 
-sol-review:
-  read grep glob web_search ast_grep security_scan
-```
+## What is still not established
 
-Workers do not recursively orchestrate. `sol-review` remains intent-level read-only. OMP's combined `github` built-in remains Main-owned because it includes remote mutation. Issue #5 owns natural-use capability review; Issue #8 owns delegation economics.
+Repeated fresh-session/offline project-state recovery (#11), robust delegation economics (#8), long-run capability value (#5), and systematic scaffolding ablation (#9) remain unfinished. Documentation cleanup does not supply those experiments.
 
-Routine evidence for those Issues now comes from the #21 collector plus bounded qualitative feedback rather than bespoke raw-session parsing or mandatory reflection turns.
-
-## Harness subtraction status
-
-Two opportunistic simplifications are already accepted:
-
-1. generic end-of-task self-improvement reflection is removed; feedback is triggered only by reusable friction observed during real work;
-2. duplicate unchanged full repository gates are removed as a default; focused implementation checks feed one current PR merge-ref gate, followed by the distinct post-landing `main` gate.
-
-These examples do **not** complete Issue #9. Systematic current-generation scaffolding inventory/analysis has not yet been performed. #9 remains inactive until enough routine evidence accumulates or one rule causes obvious repeated friction.
-
-## Evidence discipline
-
-For future validation work:
-
-- distinguish deterministic CI, source/document audit, released-runtime smoke, observational real-development evidence, and controlled provider/model experiments;
-- scope runtime claims to the exact behavior/version actually tested;
-- treat external setup failures separately from repository failures;
-- keep OMP as the owner of raw sessions/stats and runtime semantics;
-- keep routine derived summaries outside Git and promote only decision-relevant samples through #12's experiment evidence lifecycle;
-- preserve historical evidence rather than rewriting old experiment bundles when current product policy changes;
-- spend provider/model quota only when a decision-relevant ambiguity cannot be resolved more cheaply.
+Retaining Skills also does not certify every external dependency/provider/version. Live AutoDL, cloud parser, profile, browser and LSP claims require relevant authorized runtime checks when they are actually the subject of work.

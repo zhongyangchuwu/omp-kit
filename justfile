@@ -1,25 +1,10 @@
 set dotenv-load := false
 
-# Portable installer uses its own small dependency environment.
-install *args:
-    uv run --script scripts/install_harness.py {{args}}
+# Native plugin installation does not replace user configuration.
+install:
+    omp plugin link .
 
-install-force:
-    uv run --script scripts/install_harness.py --force
-
-install-preview *args:
-    uv run --script scripts/install_harness.py --dry-run {{args}}
-
-validate-harness:
-    uv run --script scripts/install_harness.py --validate
-
-doctor:
-    uv run --script scripts/install_harness.py --doctor
-
-rollback:
-    uv run --script scripts/install_harness.py --rollback
-
-# Explicit legacy helper; not the normal managed-copy installation.
+# Explicit skill-library link helper; do not combine with duplicate native discovery.
 install-skills *args:
     uv run python scripts/link_skills.py {{args}}
 
@@ -42,22 +27,28 @@ promote-skill path *args:
     uv run python scripts/promote_skill.py {{path}} {{args}}
 
 test:
-    uv run python -m pytest tests
+    uv run --frozen python -m pytest tests
 
+test-skill-authoring:
+    uv run --frozen python -m pytest skills/skill-authoring/tests
 
-# Deterministic offline TypeScript gates; these use the checked-in Bun dependency graph.
+# Isolated dependency environment; tests mock remote APIs and SSH.
+test-autodl:
+    cd skills/autodl && uv run --frozen python -m pytest tests
+
 test-ts:
     bun run test:ts
 
 typecheck:
     bun run typecheck
 
-# Final deterministic local gate. Live OMP/provider smokes are intentionally excluded.
+# Provider-free repository acceptance. No cloud resource or OMP model calls.
 verify:
     just test
+    just test-skill-authoring
+    just test-autodl
     just typecheck
     just test-ts
-    just validate-harness
     just check-registry
     just validate-registry
     git diff --check HEAD

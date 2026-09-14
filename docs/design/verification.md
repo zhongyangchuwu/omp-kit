@@ -17,189 +17,137 @@ omp-kit needs evidence-driven acceptance without turning every worker handoff or
 
 ## Evidence
 
-### Mechanical evidence and model judgment solve different problems
+### Mechanical evidence and judgment solve different problems
 
 **Type:** engineering argument + project dogfood.
 
-Deterministic checks are good at falsifying mechanical contracts such as tests, types, generated registries and repository consistency. Strong review is more valuable for semantics, lifecycle, product intent, security, ambiguity and cross-slice reasoning that those checks do not encode.
+Deterministic checks falsify mechanical contracts such as tests, types, generated registries and repository consistency. Review is useful for semantics, lifecycle, product intent, security, ambiguity and cross-slice reasoning. Repeating either layer without changed state or a new question does not automatically add independence.
 
-Repeating either layer without changed state or a new question does not automatically add independence.
+### Current gate is provider-free and CI-executable
 
-### Current deterministic gate is provider-free and CI-executable
+**Type:** repository fact.
 
-**Type:** repository/runtime fact.
+`just verify` is the repository-owned contract. It covers native-plugin/Skill/library Python tests, Skill-authoring tests, AutoDL mocked tests in its isolated environment, TypeScript typecheck/tests and registry freshness/validation. The obsolete installer validator and its exclusive tests are removed; this is not permission to discard tests for maintained Skills.
 
-`just verify` is the repository-owned deterministic contract. The current v0 tree includes Python repository tests, TypeScript typecheck/tests, harness/static validation, registry freshness/validation, and diff consistency.
+The #18 CI architecture remains:
 
-Issue #18 moved routine execution to `.github/workflows/verify.yml`. The workflow:
+- read-only repository permission, no project secrets;
+- committed Python and Bun dependency graphs;
+- the repository-owned gate instead of duplicate YAML test logic;
+- changed-line and tracked-file drift checks;
+- PR merge-ref pre-merge evidence and separate landed-main evidence.
 
-- uses read-only repository permission and no project secrets;
-- checks `uv.lock` freshness;
-- installs Bun frozen dependencies when `bun.lock` is present;
-- runs repository-owned `just verify` rather than duplicating test logic in YAML;
-- rejects tracked-file drift;
-- runs once on the current PR merge-ref before landing and once on `main` after an authorized merge.
-
-Current candidate results belong in GitHub Actions / the owning PR rather than this design record.
+Exact current candidate results live in Actions/PRs, not a self-invalidating Git-tracked latest-tested-SHA marker.
 
 ### Integrated acceptance ownership
 
 **Type:** accepted project policy.
 
-Issue #6 established that scoped worker verification is evidence while the accepted combined tree needs explicit integration ownership. Issue #9 later removed mechanical duplication of the same broad gate across worker handoff and integrated acceptance.
+#6 established that scoped worker checks provide evidence while the combined tree needs explicit integration ownership. #9 later removed mechanical duplication across unchanged handoffs. Local effort is reserved for useful focused checks, CI diagnosis and genuinely installed-runtime/profile claims.
 
-Current development deliberately prioritizes real omp-kit work over synthetic capability tests and redundant process. Local runtime effort is reserved for focused implementation checks, CI diagnosis, and claims that genuinely depend on installed OMP/profile/machine state.
-
-### Runtime capability boundaries still matter
+### Runtime boundaries
 
 **Type:** project runtime audit.
 
-The historical feedback audit demonstrated that a prompt-described read-only role is not equivalent to a runtime-enforced capability boundary. That conclusion remains valid after completed Issue #4 changed the feedback product decision.
+The historical capability audit showed that prompt-described read-only intent is not a hard runtime boundary. The shared-feedback decision did not invalidate this finding:
 
-The current v0 distinction is consequence-aware:
+- `sol-review` has a conservative review tool surface;
+- remote-mutating GitHub operations remain Main-owned;
+- feedback may be shared because it appends bounded evidence, not repository/policy/Issue changes;
+- stronger runtime enforcement is necessary when the actual consequence calls for that boundary.
 
-- `sol-review` remains intent-level read-only and does not receive ordinary mutation transports;
-- remote-mutating `github` remains Main-owned;
-- `omp_kit_feedback` may be shared with workers because it is a bounded evidence append whose output does not authorize or perform repository/policy/Issue mutation;
-- stronger future OMP per-agent capability enforcement can harden surfaces, but its absence is not proof that every bounded reporting tool must be unavailable.
+### Cleanup must preserve the requirement
+
+**Type:** user correction / review finding.
+
+A previous green cleanup candidate removed maintained Skills and accepted design/evidence assets even though the user intended historical-maintenance cleanup. Its passing tests did not validate that scope interpretation. Restoration and narrower consumer-based cleanup are required; fewer files are not a quality metric by themselves.
 
 ## Interpretation
 
-Verification has several layers with different jobs:
-
 ```text
 focused implementation evidence
-  -> did this scoped change survive checks relevant to the change?
+  -> scoped behavior and regressions
 
-integrated deterministic CI gate
-  -> does the accepted PR candidate / landed main tree mechanically satisfy repository contracts?
+integrated deterministic CI
+  -> current candidate/landed-tree mechanical contracts
 
-strong / independent review
-  -> are semantic, lifecycle, product, security, ambiguity or cross-slice failures present?
+semantic review
+  -> intent, lifecycle, product, security and cross-slice judgment
 
-external read-back / real-state evidence
-  -> did an operation against the external world actually happen as intended?
+external read-back
+  -> observed result of operations against external state
 
-local/runtime-specific evidence
-  -> did behavior depending on installed OMP/profile/machine actually hold?
+released/local runtime evidence
+  -> claims depending on the actual OMP/profile/machine
 ```
 
-The objective is **minimum evidence duplication at the same acceptance strength**, not minimum testing.
+The objective is **minimum evidence duplication at the same acceptance strength**, not minimum testing. Nor is it the smallest product surface regardless of the user's needs.
 
 ## Design principle
 
-> Prefer the cheapest evidence that can falsify the relevant failure mode, and do not collect the same evidence twice unless the state or question changed.
+> Prefer the cheapest evidence that can falsify the relevant failure mode. Do not collect the same evidence twice unless state or question changed.
 
-A broad gate answers a mechanical question about one concrete candidate tree. Once that tree changes materially, the answer may be stale. Before it changes, rerunning solely because work crossed a handoff/phase label usually adds little.
-
-Strong model review should likewise add a different kind of evidence or judgment rather than restating a compile/test-clean result.
+Once the relevant tree changes, an earlier pass may be stale. Before it changes, rerunning solely because a phase or owner changed usually adds little. Review should challenge assumptions not established by a clean test result.
 
 ## Current mechanism
 
-Default flow:
-
 ```text
-implementation / debugging
--> focused checks that answer the current change
--> handoff with concrete evidence when delegation was used
-
-related writes settle
--> reconcile actual writes and cross-slice consumers
--> review the current candidate semantically
--> GitHub Actions deterministic gate on current PR merge-ref
--> fixes, if any, produce a new candidate and therefore a new gate
--> authorized merge
--> main-push gate verifies the landed commit
+implementation/debugging -> focused checks
+related writes settle -> reconcile scopes and shared consumers
+current candidate -> semantic review + PR merge-ref CI
+relevant repair -> new candidate and appropriate new checks
+authorized merge -> landed-main gate
 ```
 
-### Worker-local full gate
+### Worker-local gate
 
-A worker does **not** run the repository-wide full gate merely because it is cheap.
+Focused checks are the default. A worker full gate can be useful for an isolated exact final tree, risky pre-merge safety, cross-slice diagnosis, explicit Main request or CI debugging. On a changing shared tree, a worker pass may describe a transient state and cannot automatically establish final acceptance.
 
-It remains appropriate for a distinct purpose, for example:
+### Integrated gate
 
-- an isolated exact final tree whose evidence is needed before push;
-- pre-merge safety in an isolated worktree;
-- cross-slice diagnosis that narrow checks cannot localize;
-- explicit Main request;
-- CI diagnosis.
+GitHub Actions is the normal broad mechanical acceptance point. A successful PR merge-ref run is pre-merge evidence; post-merge `main` CI answers the distinct landed-tree question. Local `just verify` remains useful, not a mandatory duplicate.
 
-On a shared changing tree, a worker-level full pass can describe a transient state and is poor evidence for the eventual accepted tree.
-
-### Integrated full gate
-
-After related writes settle, GitHub Actions is the normal repository-wide deterministic acceptance point for CI-supported work. It executes the repository-owned gate rather than maintaining a second implementation.
-
-A successful PR merge-ref run is pre-merge mechanical evidence. Behavior-changing integration/review fixes stale that evidence and trigger another run. After merge, the `main` push gate answers the distinct landed-tree question.
-
-Local `just verify` remains a useful pre-push/debugging command, not a mandatory duplicate of passing PR CI.
+Keep the verification implementation in the repository gate. A maintained integration can use an isolated environment and mocked tests without turning CI into a live-service acceptance campaign.
 
 ### Strong review
 
-Independent review remains selective by failure cost, ambiguity and the value of a second judgment. Review should examine the actual current diff/tree and challenge product/contract assumptions that deterministic checks cannot decide.
+Independent review is selective by failure cost, ambiguity and expected value. Review actual current diffs and accepted constraints. Known v0 examples include stale WORKING_STATE text caught before #22, fresh post-base-change CI for #3, and a clean collector-only diff before #23 acceptance.
 
-The v0 landing sequence supplied concrete examples:
+User-approved knowledge and personal Skill conventions are part of scope. An unrelated/general Skill is not necessarily obsolete. A design/evidence document can have an important consumer without being loaded by the runtime.
 
-- #22 review caught a stale `WORKING_STATE.md` before merge;
-- #3 required a fresh post-#22 merge-ref gate and distinguished an external setup failure from repository behavior;
-- #23 was retargeted/rebased into a clean collector-only diff before final review;
-- runtime evidence and CI were kept separate rather than allowing either to substitute for the other.
+### External or expensive verification
 
-### Expensive, external or machine-specific verification
-
-If verification is metered, destructive, slow, or machine-specific, use focused checks plus one proportionate acceptance strategy. External writes still require read-back/idempotency/state evidence; CI cannot prove external state.
-
-Likewise, GitHub-hosted Linux does not establish installed OMP/profile/plugin behavior on the user's machine. The v0 shared-feedback and session-evidence claims therefore used explicit OMP 18.1.21 runtime acceptance in addition to CI.
+Metered, destructive, slow or machine-specific claims need a proportionate plan. CI cannot prove a cloud resource was stopped, a document was not uploaded, or every local OMP installation topology works. Use appropriate read-back, previews, idempotency and runtime evidence.
 
 ## Evaluation / observed effect
 
-The accepted verification architecture has reduced duplicate full-gate rituals while preserving meaningful boundaries:
+The architecture automates mechanical checks while retaining semantics/runtime boundaries. During earlier landing, `setup-just` received HTTP 504 responses before tests ran; unchanged retries passed. Distinguish environment/setup failures from actual test failures rather than making arbitrary code changes or declaring success prematurely.
 
-- repository mechanical acceptance is automated and reproducible;
-- behavior-changing candidate updates receive fresh merge-ref evidence;
-- post-merge `main` gates remain distinct landed-tree evidence;
-- runtime-specific claims are tested at runtime rather than inferred from unit tests;
-- semantic review has caught stale-state and branch-topology defects that deterministic tests alone would not decide.
-
-During v0 landing, `setup-just` twice received GitHub HTTP 504 responses before repository tests ran. The unchanged retries passed. Treating setup/network failures separately from product failures prevents both false confidence and unnecessary code churn.
+The documentation cleanup restores test coverage for retained library tools rather than using deletion to make the suite simpler. It also makes the accepted knowledge available offline, without treating discussion records as the only product contract.
 
 ## Counter-evidence and limits
 
-- A worker-local full run can be high-value before an isolated/risky merge or for broad diagnosis.
-- Passing CI does not establish UI usability, external-service state, runtime security properties or product semantics unless directly covered.
-- High-consequence changes may require E2E/manual/external verification after the normal gate.
-- Reducing duplicate runs must never become an excuse to ignore a failed/missing current integrated gate.
-- GitHub-hosted Linux does not replace platform-specific checks when platform behavior is the claim.
-- A green gate after an external setup retry is valid only when the repository candidate is unchanged and the failure clearly occurred before repository checks.
+- Worker-local broad checks can be valuable for a distinct risk.
+- CI only proves covered properties; it is not proof of user intent or overall usability.
+- High-consequence claims may need E2E/manual/external checks.
+- Avoiding duplication never justifies missing/failed current-candidate checks.
+- Hosted Linux is not every supported local platform/profile.
+- A successful retry is reusable only when the candidate is unchanged and failure was understood.
+- Restoring a Skill does not certify every live external dependency it describes.
 
 ## Current status
 
-**Accepted verification architecture.** Issue #18 completed routine CI execution. Issue #9 remains inactive until enough evidence exists for systematic process/scaffolding ablation; the two earlier simplifications do not complete that audit.
+**Accepted verification architecture.** #9's systematic behavior/scaffolding audit remains unfinished. Document/library maintenance does not replace its real-session evidence.
 
-## Related implementation / Issues
+## Related
 
-- `../workflows.md`
-- `../VALIDATION.md`
-- `../../.github/workflows/verify.yml`
-- `../../skills/omp-workflow/SKILL.md`
-- `../../skills/omp-workflow/references/execution.md`
-- `../../skills/omp-workflow/references/delegation.md`
-- `../../agents/sol-review.md`
-- completed Issue #4 — shared feedback/runtime capability evidence
-- completed Issue #6 — integration/verification ownership policy
-- Issue #8 — delegation economics / accepted useful work
-- Issue #9 — systematic model-compensation/process ablation
-- completed Issue #18 — GitHub Actions deterministic gate
+- [Workflows](../workflows.md), [validation](../VALIDATION.md)
+- [CI](../../.github/workflows/verify.yml)
+- [OMP workflow](../../skills/omp-workflow/SKILL.md)
+- [Execution](../../skills/omp-workflow/references/execution.md)
+- [Delegation](../../skills/omp-workflow/references/delegation.md)
+- #4 shared feedback; #6 integration; #8 economics; #9 ablation; #18 CI; #26 documentation cleanup.
 
 ## Revisit triggers
 
-Re-audit when:
-
-- focused checks repeatedly miss failures an earlier broad gate would catch materially sooner;
-- repository verification becomes materially slower or gains external/provider dependencies;
-- CI becomes flaky/unavailable or diverges from repository-declared toolchain semantics;
-- important checks require a platform/runtime GitHub-hosted CI does not represent;
-- strong review repeatedly duplicates deterministic evidence without distinct findings;
-- a new failure class repeatedly escapes current tests/review;
-- OMP gains stronger runtime-enforced reviewer/read-only semantics that change the desired capability surface;
-- external systems make read-back/idempotency evidence central to normal work.
+Repeated missed regressions, CI/runtime divergence, new platforms, flaky checks, redundant reviews, stronger runtime capability enforcement or important external-state failures justify revisiting the smallest affected part of this policy.

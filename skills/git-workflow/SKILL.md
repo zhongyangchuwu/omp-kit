@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: Use when working with Git or GitHub repository operations: checking state, choosing branch or worktree isolation, linking work to owning Issues, staging changes, writing Conventional-style commit messages, opening pull requests, handling CI/review feedback, merging, or cleaning up branches.
+description: "Use when working with Git or GitHub repository operations: checking state, choosing branch or worktree isolation, linking work to owning Issues, staging changes, writing Conventional-style commit messages, opening pull requests, handling CI/review feedback, merging, or cleaning up branches."
 ---
 
 # Git Workflow
