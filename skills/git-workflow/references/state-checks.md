@@ -4,11 +4,13 @@
 
 Git workflows are stateful. Read repository state before branch, worktree, staging, commit, push, PR, merge, or cleanup operations. Re-read state after branch or worktree changes.
 
+When the repository uses issue-centered project state, recover the current ownership context before non-trivial work: actual branch/HEAD first, then the short `docs/WORKING_STATE.md` index when present, then the owning Issue/PR.
+
 ## State model
 
-Check the relevant state before acting:
+Check the relevant Git/GitHub state before acting:
 
-- current branch;
+- current branch and actual HEAD;
 - default branch;
 - detached HEAD state;
 - dirty tracked files;
@@ -16,8 +18,11 @@ Check the relevant state before acting:
 - staged changes;
 - upstream branch;
 - ahead/behind state;
-- PR state;
-- worktree ownership.
+- PR state and required checks;
+- worktree ownership;
+- owning Issue/acceptance criteria when the repository uses Issues for unfinished work.
+
+Do not copy an old commit SHA or PR status from notes and treat it as current observable state.
 
 ## Existing changes
 
@@ -35,26 +40,33 @@ Detached HEAD is a state that needs an explicit safe target before non-trivial w
 
 ## Default branch
 
-Default branch direct edits fit the fast local path only. Non-trivial work starts from a branch.
+Keep the default branch installable and recoverable. Non-trivial work normally starts from a branch unless repository/user policy explicitly authorizes a different path.
 
 ## Branch and worktree transitions
 
 After creating, switching, or deleting a branch or worktree, re-check:
 
-- current branch;
+- current branch and HEAD;
 - working tree cleanliness;
 - expected path;
-- upstream relationship when pushing is planned.
+- upstream relationship when pushing is planned;
+- whether the branch still matches the intended owning Issue/PR.
 
 ## Staging and commits
 
 Stage only files that belong to the logical change. Review staged paths before committing. Commit generated outputs with their source change when they are direct consequences of that change.
 
+## Merge and Issue completion
+
+Before merge, confirm current PR head/base, required CI/review state, and authorization. After merge, inspect the landed state and re-evaluate the owning Issue acceptance criteria.
+
+Do not equate `merged` with `Issue completed`. If runtime smoke, dogfood, migration, or another acceptance condition remains, keep the Issue open and record the remaining trigger/state.
+
 ## Cleanup
 
 Before deleting a branch or worktree, confirm one of these is true:
 
-- the work is merged;
+- the work is merged and no stacked/dependent branch still needs it;
 - the work is saved elsewhere;
 - the user explicitly chose to discard it.
 

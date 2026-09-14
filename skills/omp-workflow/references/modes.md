@@ -24,19 +24,27 @@ Focused mode output:
 
 Focused mode works best for small features, multi-file fixes, and changes with a few known risks.
 
-## Full mode
+## Durable project mode
 
-Use full mode when continuity, traceability, or coordination matters.
+Use durable project mode when continuity, traceability, or coordination matters across sessions.
 
-Full mode output:
+Default to the issue-centered project-state model in `project-state.md`:
 
-- durable planning artifacts;
-- explicit phase state;
-- review record;
-- verification record;
-- capture record for project documentation or handoff.
+- current accepted truth in current docs/executable policy;
+- a short `docs/WORKING_STATE.md` navigation index when useful;
+- concrete unfinished problems in Issues;
+- implementation/review/CI evidence in PRs;
+- durable rationale in design records only when worth preserving.
 
-Full mode works best for phased work, multi-session work, risky changes, and coordinated subagent execution.
+This mode works well for multi-session development without requiring a phase artifact tree.
+
+## Specialized phase mode
+
+Use the `.planning/` lifecycle only when the project deliberately needs a richer local/offline phase dossier, ordered roadmap/requirements artifacts, or explicit phase archival state.
+
+Its outputs may include PROJECT/REQUIREMENTS/ROADMAP/STATE plus phase-local context, plans, summaries, verification, and capture records. Do not select this mode merely because a task is large or lasts more than one session.
+
+Load `initialization.md` and `phase-lifecycle.md` only after choosing this mode explicitly.
 
 ## Rigor escalation
 
@@ -46,4 +54,4 @@ Use stronger review and verification as blast radius increases. The mode stays p
 
 ## Selection rule
 
-Start with the smallest mode that can preserve the facts another maintainer or agent needs to verify the result. Increase the mode when risk, ambiguity, coordination, or time span increases.
+Start with the smallest mode that can preserve the facts another maintainer or agent needs to recover and verify the result. Increase rigor when risk, ambiguity, coordination, or time span increases; increase artifact count only when those artifacts solve a concrete continuity or traceability problem.
