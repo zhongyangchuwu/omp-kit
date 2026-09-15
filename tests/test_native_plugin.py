@@ -35,12 +35,13 @@ def test_native_plugin_manifest_exposes_resources_and_distributed_knowledge() ->
     manifest = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
     resource_dirs = {"agents", "skills", "rules", "extensions"}
     knowledge_dirs = {"docs", "evidence"}
+    library_dirs = {"src"}
     packaged_files = {"scripts/session_evidence.ts"}
 
     assert manifest["name"] == "omp-kit"
     assert manifest["private"] is True
     assert manifest["packageManager"].startswith("bun@")
-    assert set(manifest["files"]) == resource_dirs | knowledge_dirs | packaged_files
+    assert set(manifest["files"]) == resource_dirs | knowledge_dirs | library_dirs | packaged_files
     assert manifest["omp"]["name"] == "OMP Kit"
     assert manifest["omp"]["description"]
     assert manifest["omp"]["extensions"] == ["./extensions/feedback.ts"]
@@ -48,7 +49,7 @@ def test_native_plugin_manifest_exposes_resources_and_distributed_knowledge() ->
     assert manifest["scripts"]["evidence:collect"].endswith("session_evidence.ts collect")
     assert manifest["scripts"]["evidence:report"].endswith("session_evidence.ts report")
 
-    for resource in resource_dirs | knowledge_dirs:
+    for resource in resource_dirs | knowledge_dirs | library_dirs:
         assert (ROOT / resource).is_dir()
     for file_path in packaged_files:
         assert (ROOT / file_path).is_file()
