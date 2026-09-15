@@ -1,5 +1,9 @@
 import { test } from "bun:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { SessionEntry } from "@oh-my-pi/pi-coding-agent";
 import {
 	createOmpStatsClient,
@@ -253,19 +257,43 @@ test("current-session errors and a moving leaf are unavailable, not empty", () =
 	if (moved.status === "unavailable") assert.equal(moved.problem.code, "changed-during-read");
 });
 
-test("shared reads leave legacy quantitative derivation and schema unchanged", async () => {
-	const { buildSessionEvidence } = await import("../../scripts/session_evidence");
-	const direct = await buildSessionEvidence(summary, trace as Parameters<typeof buildSessionEvidence>[1], []);
-	const viaAccess = await buildSessionEvidence(
-		requireRead(await client([summary]).listSessions(10))[0],
-		requireRead(await client(trace).getTrace(file)),
-		[],
-	);
-	assert.deepEqual({ ...viaAccess, collectedAt: direct.collectedAt }, direct);
-	assert.equal(viaAccess.schemaVersion, "omp-kit.session-evidence/v1");
-	assert.equal("limitations" in viaAccess, false);
+test("shared reads leave legacy quantitative derivation and schema unchanged", () => {
+	// The OMP SDK caches its profile root on import. Isolate this integration check
+	// so it cannot preempt another test's agent-dir setup in the shared Bun process.
+	const agentDir = mkdtempSync(join(tmpdir(), "omp-kit-access-agent-"));
+	const env: typeof process.env = { ...process.env, HOME: agentDir, PI_CODING_AGENT_DIR: agentDir };
+	delete env.OMP_PROFILE;
+	delete env.PI_PROFILE;
+	const evidenceUrl = new URL("../../scripts/session_evidence.ts", import.meta.url).href;
+	const accessUrl = new URL("../../src/session/omp-access.ts", import.meta.url).href;
+	const code = `
+		(async () => {
+			const assert = (await import("node:assert/strict")).default;
+			const { buildSessionEvidence } = await import(${JSON.stringify(evidenceUrl)});
+			const { createOmpStatsClient, requireRead } = await import(${JSON.stringify(accessUrl)});
+			const summary = ${JSON.stringify(summary)};
+			const trace = ${JSON.stringify(trace)};
+			const client = value => createOmpStatsClient(${JSON.stringify(origin)}, {
+				fetch: async () => Response.json(value), now: () => 10,
+			});
+			const direct = await buildSessionEvidence(summary, trace, []);
+			const viaAccess = await buildSessionEvidence(
+				requireRead(await client([summary]).listSessions(10))[0],
+				requireRead(await client(trace).getTrace(summary.file)), [],
+			);
+			assert.deepEqual({ ...viaAccess, collectedAt: direct.collectedAt }, direct);
+			assert.equal(viaAccess.schemaVersion, "omp-kit.session-evidence/v1");
+			assert.equal("limitations" in viaAccess, false);
+		})().catch(error => { console.error(error); process.exitCode = 1; });
+	`;
+	try {
+		const result = spawnSync(process.execPath, ["--eval", code], { env, encoding: "utf8", timeout: 30_000 });
+		assert.equal(result.error, undefined);
+		assert.equal(result.status, 0, result.stderr);
+	} finally {
+		rmSync(agentDir, { recursive: true, force: true });
+	}
 });
-
 
 test("empty current branch does not pass a null leaf to OMP getBranch", () => {
 	const empty = {
