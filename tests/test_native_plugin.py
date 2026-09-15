@@ -36,7 +36,7 @@ def test_native_plugin_manifest_exposes_resources_and_distributed_knowledge() ->
     resource_dirs = {"agents", "skills", "rules", "extensions"}
     knowledge_dirs = {"docs", "evidence"}
     library_dirs = {"src"}
-    packaged_files = {"scripts/session_evidence.ts"}
+    packaged_files = {"scripts/session_evidence.ts", "scripts/session_assurance.ts"}
 
     assert manifest["name"] == "omp-kit"
     assert manifest["private"] is True
@@ -45,7 +45,11 @@ def test_native_plugin_manifest_exposes_resources_and_distributed_knowledge() ->
     assert manifest["omp"]["name"] == "OMP Kit"
     assert manifest["omp"]["description"]
     assert manifest["omp"]["extensions"] == ["./extensions/feedback.ts"]
-    assert manifest["bin"] == {"omp-kit-evidence": "./scripts/session_evidence.ts"}
+    assert manifest["bin"] == {
+        "omp-kit-evidence": "./scripts/session_evidence.ts",
+        "omp-kit-assurance": "./scripts/session_assurance.ts",
+    }
+    assert manifest["scripts"]["assurance:report"].endswith("session_assurance.ts")
     assert manifest["scripts"]["evidence:collect"].endswith("session_evidence.ts collect")
     assert manifest["scripts"]["evidence:report"].endswith("session_evidence.ts report")
 
