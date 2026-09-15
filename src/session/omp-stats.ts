@@ -1,96 +1,90 @@
 import type { SessionSummary, SessionTrace } from "@oh-my-pi/omp-stats/shared-types";
-import type { EvidenceRead, ReadScope } from "./read-result";
+import { isObject, isSessionSummary, isSessionTrace } from "./omp-stats-contract";
+import type { EvidenceRead, ReadLimit, ReadScope } from "./read-result";
 
 export type StatsFetch = (url: string, init?: RequestInit) => Promise<Response>;
 
-/** Consumers depend on only the reads they use, not on server ownership or a CLI. */
+/** Consumers depend only on needed reads, not the CLI or server ownership. */
 export interface SessionTraceReader {
 	getTrace(file: string, signal?: AbortSignal): Promise<EvidenceRead<SessionTrace>>;
 }
-
 export interface SessionEntryReader {
 	getEntry(file: string, id: string, signal?: AbortSignal): Promise<EvidenceRead<{ entry: unknown }>>;
 }
-
 export interface OmpStatsClient extends SessionTraceReader, SessionEntryReader {
 	sync(signal?: AbortSignal): Promise<EvidenceRead<unknown>>;
 	listSessions(limit: number, signal?: AbortSignal): Promise<EvidenceRead<SessionSummary[]>>;
 }
 
-function isObject(value: unknown): value is Record<string, unknown> {
-	return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-/**
- * Borrow an already selected stats server. Construction performs no IO, sync or logging.
- * Envelope checks are not a replacement for per-field validation in semantic rules.
- * Returned OMP data is private; it is not an allowlisted publication format.
- */
+/** Inert, caller-selected LOCAL access. Raw successful payloads remain private. */
 export function createOmpStatsClient(
 	origin: string,
 	fetcher: StatsFetch = (url, init) => fetch(url, init),
+	now: () => number = Date.now,
 ): OmpStatsClient {
-	const base = new URL(origin);
-	if (!["http:", "https:"].includes(base.protocol) || base.username || base.password) {
-		throw new Error("Expected an HTTP stats origin without embedded credentials");
+	let base: URL;
+	try {
+		base = new URL(origin);
+	} catch {
+		throw new Error("Expected a loopback HTTP origin without credentials or a path");
+	}
+	if (base.protocol !== "http:" || !["127.0.0.1", "localhost", "[::1]"].includes(base.hostname) ||
+		base.username || base.password || base.pathname !== "/" || base.search || base.hash) {
+		throw new Error("Expected a loopback HTTP origin without credentials or a path");
 	}
 
 	async function read<T>(
 		view: Extract<ReadScope, { source: "omp-stats" }>["view"],
 		path: string,
 		accept: (value: unknown) => boolean,
+		limitations: readonly ReadLimit[],
 		signal?: AbortSignal,
 	): Promise<EvidenceRead<T>> {
 		const scope: ReadScope = { source: "omp-stats", view };
-		if (signal?.aborted) return { scope, status: "unavailable", reason: "aborted" };
+		const startedAt = now();
+		const metadata = () => ({ scope, startedAt, finishedAt: now(), limitations, consistency: "not-checked" as const });
+		if (signal?.aborted) return { ...metadata(), status: "unavailable", reason: "aborted" };
 		let response: Response;
 		try {
-			response = await fetcher(new URL(path, base).href, { signal });
+			response = await fetcher(new URL(path, base).href, { signal, redirect: "error" });
 		} catch {
-			return { scope, status: "unavailable", reason: signal?.aborted ? "aborted" : "transport" };
+			return { ...metadata(), status: "unavailable", reason: signal?.aborted ? "aborted" : "transport" };
 		}
 		if (!response.ok) {
-			// Do not read or retain potentially private diagnostic bodies.
-			try { await response.body?.cancel(); } catch { /* Best-effort body release. */ }
-			return { scope, status: "unavailable", reason: "http", httpStatus: response.status };
+			// Never read potentially private HTTP diagnostic bodies.
+			try { await response.body?.cancel(); } catch { /* Best-effort release. */ }
+			return { ...metadata(), status: "unavailable", reason: signal?.aborted ? "aborted" : "http", httpStatus: response.status };
 		}
 		let data: unknown;
 		try {
 			data = await response.json();
 		} catch {
-			return { scope, status: "unavailable", reason: signal?.aborted ? "aborted" : "invalid-json" };
+			return { ...metadata(), status: "unavailable", reason: signal?.aborted ? "aborted" : "invalid-json" };
 		}
-		if (signal?.aborted) return { scope, status: "unavailable", reason: "aborted" };
-		if (!accept(data)) return { scope, status: "unavailable", reason: "invalid-envelope" };
-		return { scope, status: "available", data: data as T };
+		if (signal?.aborted) return { ...metadata(), status: "unavailable", reason: "aborted" };
+		if (!accept(data)) return { ...metadata(), status: "unavailable", reason: "invalid-envelope" };
+		return { ...metadata(), status: "available", data: data as T };
 	}
 
 	return {
-		sync: signal => read("sync", "/api/sync", () => true, signal),
-		listSessions(limit, signal) {
+		sync: signal => read("sync", "/api/sync", () => true, [], signal),
+		async listSessions(limit, signal) {
 			if (!Number.isSafeInteger(limit) || limit <= 0) throw new Error("Expected a positive session limit");
-			return read(
-				"session-list",
-				`/api/sessions?limit=${limit}`,
-				value => Array.isArray(value) && value.every(row => isObject(row) && typeof row.file === "string"),
-				signal,
-			);
+			const result = await read<SessionSummary[]>("session-list", `/api/sessions?limit=${limit}`,
+				value => Array.isArray(value) && value.every(isSessionSummary), ["bounded-session-list"], signal);
+			if (result.status === "available" && result.data.length >= limit) {
+				return { ...result, limitations: [...result.limitations, "list-limit-reached" as const] };
+			}
+			return result;
 		},
 		getTrace(file, signal) {
-			return read(
-				"active-branch-trace",
-				`/api/session/trace?file=${encodeURIComponent(file)}`,
-				value => isObject(value) && value.file === file && Array.isArray(value.tracks) && isObject(value.summary),
-				signal,
-			);
+			return read("active-branch-trace", `/api/session/trace?file=${encodeURIComponent(file)}`,
+				value => isSessionTrace(value) && value.file === file,
+				["active-branches-only", "child-completeness-unknown", "details-are-previews", "not-an-atomic-snapshot"], signal);
 		},
 		getEntry(file, id, signal) {
-			return read(
-				"selected-entry",
-				`/api/session/entry?file=${encodeURIComponent(file)}&id=${encodeURIComponent(id)}`,
-				value => isObject(value) && isObject(value.entry),
-				signal,
-			);
+			return read("selected-entry", `/api/session/entry?file=${encodeURIComponent(file)}&id=${encodeURIComponent(id)}`,
+				value => isObject(value) && isObject(value.entry) && value.entry.id === id, [], signal);
 		},
 	};
 }
@@ -100,13 +94,13 @@ export interface LocalStatsServer {
 	port: number;
 	stop(): unknown;
 }
-
 export interface LocalStatsOptions {
 	start?: () => Promise<LocalStatsServer>;
 	fetch?: StatsFetch;
+	now?: () => number;
 }
 
-/** Own only the server created here; release it on callback success or failure. */
+/** Own only this server; release it on success, read failure or consumer failure. */
 export async function withLocalOmpStats<T>(
 	use: (client: OmpStatsClient) => Promise<T>,
 	options: LocalStatsOptions = {},
@@ -117,8 +111,7 @@ export async function withLocalOmpStats<T>(
 	});
 	const server = await start();
 	try {
-		const client = createOmpStatsClient(`http://${server.hostname}:${server.port}`, options.fetch);
-		return await use(client);
+		return await use(createOmpStatsClient(`http://${server.hostname}:${server.port}`, options.fetch, options.now));
 	} finally {
 		await server.stop();
 	}

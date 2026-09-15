@@ -1,14 +1,13 @@
-import type { EvidenceRead, ReadScope } from "./read-result";
+import type { EvidenceRead, ReadLimit, ReadScope } from "./read-result";
 
-/** Narrow structural subset of OMP's public sessionManager; no raw journal parser. */
+/** Narrow structural subset of the public SDK, without importing its runtime. */
 export interface RuntimeEntrySource<Entry> {
 	getSessionId(): string;
 	getSessionFile(): string | undefined;
 	getLeafId(): string | null;
-	getBranch(leafId?: string | null): Entry[];
+	getBranch(leafId?: string): Entry[];
 	getEntries(): Entry[];
 }
-
 export interface RuntimeEntrySnapshot<Entry> {
 	sessionId: string;
 	sessionFile: string | null;
@@ -18,28 +17,32 @@ export interface RuntimeEntrySnapshot<Entry> {
 
 type RuntimeView = Extract<ReadScope, { source: "omp-runtime" }>["view"];
 
-/**
- * A detached snapshot of ONE live session's retained entries. Other branches require
- * explicit all-retained selection; child sessions and erased history are not implied.
- * Raw entries stay private and must not be forwarded to a publication sink by default.
- */
+/** Detached PRIVATE view of ONE live session; no child recursion or journal parsing. */
 export function readRuntimeEntries<Entry>(
 	source: RuntimeEntrySource<Entry> | null | undefined,
 	view: RuntimeView = "active-branch-entries",
+	now: () => number = Date.now,
 ): EvidenceRead<RuntimeEntrySnapshot<Entry>> {
 	const scope: ReadScope = { source: "omp-runtime", view };
-	if (!source) return { scope, status: "unavailable", reason: "runtime-unavailable" };
+	const startedAt = now();
+	const limitations: ReadLimit[] = ["single-session-only", "retained-entries-only", "not-an-atomic-snapshot"];
+	if (view === "active-branch-entries") limitations.push("active-branches-only");
+	const metadata = () => ({ scope, startedAt, finishedAt: now(), limitations, consistency: "not-checked" as const });
+	if (!source) return { ...metadata(), status: "unavailable", reason: "runtime-unavailable" };
 	try {
 		const sessionId = source.getSessionId();
 		const sessionFile = source.getSessionFile() ?? null;
 		const leafId = source.getLeafId();
-		const entries = structuredClone(view === "all-retained-entries" ? source.getEntries() : source.getBranch(leafId));
-		const data = { sessionId, sessionFile, leafId, entries };
-		if (source.getSessionId() !== sessionId || (source.getSessionFile() ?? null) !== sessionFile || source.getLeafId() !== leafId) {
-			return { scope, status: "partial", reason: "source-changed", data };
+		const entries = structuredClone(view === "all-retained-entries"
+			? source.getEntries()
+			: leafId === null ? [] : source.getBranch(leafId));
+		// Never attach possibly mixed data to an identity that changed mid-read.
+		if (source.getSessionId() !== sessionId || (source.getSessionFile() ?? null) !== sessionFile) {
+			return { ...metadata(), consistency: "source-changed", status: "unavailable", reason: "source-changed" };
 		}
-		return { scope, status: "available", data };
+		const consistency = source.getLeafId() === leafId ? "no-change-detected" : "source-changed";
+		return { ...metadata(), consistency, status: "available", data: { sessionId, sessionFile, leafId, entries } };
 	} catch {
-		return { scope, status: "unavailable", reason: "runtime-read-failed" };
+		return { ...metadata(), status: "unavailable", reason: "runtime-read-failed" };
 	}
 }
