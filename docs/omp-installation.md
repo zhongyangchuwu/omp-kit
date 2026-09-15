@@ -18,7 +18,7 @@ omp install .
 omp plugin list
 ```
 
-Current OMP classifies a local install target as a link, so the native plugin registration points at the checkout instead of copying the source into another development directory. Normal source edits and `git pull` therefore keep the same registration. Restart the OMP session after changing loaded resources; rerun `just install` when dependencies or registration change.
+OMP 18.2.0 exposes `omp install <target>` as the top-level convenience command. Local filesystem targets are routed to the native plugin link flow, so the registration points at the checkout instead of copying the source into another development directory. Normal source edits and `git pull` therefore keep the same registration. Restart the OMP session after changing loaded resources; rerun `just install` when dependencies or registration change.
 
 ```sh
 just check-install
@@ -26,7 +26,7 @@ just plugin-doctor
 just uninstall
 ```
 
-`omp plugin doctor` evaluates the active plugin root rather than omp-kit alone, so unrelated plugin problems can also appear there.
+`just check-install` reports the active OMP version and plugin registration. `omp plugin doctor` evaluates the active plugin root rather than omp-kit alone, so unrelated plugin problems can also appear there.
 
 The plugin exposes agents, maintained Skills, a Main workflow rule and the feedback extension. It does not install AutoDL credentials, external parser programs, MCP servers, model routes or normal OMP configuration.
 
@@ -58,7 +58,7 @@ Use the normal plugin path for omp-kit agents/rules/extensions. Skill-only links
 
 The old config-copy installer and tracked provider/config snapshot are no longer maintained. Their implementation and old rollback commands are available at the pre-cleanup revision:
 
-[Pre-cleanup source](https://github.com/zhongyangchuwu/omp-kit/tree/47a2951f47c9c55ce8f8dd3a73256189f37582).
+[Pre-cleanup source](https://github.com/zhongyangchuwu/omp-kit/tree/47a2951f47c9c55ce8f8cb020220288f9e28f871).
 
 This repository cleanup does **not** remove or rewrite anything previously installed in `~/.omp/agent`, named profiles or custom roots. Before migrating an old installation:
 
