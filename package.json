@@ -9,6 +9,7 @@
     "skills",
     "rules",
     "extensions",
+    "src",
     "scripts/session_evidence.ts",
     "docs",
     "evidence"

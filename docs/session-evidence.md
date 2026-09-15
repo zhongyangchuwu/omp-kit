@@ -99,6 +99,8 @@ The collector uses the released/public OMP stats package/server:
 
 Do not replace these with direct `stats.db` queries or raw OMP JSONL parsing.
 
+The shared [session access library](session-access.md) separates these reads from server ownership and preserves explicit availability/scope for future assurance and publication consumers. Existing collector schemas and storage remain unchanged.
+
 ## Feedback relationship
 
 `omp_kit_feedback` is the qualitative evidence stream. Its records remain durable in the feedback store and session journal. The evidence collector links feedback by the public session-file provenance stored in each feedback record.
