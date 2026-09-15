@@ -15,6 +15,8 @@ not a safety verdict; exit 2 means invalid usage, an unassessed read or rule fai
 export interface AssuranceOptions { sessionFile: string; origin?: string; json: boolean }
 
 export function parseAssuranceArgs(argv: readonly string[]): AssuranceOptions | null {
+	// Package-script runners may forward one leading argument separator.
+	if (argv[0] === "--") argv = argv.slice(1);
 	if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) return null;
 	let sessionFile: string | undefined;
 	let origin: string | undefined;
