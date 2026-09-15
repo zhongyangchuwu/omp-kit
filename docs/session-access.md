@@ -104,3 +104,6 @@ adapter, rather than relying only on permissive fakes. CI checks the full reposi
 and Bun contracts. Neither these tests nor SDK compilation establish live rewind,
 child-coverage or installed-profile acceptance. No assurance rules/UI, PostgreSQL or
 cloud publication is delivered here. #31 and #33 remain open.
+
+The separate [initial assurance report](session-assurance.md) now consumes this
+reading layer; it does not change these source/coverage contracts.

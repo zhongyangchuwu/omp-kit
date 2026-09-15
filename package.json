@@ -11,17 +11,20 @@
     "extensions",
     "src",
     "scripts/session_evidence.ts",
+    "scripts/session_assurance.ts",
     "docs",
     "evidence"
   ],
   "bin": {
-    "omp-kit-evidence": "./scripts/session_evidence.ts"
+    "omp-kit-evidence": "./scripts/session_evidence.ts",
+    "omp-kit-assurance": "./scripts/session_assurance.ts"
   },
   "scripts": {
     "test:ts": "bun test ./tests/ts",
     "typecheck": "tsc --noEmit",
     "evidence:collect": "bun ./scripts/session_evidence.ts collect",
-    "evidence:report": "bun ./scripts/session_evidence.ts report"
+    "evidence:report": "bun ./scripts/session_evidence.ts report",
+    "assurance:report": "bun ./scripts/session_assurance.ts"
   },
   "dependencies": {
     "@oh-my-pi/pi-coding-agent": "18.2.0"
