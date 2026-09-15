@@ -7,10 +7,12 @@ install:
     omp install .
     omp plugin list
 
-# Inspect native plugin registration. Doctor checks the whole active plugin root.
+# Inspect the runtime version and native plugin registration.
 check-install:
+    omp --version
     omp plugin list
 
+# Doctor checks the whole active plugin root, not only omp-kit.
 plugin-doctor:
     omp plugin doctor
 
