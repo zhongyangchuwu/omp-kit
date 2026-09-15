@@ -34,22 +34,15 @@ A separate community report similarly favors separating strong-model planning/ac
 
 Reference: https://www.makerjackie.com/blog/2026-09-07-gpt6-astra
 
-### OMP 18.1.20 `hub wait` semantics
+### OMP 18.2.0 `hub wait` semantics
 
-**Type:** released-source inspection.
+**Type:** released-source/changelog inspection.
 
-OMP 18.1.20 defines unified `hub wait` as returning on the first of:
+OMP 18.2.0 retains unified `hub wait` semantics in which a matching peer message can win the wait before a watched job settles. Therefore a routine peer progress message can still wake Main before the completion-related condition Main was conceptually waiting for.
 
-```text
-matching peer message
-watched job settling
-wait-window expiry
-steering interrupt
-```
+Since 18.1.22, message/job waits use an OMP-owned adaptive window instead of a caller-supplied timeout: the window starts around 5 seconds and lengthens across back-to-back waits up to about 5 minutes. The old `timeoutMs` argument and `async.pollWaitDuration` setting were removed. In 18.2.0, process waits also report what they were actually blocked on when timing out, improving diagnostics without adding semantic completion filtering.
 
-Therefore a normal peer progress message can wake Main before the completion-related condition Main was conceptually waiting for.
-
-The inspected `IrcMessage` structure carries routing/body/timestamp/reply metadata rather than a general workflow-semantic kind such as:
+The peer-message contract still does not provide a general workflow-semantic kind such as:
 
 ```text
 progress
@@ -58,22 +51,20 @@ blocker
 final
 ```
 
-Main therefore cannot ask that runtime contract to ignore routine progress while waking only on material message classes. These remaining runtime gaps stay in Issue #7 rather than being reimplemented in omp-kit. The later 18.1.21 changelog triage did not identify a change to this surface; this is not a new full runtime test.
+Main therefore still cannot ask the runtime to ignore routine progress while waking only on decision-relevant message classes. These remaining gaps stay in Issue #7 rather than being reimplemented in omp-kit.
 
-### OMP 18.1.20 stable final-result retrieval
+### Stable final-result retrieval
 
 **Type:** released documentation/source contract.
 
-Released OMP 18.1.20 documents:
+Released OMP provides:
 
 ```text
 agent://<id>   -> saved final subagent output artifact
 history://<id> -> concise live/parked subagent transcript
 ```
 
-For task subagents with an artifacts directory, OMP writes `<id>.md` and resolves it through `agent://<id>`. IDs are allocated by the session-scoped `AgentOutputManager`; nested outputs retain id-qualified paths.
-
-This is sufficient for omp-kit's stable post-settlement result-retrieval need. A convenient recent `/jobs` row may still be lifecycle-oriented, but omp-kit does not need a parallel result ledger merely to recover a final output by stable agent identity.
+This is sufficient for omp-kit's stable post-settlement result-retrieval need. A convenient recent job row may still be lifecycle-oriented, but omp-kit does not need a parallel result ledger merely to recover a final output by stable agent identity.
 
 ### omp-kit persistent-worker evidence
 
@@ -117,11 +108,13 @@ standard ~5m
 deep     ~10m
 ```
 
-These are coordination hints, not completion promises or empirically optimal constants. Guidance favors:
+These are coordination hints, not completion promises, empirically optimal constants, or `hub wait` timeout settings. OMP 18.2.0 owns the actual adaptive wait window.
 
-- a coherent bounded wait appropriate to the checkpoint;
-- avoiding short repeated polling;
-- one checkpoint request after a meaningful overrun;
+Guidance favors:
+
+- letting the current OMP wait contract block instead of recreating a short polling loop;
+- avoiding repeated supervisor turns on all-running snapshots with no new information;
+- one checkpoint request after a meaningful task-level overrun;
 - stop/split/escalate after repeated comparable overrun or stagnation;
 - coherent worker reuse when task continuity justifies it;
 - final-output retrieval through `agent://<id>` and transcript evidence through `history://<id>` when the released surfaces apply;
@@ -131,13 +124,13 @@ These are policy-level mitigations, not a claim of ideal event semantics.
 
 ## Evaluation / observed effect
 
-Current evidence establishes persistent continuation in an exercised scenario, plausible and observed wakeup costs, the inspected wait/message limitations, and released final-output retrieval. Issue #7 narrowed from four gaps to three without an extra result-retrieval layer.
+Current evidence establishes persistent continuation in an exercised scenario, plausible and observed wakeup costs, the inspected wait/message limitations, and released final-output retrieval. OMP 18.1.22/18.2.0 removed the local timeout knob and improved waiting diagnostics, but did not resolve the completion-relevant message-filtering gap. Issue #7 therefore remains open with the same three semantic gaps.
 
-A portable cost curve for wait durations and orchestration shapes across providers remains unestablished. That belongs with delegation economics (Issue #8) and natural real-work telemetry, not a synthetic waiting benchmark by default.
+A portable cost curve for checkpoint cadence and orchestration shapes across providers remains unestablished. That belongs with delegation economics (Issue #8) and natural real-work telemetry, not a synthetic waiting benchmark by default.
 
 ## Counter-evidence and limits
 
-- Long waits reduce polling but can delay intervention when a worker is stuck.
+- Longer runtime waits reduce polling but can delay intervention when a worker is stuck.
 - Progress messages sometimes contain a real blocker/decision in prose.
 - Separate sessions can reduce supervision overhead while increasing context-transfer cost and losing local state.
 - `agent://<id>` does not make recent job snapshots permanent or add semantic wait predicates.

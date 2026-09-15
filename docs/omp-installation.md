@@ -1,24 +1,52 @@
 # Installation and migration
 
-## Native plugin checkout
+## Development checkout
 
-Use a released OMP installation and the Bun version in `package.json`. From this checkout:
+For active omp-kit development, keep one long-lived checkout and install that working tree through OMP's native local install path:
+
+```sh
+git clone git@github.com:zhongyangchuwu/omp-kit.git
+cd omp-kit
+just install
+```
+
+The `install` recipe runs:
 
 ```sh
 bun install --frozen-lockfile
-omp plugin link .
+omp install .
 omp plugin list
 ```
 
-Restart the OMP session to load changed plugin resources. Inspect the actual linked checkout and runtime errors rather than assuming that selecting a different Git branch changes an already running session.
+OMP 18.2.0 exposes `omp install <target>` as the top-level convenience command. Local filesystem targets are routed to the native plugin link flow, so the registration points at the checkout instead of copying the source into another development directory. Normal source edits and `git pull` therefore keep the same registration. Restart the OMP session after changing loaded resources; rerun `just install` when dependencies or registration change.
+
+```sh
+just check-install
+just plugin-doctor
+just uninstall
+```
+
+`just check-install` reports the active OMP version and plugin registration. `omp plugin doctor` evaluates the active plugin root rather than omp-kit alone, so unrelated plugin problems can also appear there.
 
 The plugin exposes agents, maintained Skills, a Main workflow rule and the feedback extension. It does not install AutoDL credentials, external parser programs, MCP servers, model routes or normal OMP configuration.
 
+## Remote Git installation
+
+OMP also accepts Git plugin sources. A public repository can be installed without repository credentials, for example:
+
 ```sh
-omp plugin uninstall omp-kit
+omp install github:zhongyangchuwu/omp-kit
 ```
 
-This removes the plugin registration, not the repository checkout or the user's sessions and feedback.
+A private repository does not need to be made public when the machine already has access. Use an authenticated Git source such as SSH:
+
+```sh
+omp install git@github.com:zhongyangchuwu/omp-kit.git
+```
+
+This installs a managed Git dependency under OMP's plugin root. It is appropriate for consumption, but it is not the preferred maintainer workflow because it is separate from the editable working checkout. For ongoing development, use the local checkout install/link above.
+
+Repository visibility and package publication are separate concerns. `package.json` may remain `private: true`; OMP can load the source checkout or a Git-installed plugin without publishing an npm package.
 
 ## Skill-only library use
 
@@ -44,6 +72,6 @@ Do not run a historical rollback blindly against a newer live profile. No automa
 
 ## Verification boundaries
 
-`omp plugin list` confirms registration, not every tool invocation. The prior feedback acceptance used OMP's explicit `--extension` workflow against an exact checkout; that is claim-specific evidence, not proof of every installation topology.
+`omp plugin list` confirms registration, not every tool invocation. `omp plugin doctor` checks the plugin root but is not a full runtime acceptance test. Prior feedback/session-evidence acceptance used exact checkouts and released OMP runtime behavior; those claims remain scoped to the evidence recorded in `VALIDATION.md`.
 
 A fresh or changed installation may need a small discovery smoke. Routine documentation/library edits do not require repeating model calls when the corresponding runtime implementation has not changed.

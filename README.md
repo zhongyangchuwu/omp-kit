@@ -11,23 +11,29 @@ OMP Kit combines a model-neutral workflow for Oh My Pi (OMP) with a personally m
 
 Core workflow, maintained experience Skills, and service integrations are responsibility categories, not a ranking of value or a requirement to split repositories. Skills such as `code-taste` and `omp-design` preserve the maintainer's practical experience even when they are useful outside omp-kit. See [architecture](docs/architecture.md).
 
-## Install from a checkout
+## Install for active development
 
-Use an existing released OMP installation and Bun matching `package.json`:
+For a checkout that stays on the latest development state, keep one long-lived clone and let OMP link that working tree through its native local install flow:
 
 ```sh
-git clone https://github.com/zhongyangchuwu/omp-kit.git
+git clone git@github.com:zhongyangchuwu/omp-kit.git
 cd omp-kit
-bun install --frozen-lockfile
-omp plugin link .
-omp plugin list
+just install
 ```
 
-Restart the OMP session after changing installed resources. Linking a plugin does not configure your providers or replace `config.yml`, `models.yml`, or MCP settings. All maintained Skills remain in the existing native discovery path; service-specific Skills run only for their relevant requests and do not authorize cloud spending or document uploads by being installed.
+`just install` runs the frozen Bun install, `omp install .`, and `omp plugin list`. Current OMP routes a local install target to its native link flow, so the installed plugin points at this checkout instead of making a second development copy. Ordinary edits and `git pull` therefore keep the same plugin registration; restart OMP after changing resources, and rerun `just install` when dependencies or plugin registration change.
+
+Useful maintenance commands:
 
 ```sh
-omp plugin uninstall omp-kit
+just check-install   # show native plugin registration
+just plugin-doctor   # run OMP's plugin-root health checks
+just uninstall       # remove the omp-kit plugin registration
 ```
+
+The repository may remain private for this workflow. A private remote Git install is also possible when the machine's Git/SSH credentials can access it, for example `omp install git@github.com:zhongyangchuwu/omp-kit.git`, but that is a managed installed copy rather than the editable working-tree link and is therefore not the preferred development path. Making the repository public is useful only when unauthenticated users should be able to install it directly.
+
+Linking the plugin does not configure providers or replace `config.yml`, `models.yml`, or MCP settings. All maintained Skills remain in the existing native discovery path; service-specific Skills run only for their relevant requests and do not authorize cloud spending or document uploads by being installed.
 
 The retired Harness v2 config-copy installer is no longer a supported install path. Existing machine files are not removed automatically. Read [installation and migration](docs/omp-installation.md) before changing a previously managed setup. A skill-only linking helper remains available for deliberate library use; do not duplicate native plugin discovery with it.
 
@@ -79,4 +85,4 @@ Do not delete a maintained Skill, accepted design, or compact experiment simply 
 
 Start with the [documentation map](docs/README.md). It separates current usage, design rationale, evidence and maintenance. [WORKING_STATE](docs/WORKING_STATE.md) is only the current work index; Issues own unfinished problems and PRs own implementation/review. Closed Issues mean completed acceptance criteria, not merely deferred work.
 
-`0.1.0` is the release candidate version. The package remains private; a green candidate is not a published release.
+`v0.1.0` is the first published baseline. Ongoing development follows `main`; the package remains private because omp-kit is distributed as an OMP plugin/source checkout rather than an npm package.

@@ -60,13 +60,28 @@ latest changelog triaged
 claim-specific released-runtime evidence
 ```
 
-A changelog review is not a full runtime test. Existing smoke evidence remains relevant to its claim until that contract changes. Exact candidate CI belongs in Actions/PRs; accepted compatibility findings and limitations belong in current repository docs, with unresolved concrete problems in Issues.
+A changelog/source review is not a full runtime test. Existing smoke evidence remains relevant to its claim until that contract changes. Exact candidate CI belongs in Actions/PRs; accepted compatibility findings and limitations belong in current repository docs, with unresolved concrete problems in Issues.
 
 ## Recorded baseline
 
-The existing 2026-09-14 review saw and triaged OMP 18.1.21. Its browser/Chromium changelog did not identify a change to the then-reviewed task/agent/plugin/extension/session surfaces. No generic smoke was required merely for that patch number.
+### OMP 18.2.0 triage — 2026-09-15
 
-Separate feedback/collector acceptance on 18.1.21 then exposed a stats representation mismatch:
+OMP 18.2.0 is the latest release inspected for current omp-kit contracts. The review covered changes since 18.1.21 and the relevant released source.
+
+Relevant findings:
+
+- **Native install path:** `omp install <target>` is a real top-level command. Local filesystem targets route to the plugin link flow, so `omp install .` is appropriate for omp-kit's long-lived editable checkout. Git specs continue through managed plugin installation. The development install docs and `just install` now use this public path.
+- **Hub waiting:** 18.1.22 removed the caller `timeoutMs` argument and `async.pollWaitDuration`; waits now use an OMP-owned adaptive window beginning around 5 seconds and lengthening across consecutive waits to about 5 minutes. 18.2.0 also improves process-wait timeout diagnostics. omp-kit's delegation guidance no longer invents the removed timeout control.
+- **Remaining supervision gap:** current `hub wait` still lets a matching peer message win the wait before job settlement. There is still no general progress/blocker/decision/final message kind for completion-relevant filtering, so Issue #7 remains unresolved rather than spawning a local scheduler/message layer.
+- **Skill UX:** `/skill:<name>` is now represented as an atomic composer chip and user-invoked skill prompts participate more consistently in rewind/tree/copy behavior. This changes interaction/rendering, not the native Skill discovery contract omp-kit relies on.
+- **SDK breaking changes:** `Settings.getGroup()` now returns shallow-frozen snapshots; removed MCP response aliases make `callMCP()` return the shared `JsonRpcResponse`. omp-kit does not call those APIs. The direct `@oh-my-pi/pi-coding-agent` dependency is nevertheless updated to 18.2.0 so extension/session-evidence typecheck and tests compile against the current SDK.
+- **Stats path mismatch remains:** upstream `can1357/oh-my-pi#12060` is still open, and the 18.2.0 stats parser still derives `SessionSummary.folder` with the older `--` decoding logic. The collector must continue using public trace `cwd` for real-path matching.
+
+No 18.2.0 change identified a need to alter agent frontmatter, the feedback authorization boundary, session-evidence storage ownership, or stable `agent://<id>` / `history://<id>` result retrieval. Deterministic CI against the 18.2.0 package tests source/type compatibility; it is not a new live-provider/runtime acceptance claim.
+
+### Existing released-runtime acceptance
+
+Feedback and collector acceptance remain claim-specific evidence from OMP 18.1.21. That testing exposed the stats representation mismatch:
 
 ```text
 /api/sessions.folder   -> encoded session-storage key
