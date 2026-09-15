@@ -57,9 +57,16 @@ Known slow builds, installs or external services may justify a longer window bas
 observed baselines. The estimate is for supervisor cadence only; it is not a requirement
 for the worker to sacrifice correctness or skip decision-critical verification.
 
-When the live `hub` schema exposes a timeout, prefer one bounded wait that roughly
-matches the checkpoint window. Never use an indefinite wait (`timeoutMs: 0`) merely to
-watch a worker finish. A wait timeout is a checkpoint, not a failure.
+OMP 18.1.22+ message/job waits own their wait window: it starts at about 5 seconds and
+lengthens across back-to-back waits up to about 5 minutes. The former `timeoutMs`
+argument and `async.pollWaitDuration` setting no longer exist. Do not invent those
+arguments or wrap `hub wait` in a short polling loop to recreate them. Let the runtime
+block according to its current contract, and treat a returned all-running snapshot as
+status evidence rather than a reason for an immediate repeated model turn.
+
+The task-shape checkpoint above is a director policy, not a `hub wait` parameter. If the
+work materially exceeds that checkpoint, inspect current status once and decide whether
+new information warrants intervention.
 
 On the **first material overrun**:
 
