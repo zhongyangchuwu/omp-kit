@@ -203,7 +203,9 @@ export function readCurrentSession(source: CurrentSessionSource, scope: "current
 		const sessionId = source.getSessionId();
 		const sessionFile = source.getSessionFile();
 		const leafId = source.getLeafId();
-		const entries = structuredClone(scope === "current-branch" ? source.getBranch(leafId) : source.getEntries());
+		const entries = structuredClone(scope === "current-branch"
+			? (leafId === null ? [] : source.getBranch(leafId))
+			: source.getEntries());
 		if (sessionId !== source.getSessionId() || sessionFile !== source.getSessionFile() || leafId !== source.getLeafId()) {
 			throw new OmpReadError({ operation: scope, code: "changed-during-read" });
 		}

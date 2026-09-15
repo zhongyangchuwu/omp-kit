@@ -265,3 +265,16 @@ test("shared reads leave legacy quantitative derivation and schema unchanged", a
 	assert.equal(viaAccess.schemaVersion, "omp-kit.session-evidence/v1");
 	assert.equal("limitations" in viaAccess, false);
 });
+
+
+test("empty current branch does not pass a null leaf to OMP getBranch", () => {
+	const empty = {
+		...source(),
+		getLeafId: () => null,
+		getBranch: () => { throw new Error("getBranch must not be called without a leaf"); },
+	};
+	const result = readCurrentSession(empty, "current-branch");
+	assert.notEqual(result.status, "unavailable");
+	assert.deepEqual(requireRead(result).entries, []);
+	assert.equal(requireRead(result).leafId, null);
+});
