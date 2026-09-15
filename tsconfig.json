@@ -8,5 +8,5 @@
 		"skipLibCheck": true,
 		"types": ["bun"]
 	},
-	"include": ["extensions/**/*.ts", "scripts/**/*.ts", "tests/ts/**/*.ts"]
+	"include": ["src/**/*.ts", "extensions/**/*.ts", "scripts/**/*.ts", "tests/ts/**/*.ts"]
 }

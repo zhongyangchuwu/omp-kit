@@ -10,6 +10,7 @@
     "rules",
     "extensions",
     "scripts/session_evidence.ts",
+    "src",
     "docs",
     "evidence"
   ],

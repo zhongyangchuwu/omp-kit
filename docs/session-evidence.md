@@ -99,6 +99,26 @@ The collector uses the released/public OMP stats package/server:
 
 Do not replace these with direct `stats.db` queries or raw OMP JSONL parsing.
 
+## Shared reads and coverage
+
+`src/session/omp-access.ts` is the shared local access layer for the collector and future assurance consumers. It contains no scoring, command classification, database storage or UI:
+
+- `createOmpStatsClient` constructs an inert client for a caller-selected loopback HTTP origin; `sync`, `listSessions`, `getTrace` and `getEntry` are explicit operations. Redirects are rejected.
+- `withOmpStats` creates and closes its own OMP stats server, including on failure. Importing the module does not start a server or synchronize sessions.
+- `readCurrentSession` uses the public read-only session manager's `getBranch` or `getEntries`. It returns a detached snapshot of one session's current branch or retained entries, not a second journal or recursive child reader.
+
+A read returns `available`, `partial` or `unavailable`, its scope, a read-time window and limitations. An empty successful payload remains data; a failed read has a structured problem and **no data field**. Availability says nothing about tool success or the absence of external effects. Callers retain the requested session/track identity when associating results. Diagnostics intentionally omit request paths, server bodies and raw exception text.
+
+Session lists are bounded views of the selected stats/profile store, not a complete filesystem inventory. Reaching the requested limit adds an explicit limit marker; falling below it does not prove all sessions were included.
+
+On OMP 18.2.0, stats traces describe persisted active branches. Rewinding a conversation may remove an earlier action from that view without undoing its effects. Trace reads therefore always expose active-branch, unknown child-completeness, preview-detail and non-atomic-snapshot limits. A successful root trace does not prove every child was readable. A caller that separately fails to read a child must retain that failure rather than substituting an empty track.
+
+Current-session `retained-entries` reads include entries outside the active branch that OMP still retains. They do not recover deleted history or certify child/process/network coverage. Session identity and leaf are checked before and after the read; a detected change is unavailable, not silently retried. Raw entries, preview strings and local file references remain **private**, not sanitized or approved for publication under #33.
+
+The existing collector deliberately unwraps these bounded reads through `requireRead`: its v1 schema, filters, sampled provider labels, feedback joins, incremental cache and human/JSON output remain unchanged. Sync/list/trace failures still abort collection; provider-entry failures still leave sampled provider identity `null`. Malformed API data now fails at the access boundary instead of reaching the summarizer. Review consumers must retain coverage metadata rather than treating quantitative summaries as exhaustive assurance.
+
+Contract sources: OMP 18.2.0 [trace assembly](https://github.com/can1357/oh-my-pi/blob/v18.2.0/packages/stats/src/trace.ts), [trace types](https://github.com/can1357/oh-my-pi/blob/v18.2.0/packages/stats/src/shared-types.ts), and [public session manager](https://github.com/can1357/oh-my-pi/blob/v18.2.0/packages/coding-agent/src/session/session-manager.ts). Mocked boundary tests do not replace installed-runtime acceptance; no new live OMP acceptance is claimed by this refactor.
+
 ## Feedback relationship
 
 `omp_kit_feedback` is the qualitative evidence stream. Its records remain durable in the feedback store and session journal. The evidence collector links feedback by the public session-file provenance stored in each feedback record.

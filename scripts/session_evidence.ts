@@ -4,8 +4,9 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { getAgentDir } from "@oh-my-pi/pi-coding-agent";
-import { startServer } from "@oh-my-pi/omp-stats";
 import type { SessionSummary, SessionTrace, TraceSpan, TraceTrack } from "@oh-my-pi/omp-stats/shared-types";
+
+import { requireRead, withOmpStats } from "../src/session/omp-access";
 
 export const SESSION_EVIDENCE_SCHEMA = "omp-kit.session-evidence/v1" as const;
 export const SESSION_EVIDENCE_INDEX_SCHEMA = "omp-kit.session-evidence-index/v1" as const;
@@ -496,12 +497,6 @@ export function feedbackForTrace(trace: SessionTrace, bySessionFile: Map<string,
 	return [...deduped.values()].sort((a, b) => a.id.localeCompare(b.id));
 }
 
-async function api<T>(origin: string, path: string): Promise<T> {
-	const response = await fetch(`${origin}${path}`);
-	if (!response.ok) throw new Error(`OMP stats API ${path} failed: ${response.status} ${await response.text()}`);
-	return (await response.json()) as T;
-}
-
 function providerFromEntry(payload: unknown): string | null {
 	if (typeof payload !== "object" || payload === null) return null;
 	const entry = (payload as JsonObject).entry;
@@ -524,13 +519,11 @@ async function collect(options: CliOptions): Promise<{ collected: number; skippe
 	if (index.schemaVersion !== SESSION_EVIDENCE_INDEX_SCHEMA)
 		throw new Error(`Unsupported evidence index schema: ${String(index.schemaVersion)}`);
 	const feedbackByFile = await readFeedbackBySessionFile();
-	const server = await startServer(0, "127.0.0.1");
-	const origin = `http://${server.hostname}:${server.port}`;
 	let collected = 0;
 	let skipped = 0;
-	try {
-		await api(origin, "/api/sync");
-		const summaries = await api<SessionSummary[]>(origin, `/api/sessions?limit=${options.limit}`);
+	await withOmpStats(async client => {
+		await client.sync();
+		const summaries = requireRead(await client.listSessions(options.limit));
 		for (const summary of summaries) {
 			if (options.since !== null && summary.endedAt < options.since) continue;
 			const revision = sessionRevision(summary);
@@ -544,7 +537,7 @@ async function collect(options: CliOptions): Promise<{ collected: number; skippe
 				continue;
 			}
 
-			const trace = await api<SessionTrace>(origin, `/api/session/trace?file=${encodeURIComponent(summary.file)}`);
+			const trace = requireRead(await client.getTrace(summary.file));
 			if (options.folder && !folderFilterMatches(options.folder, summary.folder, trace.cwd)) continue;
 
 			const providerCache = new Map<string, string | null>();
@@ -556,10 +549,7 @@ async function collect(options: CliOptions): Promise<{ collected: number; skippe
 					return null;
 				}
 				try {
-					const payload = await api<unknown>(
-						origin,
-						`/api/session/entry?file=${encodeURIComponent(trackFile)}&id=${encodeURIComponent(span.entryId)}`,
-					);
+					const payload = requireRead(await client.getEntry(trackFile, span.entryId));
 					const provider = providerFromEntry(payload);
 					providerCache.set(cacheKey, provider);
 					return provider;
@@ -573,9 +563,7 @@ async function collect(options: CliOptions): Promise<{ collected: number; skippe
 			index.sessions[summary.file] = { key, revision, collectedAt: evidence.collectedAt };
 			collected += 1;
 		}
-	} finally {
-		server.stop();
-	}
+	});
 	index.updatedAt = new Date().toISOString();
 	await writeJsonAtomic(indexPath, index);
 	return { collected, skipped, report: await loadReport(options) };
