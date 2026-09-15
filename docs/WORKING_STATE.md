@@ -5,9 +5,9 @@ Short mutable navigation index. Read actual branch/HEAD/worktree, then this inde
 ## Current baseline
 
 - `v0.1.0` is published and landed on `main`; PR #25 / Issue #24 own the completed release-preparation and landing record.
-- PR #30 owns the current installation/compatibility maintenance: one long-lived editable checkout, native `omp install .`, Justfile install checks, and OMP 18.2.0 contract triage.
+- The current installation/compatibility baseline, implemented and reviewed in PR #30, uses one long-lived editable checkout, native `omp install .`, Justfile install checks, and OMP 18.2.0 contract triage.
 - All fifteen maintained Skills, design records, compact experiment bundles and consumed library tooling remain part of the repository. Resource categories describe responsibility, not mandatory deletion, packaging, hiding or permission changes.
-- Latest upstream release inspected/triaged: **OMP 18.2.0**. The candidate compiles/tests against `@oh-my-pi/pi-coding-agent` 18.2.0. Claim-specific live feedback/collector acceptance remains OMP 18.1.21 evidence; see `VALIDATION.md`.
+- Latest upstream release inspected/triaged: **OMP 18.2.0**. The repository compiles/tests against `@oh-my-pi/pi-coding-agent` 18.2.0. Claim-specific live feedback/collector acceptance remains OMP 18.1.21 evidence; see `VALIDATION.md`.
 - Upstream stats path mismatch `can1357/oh-my-pi#12060` remains open in 18.2.0; the collector continues to use public trace `cwd` for path matching.
 
 ## Issue lifecycle
@@ -45,4 +45,4 @@ The maintained `.planning/` Skill is an explicit specialized option, not the mul
 
 ## Next
 
-Finish PR #30 verification and land it if the current candidate remains clean. Then continue #5/#8/#11 through real development. Keep #9 evidence-driven; do not turn every upstream release into a synthetic compatibility campaign.
+Continue #5/#8/#11 through real development. Keep #9 evidence-driven, and re-audit OMP when a release touches contracts omp-kit actually uses rather than turning every upstream version into a synthetic compatibility campaign.
