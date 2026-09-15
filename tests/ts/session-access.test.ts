@@ -8,6 +8,18 @@ import { readRuntimeEntries, type RuntimeEntrySource } from "../../src/session/r
 const origin = "http://127.0.0.1:3847";
 const json = (value: unknown) => new Response(JSON.stringify(value));
 
+function emptyTrace(file: string): SessionTrace {
+	return {
+		file, title: null, cwd: "/work/project", startedAt: 0, endedAt: 0,
+		mtimeMs: 1, tracks: [],
+		summary: {
+			wallMs: 0, modelMs: 0, toolMs: 0, idleMs: 0, turns: 0,
+			requests: 0, toolCalls: 0, subagents: 0, totalTokens: 0,
+			costTotal: 0, unpricedRequests: 0, toolStats: [],
+		},
+	};
+}
+
 describe("composable OMP stats reads", () => {
 	test("construction is inert and an empty catalog is an available observation", async () => {
 		let calls = 0;
@@ -20,7 +32,7 @@ describe("composable OMP stats reads", () => {
 
 	test("trace and entry consumers can use the same client without owning its lifecycle", async () => {
 		const file = "/sessions/a & b/root.jsonl";
-		const trace = { file, tracks: [], summary: {} };
+		const trace = emptyTrace(file);
 		const urls: URL[] = [];
 		const client = createOmpStatsClient(origin, async url => {
 			const parsed = new URL(url);
@@ -42,7 +54,7 @@ describe("composable OMP stats reads", () => {
 		const client = createOmpStatsClient(origin, async url =>
 			new URL(url).searchParams.get("file") === "child"
 				? new Response("PRIVATE_FAILURE_BODY", { status: 403 })
-				: json({ file: "root", tracks: [], summary: {} }),
+				: json(emptyTrace("root")),
 		);
 		const reads = await Promise.all([client.getTrace("root"), client.getTrace("child")]);
 		expect(reads.map(read => read.status)).toEqual(["available", "unavailable"]);
@@ -159,7 +171,6 @@ describe("public runtime entry snapshots", () => {
 		expect(() => requireEvidence(read)).toThrow(EvidenceReadError);
 	});
 });
-
 
 test("shared trace reads compose with the existing derivation without a CLI", async () => {
 	const summary: SessionSummary = {

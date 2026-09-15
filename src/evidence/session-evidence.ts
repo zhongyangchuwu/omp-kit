@@ -371,4 +371,3 @@ export function feedbackForTrace(trace: SessionTrace, bySessionFile: Map<string,
 	}
 	return [...deduped.values()].sort((a, b) => a.id.localeCompare(b.id));
 }
-
