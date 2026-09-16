@@ -52,6 +52,7 @@ export type ScopeLimitation =
 	| "declared-targets-only"
 	| "generic-shell-unclassified"
 	| "path-symlink-target-unverified"
+	| "child-workspace-root-unverified"
 	| "cross-track-order-unavailable";
 
 export interface ScopeEvidence {
@@ -72,7 +73,7 @@ export interface ScopeToolCall {
 }
 
 export interface ScopeClassifierContext {
-	/** Root session cwd. Relative paths are still the current track workspace. */
+	/** Known workspace root for this track, or null when the public trace does not expose it. */
 	readonly workspaceRoot: string | null;
 	readonly homeDir: string | null;
 }
