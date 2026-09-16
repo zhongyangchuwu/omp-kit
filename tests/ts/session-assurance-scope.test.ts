@@ -39,6 +39,11 @@ function input(value: SessionTrace): TraceInput {
 		startedAt: 1, finishedAt: 2, limitations: [], consistency: "not-checked", status: "available", data: value } };
 }
 
+function unavailableInput(): TraceInput {
+	return { sourceId: "session", sessionFile: file, read: { scope: { source: "omp-stats", view: "active-branch-trace" },
+		startedAt: 1, finishedAt: 2, limitations: [], consistency: "not-checked", status: "unavailable", reason: "http", httpStatus: 500 } };
+}
+
 function entryReader(entries: Record<string, unknown>): SessionEntryReader {
 	return {
 		async getEntry(_file, id) {
@@ -68,6 +73,7 @@ async function scopeFor(value: SessionTrace, entries: Record<string, unknown>, r
 test("scope enrichment follows result -> start -> assistant entry chain without retaining raw arguments", async () => {
 	const value = trace([track("main", [toolSpan("s1", "c1", "result-one", "read", 1)])]);
 	const scope = await scopeFor(value, chain("c1", "read", { path: "/home/test/project/PRIVATE_SECRET.ts" }, "one"));
+	assert.equal(scope.traceCoverage, "available");
 	assert.deepEqual(scope.observations.map(item => [item.boundary, item.access, item.resource]), [["workspace", "read", "filesystem"]]);
 	assert.equal(scope.actionCoverage[0].status, "classified");
 	assert.doesNotMatch(JSON.stringify(scope), /PRIVATE_SECRET/);
@@ -121,8 +127,35 @@ test("generic shell remains explicitly unclassified even when its command looks 
 test("missing entry reader is coverage loss rather than zero scope", async () => {
 	const value = trace([track("main", [toolSpan("s1", "c1", "result-one", "read", 1)])]);
 	const scope = await scopeFor(value, {}, undefined);
+	assert.equal(scope.traceCoverage, "available");
 	assert.equal(scope.observations.length, 0);
 	assert.equal(scope.actionCoverage[0].reason, "entry-reader-unavailable");
+});
+
+test("successful empty trace is assessed while failed trace is not", async () => {
+	const emptySource = input(trace([track("main", [])]));
+	const emptyNormalized = normalizeTraceReads([emptySource]);
+	const emptyScope = await deriveTraceScopeEvidence([emptySource], emptyNormalized, entryReader({}), BUILTIN_SCOPE_CLASSIFIERS, { homeDir: "/home/test" });
+	const emptyReport = buildAssuranceReport({ ...emptyNormalized, scope: emptyScope }, [scopeExpansionRule]);
+	assert.equal(emptyScope.traceCoverage, "available");
+	assert.equal(emptyReport.rules[0].status, "evaluated");
+	assert.match(renderAssuranceReport(emptyReport, [scopeExpansionRule]), /Observed boundaries: none classified/);
+
+	const failedSource = unavailableInput();
+	const failedNormalized = normalizeTraceReads([failedSource]);
+	const failedScope = await deriveTraceScopeEvidence([failedSource], failedNormalized, entryReader({}), BUILTIN_SCOPE_CLASSIFIERS, { homeDir: "/home/test" });
+	const failedReport = buildAssuranceReport({ ...failedNormalized, scope: failedScope }, [scopeExpansionRule]);
+	assert.equal(failedScope.traceCoverage, "unavailable");
+	assert.equal(failedReport.rules[0].status, "skipped");
+	assert.match(renderAssuranceReport(failedReport, [scopeExpansionRule]), /Scope\n  NOT ASSESSED/);
+});
+
+test("child absolute paths are not compared with the root cwd", async () => {
+	const childFile = "/home/test/project/child.jsonl";
+	const child = track("child", [toolSpan("s1", "c1", "result-one", "read", 1)], childFile, "main");
+	const scope = await scopeFor(trace([track("main", []), child]), chain("c1", "read", { path: "/home/test/project/src/a.ts" }, "one"));
+	assert.equal(scope.observations[0].boundary, "host-user");
+	assert.ok(scope.limitations.includes("child-workspace-root-unverified"));
 });
 
 test("scope expansion is per-track first appearance, not a risk ranking or cross-track order", async () => {
@@ -162,6 +195,7 @@ test("partial scope classification makes expansion partial and renderer exposes 
 	const report = buildAssuranceReport({ ...normalized, scope }, [scopeExpansionRule]);
 	assert.equal(report.rules[0].status, "partial");
 	const rendered = renderAssuranceReport(report, [scopeExpansionRule]);
+	assert.match(rendered, /Trace coverage: available/);
 	assert.match(rendered, /Observed boundaries: workspace, external/);
 	assert.match(rendered, /Tool actions classified: 2/);
 	assert.match(rendered, /Tool actions unclassified: 1/);
