@@ -21,8 +21,9 @@ export interface ScopeClassifierRef {
 export interface ScopeObservation {
 	readonly id: string;
 	readonly actionId: string;
-	readonly trackId: string;
-	/** Tool-order position within one trace track. No cross-track causal order is implied. */
+	/** Stable private correlation key for one transcript; native track ids remain in evidence refs. */
+	readonly trackKey: string;
+	/** Tool-order position within one transcript. No cross-track causal order is implied. */
 	readonly position: number;
 	readonly boundary: ScopeBoundary;
 	readonly access: ScopeAccess;
@@ -41,7 +42,7 @@ export type ScopeCoverageReason =
 /** Classification status for one tool action, separate from raw trace-read coverage. */
 export interface ScopeActionCoverage {
 	readonly actionId: string;
-	readonly trackId: string;
+	readonly trackKey: string;
 	readonly position: number;
 	readonly status: "classified" | "unclassified";
 	readonly reason?: ScopeCoverageReason;
@@ -65,7 +66,7 @@ export interface ScopeEvidence {
 
 export interface ScopeToolCall {
 	readonly actionId: string;
-	readonly trackId: string;
+	readonly trackKey: string;
 	readonly position: number;
 	readonly toolName: string;
 	readonly arguments: Readonly<Record<string, unknown>>;
@@ -73,7 +74,7 @@ export interface ScopeToolCall {
 }
 
 export interface ScopeClassifierContext {
-	/** Known workspace root for this track, or null when the public trace does not expose it. */
+	/** Known workspace root for this transcript, or null when the public trace does not expose it. */
 	readonly workspaceRoot: string | null;
 	readonly homeDir: string | null;
 }
