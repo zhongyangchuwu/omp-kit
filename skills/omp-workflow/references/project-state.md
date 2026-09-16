@@ -64,9 +64,9 @@ No empty directory, global state file, complete Issue registry, or generic hando
 
 ## Explicit `.planning/` mode
 
-The maintained `omp-planning-artifacts` Skill remains available when a project genuinely needs a richer local/offline phase dossier, ordered roadmap/requirements or phase-by-phase traceability. Select it deliberately; multi-session work alone does not imply this mode.
+The maintained `omp-planning-artifacts` Skill is the sole owner of the specialized `.planning/` dossier: root project artifacts, phase lifecycle, optional reusable brownfield maps, state, handoffs, and release archives. Select it deliberately when those artifacts solve a real local/offline continuity or traceability need; multi-session work alone does not imply this mode.
 
-When chosen, use that Skill and the relevant `initialization.md` / `phase-lifecycle.md` references. Otherwise do not initialize the tree by inertia. Cleaning this repository's historical archive or global work-state mirror does not remove another project's useful specialized workflow.
+Once selected, use that Skill's own support files rather than maintaining a second phase lifecycle or artifact contract in `omp-workflow`.
 
 ## Preserve at task end
 
