@@ -29,6 +29,12 @@ export function classifyPathTarget(
 ): ScopeDescriptor | null {
 	const value = raw.trim();
 	if (!value) return null;
+	// OMP read/search accepts a few URL spellings beyond strict scheme:// syntax.
+	// Without filesystem IO we cannot disambiguate www.* from a same-named local file,
+	// so prefer external/unknown over a false workspace claim.
+	if (/^https?:\/[^/]/i.test(value) || /^www\./i.test(value)) {
+		return access === "read" ? { boundary: "external", access, resource: "network" } : null;
+	}
 	const scheme = /^([A-Za-z][A-Za-z0-9+.-]*):\/\//.exec(value)?.[1]?.toLowerCase();
 	if (scheme) {
 		const protocol = `${scheme}:`;
