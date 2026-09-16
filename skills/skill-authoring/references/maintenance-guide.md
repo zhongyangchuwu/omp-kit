@@ -1,75 +1,43 @@
 # Maintenance Guide
 
-Use this guide for long-term personal skill library care. Detailed workflows, resource schema, and daily operations are in `docs/workflows.md` and `docs/resource-model.md`.
+Use this guide for long-term personal Skill-library care. Current behavior belongs in each `SKILL.md` and its support files; Git and PR history retain prior versions and chronology. Do not maintain a second registry merely to restate the active filesystem.
 
-## Metadata model
+## When to review a Skill
 
-Every tracked resource has a `resource.yaml`:
+Review a Skill when:
 
-```yaml
-name: example
-kind: skill
-status: active
-path: skills/example
-source:
-  type: self
-risk:
-  level: low
-  reason: Instruction-only, no scripts, secrets, or external actions.
-activation:
-  mode: automatic
-verification:
-  commands: []
-  notes: []
-maintenance:
-  last_reviewed: "YYYY-MM-DD"
-  notes: []
-relationships:
-  extensions: []
-  tools: []
-  packages: []
-  upstream: []
-```
-
-`registry.yaml` is generated from these files. Do not edit it by hand.
-
-## When to update maintenance notes
-
-Update `resource.yaml` maintenance notes when:
-
-- you review a skill and confirm it is still accurate;
-- you change the activation policy or risk level;
-- you discover a false trigger, missed trigger, or unsafe instruction;
-- you add or remove scripts, references, or verification commands;
-- you promote a skill from drafts.
+- its instructions no longer match current tools or workflow;
+- its description false-triggers or misses intended tasks;
+- scripts, references or dependencies change materially;
+- a user correction reveals a bad default or missing boundary;
+- two Skills start duplicating the same decision ownership.
 
 ## Update workflow
 
-1. Identify what needs to change: stale docs, missing trigger, unsafe instruction, broken link.
-2. Read the current `SKILL.md`, `resource.yaml`, and references.
-3. Make the smallest coherent change.
-4. Run `just build-registry`.
-5. Run `just test`.
+1. Read the current `SKILL.md` and support files that own the behavior.
+2. Confirm the current runtime/tool behavior when the change depends on it.
+3. Make the smallest coherent correction.
+4. Check frontmatter, relative links, examples and templates.
+5. Run the applicable skill-local or repository verification.
+6. Use the PR/commit to explain material design changes when the diff alone is not enough.
 
-## Archiving
+Do not add a review date or provenance field just to prove maintenance happened. If a recurring review is actually required, schedule or track that obligation explicitly rather than relying on a manually synchronized timestamp.
 
-A skill should be archived when it is no longer correct, useful, or safe. Instead of a dedicated `archive/` directory, change the skill's `resource.yaml`:
+## Archiving and retirement
 
-```yaml
-status: archived
-```
+A Skill should leave the active `skills/` discovery root when it is no longer correct, useful or safe. Git history is the default recovery path. If an inactive working copy is temporarily useful, keep it outside the active discovery path; no fixed archive or drafts directory is required.
 
-And remove it from `skills/`. The archived source can be kept under `drafts/` or reconstructed from `source.references`. Do not leave obsolete skills in active scan paths.
+Before removal, preserve only current knowledge that still belongs elsewhere. Do not keep obsolete policy alive merely to retain provenance.
 
 ## Quality checklist
 
-Before declaring a skill ready:
+Before declaring a Skill ready:
 
-- [ ] name matches directory
-- [ ] description says what the skill does and when to use it
+- [ ] directory name matches frontmatter `name`
+- [ ] description says what the Skill does and when to use it
 - [ ] `SKILL.md` is concise enough for activation-time loading
-- [ ] references are linked from `SKILL.md` and exist
-- [ ] scripts have `--help` and avoid secrets and unsafe defaults
+- [ ] references linked from `SKILL.md` exist
+- [ ] scripts have bounded behavior, useful `--help`, and no embedded secrets
 - [ ] runtime-specific notes are isolated from portable guidance
-- [ ] `resource.yaml` is complete and accurate
-- [ ] `just test` passes
+- [ ] safety or disclosure boundaries that matter during use are visible in the Skill itself
+- [ ] applicable tests or validators pass

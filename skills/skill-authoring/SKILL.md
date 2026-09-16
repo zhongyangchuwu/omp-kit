@@ -21,14 +21,12 @@ Core principle: `SKILL.md` is a control panel, not an encyclopedia. Put core wor
 6. Add examples, gotchas, evals, maintenance notes, and scripts only when they add clear reusable value.
 7. Validate before completion: check names, frontmatter, links, template paths, and any available validator output.
 
-
 ## Reference Routing
 
 | Need | Read |
 | --- | --- |
-| Repository resource model and activation policies | ../../docs/resource-model.md |
-| Daily workflows: import, localize, promote, verify | ../../docs/workflows.md |
-| Repository architecture and operating principles | ../../docs/architecture.md |
+| Repository maintenance workflow | ../../docs/workflows.md |
+| Repository architecture and resource categories | ../../docs/architecture.md |
 | Agent Skills format, directories, frontmatter, validation | [agent-skills-standard.md](references/agent-skills-standard.md) |
 | Quality rubric for creating, updating, or reviewing a skill | [authoring-rubric.md](references/authoring-rubric.md) |
 | Improve triggering and `description` wording | [description-guide.md](references/description-guide.md) |
@@ -36,15 +34,12 @@ Core principle: `SKILL.md` is a control panel, not an encyclopedia. Put core wor
 | Decide whether a skill needs scripts | [scripts-guide.md](references/scripts-guide.md) |
 | Maintain a personal skill library over time | [maintenance-guide.md](references/maintenance-guide.md) |
 | Review a downloaded or third-party skill | [third-party-review.md](references/third-party-review.md) |
-| Define resource-local metadata | [resource-metadata.md](references/resource-metadata.md) |
-| Generate and validate `registry.yaml` | [registry-generation.md](references/registry-generation.md) |
 | Runtime-specific notes; optional and non-portable | [runtimes/README.md](references/runtimes/README.md) |
 | Claude runtime notes | [runtimes/claude.md](references/runtimes/claude.md) |
 | Codex runtime notes | [runtimes/codex.md](references/runtimes/codex.md) |
 | npx skills CLI notes | [runtimes/npx-skills.md](references/runtimes/npx-skills.md) |
 | oh-my-pi runtime notes | [runtimes/oh-my-pi.md](references/runtimes/oh-my-pi.md) |
 | Portable skill starter template | [skill-template.md](assets/skill-template.md) |
-| Resource metadata template | [resource-template.yaml](assets/resource-template.yaml) |
 | Eval file template | [evals-template.json](assets/evals-template.json) |
 | Maintenance notes template | [maintenance-notes-template.md](assets/maintenance-notes-template.md) |
 
@@ -74,6 +69,8 @@ If it is unavailable, manually verify:
 - referenced files exist;
 - examples and templates do not contain real secrets;
 - evals or maintenance notes exist for important skills.
+
+Repository-specific acceptance should use the real repository gate or skill-local tests, not a parallel metadata command list.
 
 ## Common Mistakes
 

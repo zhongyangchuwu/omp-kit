@@ -5,17 +5,8 @@ from pathlib import Path
 
 import yaml
 
-from scripts.validate_registry import load_registry as load_registry_file
-from scripts.validate_registry import parse_frontmatter as parse_registry_frontmatter
-
 ROOT = Path(__file__).resolve().parents[1]
 AGENT_NAMES = {"luna-code", "luna-deep", "luna-doc", "sol-review"}
-
-
-def load_registry() -> dict:
-    data = load_registry_file(ROOT / "registry.yaml")
-    assert isinstance(data, dict)
-    return data
 
 
 def markdown_sections(path: Path) -> tuple[str, str]:
@@ -29,6 +20,14 @@ def yaml_frontmatter(path: Path) -> tuple[dict, str]:
     metadata = yaml.safe_load(source)
     assert isinstance(metadata, dict)
     return metadata, body
+
+
+def discovered_skill_paths() -> list[Path]:
+    return sorted((ROOT / "skills").glob("*/SKILL.md"))
+
+
+def discovered_skill_names() -> set[str]:
+    return {path.parent.name for path in discovered_skill_paths()}
 
 
 def test_native_plugin_manifest_exposes_resources_and_distributed_knowledge() -> None:
@@ -62,10 +61,7 @@ def test_native_plugin_manifest_exposes_resources_and_distributed_knowledge() ->
 
 
 def test_native_plugin_agents_are_model_neutral_and_bounded() -> None:
-    active_skills = {
-        name for name, entry in load_registry().get("skills", {}).items()
-        if entry.get("status") == "active"
-    }
+    active_skills = discovered_skill_names()
     agent_paths = sorted((ROOT / "agents").glob("*.md"))
     assert {path.stem for path in agent_paths} == AGENT_NAMES
     for path in agent_paths:
@@ -78,28 +74,22 @@ def test_native_plugin_agents_are_model_neutral_and_bounded() -> None:
         assert set(metadata.get("autoloadSkills", [])) <= active_skills
 
 
-def test_native_plugin_skills_match_active_registry() -> None:
-    active_skills = {
-        name for name, entry in load_registry().get("skills", {}).items()
-        if entry.get("status") == "active"
-    }
-    skill_paths = sorted((ROOT / "skills").glob("*/SKILL.md"))
-    assert {path.parent.name for path in skill_paths} == active_skills
+def test_native_plugin_skills_are_self_describing() -> None:
+    skill_paths = discovered_skill_paths()
+    assert len(skill_paths) == 15
     for path in skill_paths:
         metadata, body = yaml_frontmatter(path)
         assert metadata.get("name") == path.parent.name
         assert isinstance(metadata.get("description"), str)
         assert metadata["description"].strip()
         assert body
-        # Both the maintenance parser and real YAML must agree on identity.
-        assert parse_registry_frontmatter(path).get("name") == metadata["name"]
 
-        resource = yaml.safe_load((path.parent / "resource.yaml").read_text(encoding="utf-8"))
-        assert isinstance(resource, dict)
-        if resource.get("activation", {}).get("mode") == "explicit-only":
-            # Explicit user workflows still need model-visible discovery.
-            assert metadata.get("disable-model-invocation") is not True
-            assert metadata.get("hide") is not True
+
+def test_explicit_document_parser_remains_model_visible() -> None:
+    metadata, _body = yaml_frontmatter(ROOT / "skills/document-parser/SKILL.md")
+    assert "explicit" in metadata["description"].lower()
+    assert metadata.get("disable-model-invocation") is not True
+    assert metadata.get("hide") is not True
 
 
 def test_native_plugin_main_rule_is_independent_of_retired_config_snapshot() -> None:

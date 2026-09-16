@@ -6,29 +6,27 @@ OMP Kit owns reusable workflow policy, a personally maintained Skill library, bo
 
 | Category | Current resources | Boundary |
 | --- | --- | --- |
-| Core workflow | Four task agents, Main rule, `omp-workflow`, `git-workflow`, `bounded-executor`, `omp-review`, feedback and session evidence | Defines routing, scope, integration, acceptance and observation |
-| Maintained experience Skills | `code-taste`, `omp-design`, `omp-debug`, `omp-research`, `omp-test`, `omp-verification`, `program-language`, `skill-authoring`, `omp-planning-artifacts` | The maintainer's reusable judgment, methods and specialized workflows |
+| Core Harness | Four task agents, Main rule, `omp-workflow`, `git-workflow`, `bounded-executor`, `omp-review`, feedback, session evidence and assurance | Defines routing, scope, integration, acceptance, observation and human-facing review |
+| Experience Skills | `code-taste`, `omp-design`, `omp-debug`, `omp-research`, `omp-test`, `omp-verification`, `program-language`, `skill-authoring`, `omp-planning-artifacts` | The maintainer's reusable judgment, methods and specialized workflows |
 | Integrations | `autodl`, `document-parser`; future service/provider/MCP adapters | Separate dependencies, credentials, network, billing or data-disclosure consequences |
 
-These categories describe responsibility, not value, maturity or installation state. They coexist in this repository. All fifteen maintained Skills remain under the existing `skills/` discovery root; this cleanup does not force separate packages, hide resources, change tool permissions or install external services.
+These categories describe responsibility, not value, maturity, installation state or permission. All fifteen maintained Skills currently coexist under the same `skills/` discovery root. A category does not hide a Skill or change runtime behavior; any future behavior difference must be implemented by a real OMP/package/feature boundary rather than descriptive metadata.
 
 A Skill need not depend on omp-kit to be worth maintaining here. `code-taste` and `omp-design`, for example, capture practical user preferences rather than missing OMP runtime features.
 
-## Discovery and maintenance metadata
+## Discovery and source of truth
 
-OMP discovers `skills/*/SKILL.md`, agents, rules and registered extensions through the native plugin. `resource.yaml` and the generated `registry.yaml` remain useful to the Skill-library maintenance workflow for provenance, risk, activation intent and validation. They do not replace OMP's runtime discovery or enforce permissions.
+OMP discovers `skills/*/SKILL.md`, agents, rules and registered extensions through the native plugin. The filesystem plus each resource's native definition is the source of truth: `SKILL.md` owns Skill identity/description and package/extension manifests own their respective runtime wiring.
 
-An explicit-only workflow may remain model-visible so an explicit request can select it. Do not equate explicit-only metadata with OMP hiding semantics or claim that the registry is a security boundary.
-
-Metadata generation, promotion, risk inspection and standalone skill linking retain active consumers in `skill-authoring` and maintenance workflows. They are not the retired Harness v2 runtime-config installer.
+There is no parallel resource registry or activation database. Git and PR history retain retired implementations and chronology; current behavior stays in current files. If the repository later grows enough to need a machine-readable catalog, add one only for a concrete consumer rather than as a second description of the same tree.
 
 ## Installation and configuration
 
-Use `omp plugin link .` after installing the checkout's Bun dependencies. OMP links native resources; the repository does not replace normal user settings or provider models. `omp plugin uninstall omp-kit` removes the plugin registration.
+Use `just install` for the checkout's native OMP install/link flow. OMP links native resources; the repository does not replace normal user settings or provider models. `omp plugin uninstall omp-kit` removes the plugin registration.
 
 The legacy Harness v2 configuration snapshot, config-copy installer, its exclusive composition helper and tests are retired. User configuration already installed on a machine is not automatically removed. See [installation](omp-installation.md) for migration precautions.
 
-Python/uv remain the toolchain for maintained library tools and tests, with AutoDL using its own environment. Bun/TypeScript own feedback and session-evidence code. Toolchains follow current consumers, not a goal of using only one language.
+Python/uv remain for retained repository/Skill-library helpers and tests, with AutoDL using its own environment. Bun/TypeScript own feedback, session-evidence and assurance code. Toolchains follow current consumers, not a goal of using only one language.
 
 ## Agent and workflow boundary
 
@@ -52,11 +50,11 @@ chronology                  -> Git + Issue/PR history
 
 Issue-centered state is the normal multi-session workflow. The maintained `.planning/` Skill remains an explicit specialized option for projects that need a richer local/offline phase dossier. Neither mode justifies duplicate sources of current truth.
 
-## Session evidence
+## Session evidence and assurance
 
-OMP owns raw sessions, trace reconstruction, generic stats and usage normalization. The collector derives compact local `omp-kit.session-evidence/v1` summaries and aggregates for #5/#8/#9. It is incremental, not a second raw-journal parser or telemetry database.
+OMP owns raw sessions, trace reconstruction, generic stats and usage normalization. omp-kit derives bounded quantitative evidence and human-facing assurance facts/findings from supported OMP evidence without becoming a second raw-journal parser or telemetry database.
 
-Routine summaries stay outside Git. Feedback is linked through supported root/child session-file provenance. Provider identity is sampled per track/model rather than an exact per-request routing ledger. Selected material results may become compact committed experiments under the existing evidence policy.
+Routine summaries stay outside Git. Selected material results may become compact committed experiments under the existing evidence policy. Assurance is a review snapshot with explicit coverage limits, not a proof of task quality or safety.
 
 ## Verification and rationale
 

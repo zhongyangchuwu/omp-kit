@@ -23,7 +23,7 @@ npx skills remove skill-name
 
 ## Safety stance
 
-Treat `npx skills add` as a downloader and installer, not a trust decision. Review third-party skills before activation. Prefer a gitignored `references/` source copy, then extract reviewed material into `drafts/` before promotion.
+Treat `npx skills add` as a downloader and installer, not a trust decision. Review third-party skills before activation. Prefer reviewing a source checkout outside active discovery, then copy only accepted material into the maintained Skill tree.
 
 ## Portability notes
 

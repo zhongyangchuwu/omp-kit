@@ -23,23 +23,9 @@ uninstall:
 install-skills *args:
     uv run python scripts/link_skills.py {{args}}
 
-build-registry:
-    uv run python scripts/build_registry.py
-
-check-registry:
-    uv run python scripts/build_registry.py --check
-
-validate-registry:
-    uv run python scripts/validate_registry.py
-
-build-index:
-    uv run python scripts/build_index.py
-
+# Textual review aid only; not a sandbox or policy engine.
 scan-risk path:
     uv run python scripts/scan_risk.py {{path}}
-
-promote-skill path *args:
-    uv run python scripts/promote_skill.py {{path}} {{args}}
 
 test:
     uv run --frozen python -m pytest tests
@@ -64,8 +50,6 @@ verify:
     just test-autodl
     just typecheck
     just test-ts
-    just check-registry
-    just validate-registry
     git diff --check HEAD
 
 pull-references:

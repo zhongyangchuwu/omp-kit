@@ -8,7 +8,7 @@ Skills stay small, focused, and independently useful. Each skill owns one stable
 
 - Add a skill when it has an independent trigger, repeated use, stable scope, and a concise description that lets the runtime select it directly.
 - Keep each skill centered on one owner domain. The domain should fit in one sentence: when the agent faces this task class, this skill provides the decision rules or workflow.
-- Put reusable project facts in `docs/`; put source provenance and lifecycle metadata in `resource.yaml`; put task instructions in `SKILL.md` and focused skill-local support files.
+- Put reusable project facts in `docs/`; put task instructions and current boundaries in `SKILL.md` and focused skill-local support files. Let Git/PR history retain superseded lineage rather than duplicating it in a shadow metadata file.
 - Let each skill stand alone. Skill selection comes from the `description`, not from a hand-written routing graph between skills.
 - Prefer positive guidance: focus, rules, required checks, recommended defaults, and expected outputs.
 - Keep `SKILL.md` as the control panel. Move long rubrics, examples, checklists, and detailed procedures into support files loaded only for the relevant task.
@@ -82,7 +82,7 @@ When the same rule appears in multiple places, keep one owner and remove copied 
 - workflow cadence belongs with the workflow concern;
 - quality judgment belongs with the review or implementation concern;
 - ecosystem choices belong with the ecosystem concern;
-- resource metadata and lifecycle rules belong with the resource-management concern;
+- Skill lifecycle decisions belong with the library/authoring workflow that actually performs them;
 - repository operation rules belong with the repository-operation concern.
 
 Other skills express their own concern precisely through description and focus rather than pointing to another skill.
