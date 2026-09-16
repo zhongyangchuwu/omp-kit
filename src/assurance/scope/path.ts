@@ -21,6 +21,13 @@ function classifyAbsolutePath(candidate: string, workspaceRoot: string | null, h
 	return "unknown";
 }
 
+function relativeBoundary(value: string, workspaceRoot: string | null, homeDir: string | null): ScopeBoundary {
+	if (workspaceRoot) return classifyAbsolutePath(path.resolve(workspaceRoot, value), workspaceRoot, homeDir);
+	const normalized = path.normalize(value);
+	if (normalized === ".." || normalized.startsWith(`..${path.sep}`)) return "unknown";
+	return "workspace";
+}
+
 export function classifyPathTarget(
 	raw: string,
 	access: "read" | "write",
@@ -60,6 +67,6 @@ export function classifyPathTarget(
 			? { boundary: classifyAbsolutePath(expanded, workspaceRoot, homeDir), access, resource: "filesystem" }
 			: { boundary: "unknown", access, resource: "filesystem" };
 	}
-	if (!path.isAbsolute(value)) return { boundary: "workspace", access, resource: "filesystem" };
+	if (!path.isAbsolute(value)) return { boundary: relativeBoundary(value, workspaceRoot, homeDir), access, resource: "filesystem" };
 	return { boundary: classifyAbsolutePath(value, workspaceRoot, homeDir), access, resource: "filesystem" };
 }
