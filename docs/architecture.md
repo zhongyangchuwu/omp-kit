@@ -42,13 +42,12 @@ The shared `omp_kit_feedback` sink permits Main/worker observations without gran
 current behavior and policy -> executable resources + current docs
 durable accepted rationale  -> docs/design/
 compact decision evidence   -> evidence/experiments/
-short navigation            -> WORKING_STATE.md
-unfinished work             -> Issues
+unfinished work             -> task-local Issues when useful
 implementation/review       -> PRs
 chronology                  -> Git + Issue/PR history
 ```
 
-Issue-centered state is the normal multi-session workflow. The maintained `.planning/` Skill remains an explicit specialized option for projects that need a richer local/offline phase dossier. Neither mode justifies duplicate sources of current truth.
+Issue-centered coordination is the normal multi-session workflow when an unfinished problem benefits from a durable owner. Projects may be only partially planned, and no complete global work-state index is required. The maintained `.planning/` Skill remains an explicit specialized option for projects that need a richer local/offline phase dossier. Neither mode justifies duplicate sources of current truth.
 
 ## Session evidence and assurance
 
