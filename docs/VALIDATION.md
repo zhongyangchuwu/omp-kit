@@ -11,12 +11,11 @@ just verify
 
 The retained gate covers:
 
-- Python tests for native plugin wiring, agents/Skills, retained library helpers and documentation integrity;
-- Skill-authoring guide/template tests;
+- Bun repository-contract tests for package/native-resource wiring, agents/Skills, documentation/support files and Skill-authoring guides/templates;
 - AutoDL tests in its own frozen uv environment, with APIs and SSH mocked;
-- TypeScript typecheck and feedback/session-evidence/assurance tests.
+- TypeScript typecheck plus feedback/session-evidence/assurance unit and CLI tests.
 
-CI also checks both Python lockfiles, candidate changed lines and tracked-file drift. PR merge-ref and landed-main checks answer different questions. The retired config-copy installer and resource-registry machinery are no longer part of the gate; tests remain focused on actual runtime resources and maintained helpers.
+CI also checks the committed Bun graph, AutoDL Python lockfile, candidate changed lines and tracked-file drift. PR merge-ref and landed-main checks answer different questions. The root Python helper/test environment, config-copy installer and resource-registry machinery are no longer part of the gate; maintained runtime and documentation contracts remain directly tested.
 
 No cloud spending, external document upload, real model call or user-profile write is part of deterministic acceptance. The gate is not an upstream OMP schema/runtime test.
 

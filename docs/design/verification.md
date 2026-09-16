@@ -21,18 +21,18 @@ omp-kit needs evidence-driven acceptance without turning every worker handoff or
 
 **Type:** engineering argument + project dogfood.
 
-Deterministic checks falsify mechanical contracts such as tests, types, generated registries and repository consistency. Review is useful for semantics, lifecycle, product intent, security, ambiguity and cross-slice reasoning. Repeating either layer without changed state or a new question does not automatically add independence.
+Deterministic checks falsify mechanical contracts such as tests, types, native resource contracts and repository consistency. Review is useful for semantics, lifecycle, product intent, security, ambiguity and cross-slice reasoning. Repeating either layer without changed state or a new question does not automatically add independence.
 
 ### Current gate is provider-free and CI-executable
 
 **Type:** repository fact.
 
-`just verify` is the repository-owned contract. It covers native-plugin/Skill/library Python tests, Skill-authoring tests, AutoDL mocked tests in its isolated environment, TypeScript typecheck/tests and registry freshness/validation. The obsolete installer validator and its exclusive tests are removed; this is not permission to discard tests for maintained Skills.
+`just verify` is the repository-owned contract. It covers Bun repository contracts for native resources, maintained Skills and documentation, AutoDL mocked tests in its isolated Python environment, and TypeScript typecheck/runtime tests. The root Python helper/test environment, obsolete installer validator and resource-registry checks are retired; maintained Skill behavior remains directly tested from the files OMP discovers.
 
 The #18 CI architecture remains:
 
 - read-only repository permission, no project secrets;
-- committed Python and Bun dependency graphs;
+- a committed Bun dependency graph at the root plus AutoDL's isolated Python dependency graph;
 - the repository-owned gate instead of duplicate YAML test logic;
 - changed-line and tracked-file drift checks;
 - PR merge-ref pre-merge evidence and separate landed-main evidence.
@@ -123,7 +123,7 @@ Metered, destructive, slow or machine-specific claims need a proportionate plan.
 
 The architecture automates mechanical checks while retaining semantics/runtime boundaries. During earlier landing, `setup-just` received HTTP 504 responses before tests ran; unchanged retries passed. Distinguish environment/setup failures from actual test failures rather than making arbitrary code changes or declaring success prematurely.
 
-The documentation cleanup restores test coverage for retained library tools rather than using deletion to make the suite simpler. It also makes the accepted knowledge available offline, without treating discussion records as the only product contract.
+The repository cleanup preserves direct contract coverage while removing helper/test layers with no unique consumer. It also keeps accepted knowledge available offline without treating discussion records as the only product contract.
 
 ## Counter-evidence and limits
 

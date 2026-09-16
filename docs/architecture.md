@@ -26,7 +26,7 @@ Use `just install` for the checkout's native OMP install/link flow. OMP links na
 
 The legacy Harness v2 configuration snapshot, config-copy installer, its exclusive composition helper and tests are retired. User configuration already installed on a machine is not automatically removed. See [installation](omp-installation.md) for migration precautions.
 
-Python/uv remain for retained repository/Skill-library helpers and tests, with AutoDL using its own environment. Bun/TypeScript own feedback, session-evidence and assurance code. Toolchains follow current consumers, not a goal of using only one language.
+The root repository uses Bun/TypeScript for runtime code and deterministic contracts. AutoDL remains an isolated Python/uv integration with its own `pyproject.toml`, lockfile and tests. Toolchains follow concrete consumers; there is no root Python environment solely for maintenance helpers.
 
 ## Agent and workflow boundary
 
@@ -58,6 +58,6 @@ Routine summaries stay outside Git. Selected material results may become compact
 
 ## Verification and rationale
 
-`just verify` covers the retained native product and library maintenance surfaces. CI runs it on PR merge refs and landed `main`, with lockfile, diff and drift checks. Isolated AutoDL tests mock remote operations; they are not cloud acceptance.
+`just verify` covers the retained native product and library maintenance surfaces. CI runs it on PR merge refs and landed `main`, with dependency-lock, diff and drift checks. Isolated AutoDL tests mock remote operations; they are not cloud acceptance.
 
 Real OMP/provider/profile behavior needs the relevant target environment. Existing claim-specific evidence and limits live in [VALIDATION](VALIDATION.md). Stable principles and counter-evidence live in [design records](design/README.md), not only in Issues.

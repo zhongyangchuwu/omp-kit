@@ -35,7 +35,7 @@ The repository may remain private for this workflow. A private remote Git instal
 
 Linking the plugin does not configure providers or replace `config.yml`, `models.yml`, or MCP settings. All maintained Skills remain in the existing native discovery path; service-specific Skills run only for their relevant requests and do not authorize cloud spending or document uploads by being installed.
 
-The retired Harness v2 config-copy installer is no longer a supported install path. Existing machine files are not removed automatically. Read [installation and migration](docs/omp-installation.md) before changing a previously managed setup. A skill-only linking helper remains available for deliberate library use; do not duplicate native plugin discovery with it.
+The retired Harness v2 config-copy installer is no longer a supported install path. Existing machine files are not removed automatically. Read [installation and migration](docs/omp-installation.md) before changing a previously managed setup.
 
 ## Normal work
 
@@ -72,7 +72,7 @@ See [session evidence](docs/session-evidence.md) and [validation](docs/VALIDATIO
 
 ## Maintenance
 
-Python/uv remain necessary for retained repository/Skill-library helpers and tests; Bun owns the TypeScript runtime/test surface. AutoDL retains its own dependency environment.
+The root repository uses Bun/TypeScript for runtime code and deterministic repository contracts. Python/uv are scoped to the AutoDL integration, which owns its own `pyproject.toml`, lockfile and mocked test environment.
 
 ```sh
 bun install --frozen-lockfile
