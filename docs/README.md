@@ -15,7 +15,7 @@ The checkout contains current product knowledge, accepted design rationale and c
 | How are sessions reviewed for human attention? | [Session assurance](session-assurance.md), [observed scope](assurance-scope.md) |
 | Which observations justify a decision? | [Experiment lifecycle](experiments.md), [compact evidence bundles](../evidence/README.md) |
 | Which runtime primitive should an integration use? | [Runtime notes](omp-runtime-notes.md) |
-| What unfinished work is current? | [WORKING_STATE](WORKING_STATE.md), then the owning Issue/PR |
+| Which unfinished problem owns this task? | The relevant open Issue / active PR when one exists |
 
 ## Information ownership
 
@@ -28,11 +28,10 @@ selected decision evidence      -> evidence/experiments/
 raw sessions / routine summaries -> OMP / local evidence store outside Git
 unfinished concrete problem     -> open Issue
 implementation / review / CI    -> PR and Actions
-short current navigation        -> WORKING_STATE.md
 superseded chronology           -> Git and Issue/PR history
 ```
 
-One Issue owns one independently decidable problem, not a roadmap. Keep unfinished work open; active/inactive labels only indicate attention. Close only when acceptance criteria are complete. When a decision is accepted, update the owning repository doc rather than leaving the only explanation in comments.
+One Issue owns one independently decidable problem, not a roadmap. Projects may be only partially planned, and no complete global Issue index is required before work begins. Keep unfinished work open; active/inactive labels only indicate attention. Close only when acceptance criteria are complete. When a decision is accepted, update the owning repository doc rather than leaving the only explanation in comments.
 
 ## Design and evidence are maintained assets
 
@@ -43,7 +42,7 @@ Routine sessions are not formal experiments. Keep raw transcripts, logs and broa
 ## Keep the current tree navigable
 
 - Keep the README for onboarding, architecture for current structure, and design records for why.
-- Keep `WORKING_STATE.md` short; replace stale navigation instead of accumulating a diary.
+- Do not add a mutable global work-state mirror solely to list Issues/PRs; recover task-local coordination context on demand.
 - Remove duplicate archive copies and old handoff/roadmap chronology after preserving any unique accepted conclusion or useful evidence.
 - Link a specific Git revision when a retired implementation or historical report is the original source.
 - Review maintained Skills by correctness, duplication and practical value, not by whether they are tightly coupled to omp-kit.
