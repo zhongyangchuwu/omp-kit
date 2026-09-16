@@ -1,23 +1,29 @@
 #!/usr/bin/env bun
-import { createOmpStatsClient, withLocalOmpStats, type SessionTraceReader } from "../src/session/omp-stats";
+import { homedir } from "node:os";
+import { createOmpStatsClient, withLocalOmpStats, type SessionEntryReader, type SessionTraceReader } from "../src/session/omp-stats";
 import { buildAssuranceReport } from "../src/assurance/engine";
 import type { AssuranceReport, AssuranceRule } from "../src/assurance/model";
 import { DEFAULT_ASSURANCE_PROFILE, resolveAssuranceProfile } from "../src/assurance/profiles";
 import { BUILTIN_ASSURANCE_RULES } from "../src/assurance/registry";
 import { renderAssuranceReport } from "../src/assurance/render";
-import { normalizeTraceReads } from "../src/assurance/trace-observations";
+import { deriveTraceScopeEvidence } from "../src/assurance/scope/derive";
+import { BUILTIN_SCOPE_CLASSIFIERS } from "../src/assurance/scope/registry";
+import { normalizeTraceReads, type TraceInput } from "../src/assurance/trace-observations";
 
 const DEFAULT_PROFILE_RULES = resolveAssuranceProfile(BUILTIN_ASSURANCE_RULES, DEFAULT_ASSURANCE_PROFILE);
 
 const HELP = `Usage: omp-kit-assurance --session PATH [--origin http://127.0.0.1:PORT] [--json]
 
-Read one explicit OMP session trace and returned child tracks. No catalog scan,
-explicit sync, entry enrichment, model call, test execution or publication.
-Without --origin, temporarily owns a local OMP stats server (native startup may
-update OMP's local stats). Output remains private. Exit 0 means report produced,
-not a safety verdict; exit 2 means invalid usage, an unassessed read or rule failure.
+Read one explicit OMP session trace and returned child tracks. Scope enrichment may
+read selected public OMP session entries in memory to recover structured tool-call
+inputs; raw arguments are not copied into the report. No catalog scan, explicit sync,
+model call, test execution or publication. Without --origin, temporarily owns a local
+OMP stats server (native startup may update OMP's local stats). Output remains private.
+Exit 0 means report produced, not a safety verdict; exit 2 means invalid usage, an
+unassessed trace read or rule failure.
 `;
 export interface AssuranceOptions { sessionFile: string; origin?: string; json: boolean }
+export type SessionAssuranceReader = SessionTraceReader & Partial<SessionEntryReader>;
 
 export function parseAssuranceArgs(argv: readonly string[]): AssuranceOptions | null {
 	// Package-script runners may forward one leading argument separator.
@@ -42,18 +48,25 @@ export function parseAssuranceArgs(argv: readonly string[]): AssuranceOptions | 
 	return { sessionFile, ...(origin ? { origin } : {}), json };
 }
 
-export async function readAssuranceReport(reader: SessionTraceReader, sessionFile: string,
+export async function readAssuranceReport(reader: SessionAssuranceReader, sessionFile: string,
 	signal?: AbortSignal, rules: readonly AssuranceRule[] = DEFAULT_PROFILE_RULES): Promise<AssuranceReport> {
 	const read = await reader.getTrace(sessionFile, signal);
-	return buildAssuranceReport(normalizeTraceReads([{ sourceId: "session", sessionFile, read }]), rules);
+	const traceInput: TraceInput = { sourceId: "session", sessionFile, read };
+	const normalized = normalizeTraceReads([traceInput]);
+	const entryReader: SessionEntryReader | undefined = reader.getEntry
+		? { getEntry: (file, id, entrySignal) => reader.getEntry!(file, id, entrySignal) }
+		: undefined;
+	const scope = await deriveTraceScopeEvidence([traceInput], normalized, entryReader, BUILTIN_SCOPE_CLASSIFIERS,
+		{ homeDir: homedir(), signal });
+	return buildAssuranceReport({ ...normalized, scope }, rules);
 }
 
 /** Injection is for hosts/tests; no UI/storage dependency in the report functions. */
-export async function runAssuranceCli(argv: readonly string[], reader?: SessionTraceReader): Promise<{ output: string; exitCode: number }> {
+export async function runAssuranceCli(argv: readonly string[], reader?: SessionAssuranceReader): Promise<{ output: string; exitCode: number }> {
 	const options = parseAssuranceArgs(argv);
 	if (!options) return { output: HELP, exitCode: 0 };
 	const signal = AbortSignal.timeout(15_000);
-	const use = (source: SessionTraceReader) => readAssuranceReport(source, options.sessionFile, signal);
+	const use = (source: SessionAssuranceReader) => readAssuranceReport(source, options.sessionFile, signal);
 	const report = reader ? await use(reader) : options.origin
 		? await use(createOmpStatsClient(options.origin)) : await withLocalOmpStats(use);
 	const incomplete = report.coverage.some(source => !source.assessed) || report.rules.some(rule => rule.status === "failed");
