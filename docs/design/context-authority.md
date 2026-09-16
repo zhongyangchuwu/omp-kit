@@ -28,7 +28,6 @@ executable policy/resources     -> current implemented behavior
 current docs                    -> accepted durable project policy
 design records                  -> accepted rationale and limits
 compact experiment bundles      -> selected auditable evidence
-WORKING_STATE.md                 -> current entry point / index
 open Issues                     -> unresolved objective and acceptance
 Pull Requests                   -> implementation/review
 closed Issues / Git history     -> chronology and superseded material
@@ -54,7 +53,7 @@ Notes can preserve decisions, invariants and blockers across current-session rol
 
 **Type:** dogfood.
 
-Project work has used `WORKING_STATE.md + owning Issue + actual branch/files/runtime` to recover an objective. It also exposed stale durable state: local verification reported OMP 18.1.20 while docs still said 18.1.19. The observation corrected the text.
+Earlier project work used `WORKING_STATE.md + owning Issue + actual branch/files/runtime` to recover an objective. It also exposed stale durable state: local verification reported OMP 18.1.20 while docs still said 18.1.19. Subsequent dogfood showed that a repository-wide mutable work index duplicates Issue-local context and creates another synchronization obligation. The current design therefore keeps Issue-centered coordination while dropping the required global index.
 
 These operational examples do not prove the remaining genuinely fresh-session/offline acceptance criteria in #11. Same-conversation recovery is not fresh-session evidence.
 
@@ -123,13 +122,12 @@ Current docs explain accepted intent; resources establish its implemented form. 
 Question: which unfinished problem is being worked and what closes it?
 
 ```text
-latest user direction
--> WORKING_STATE.md navigation
--> owning Issue body and material current comments
--> active PR implementation/review state
+latest user direction / current task
+-> owning Issue body and material current comments when one exists
+-> active PR implementation/review state when one exists
 ```
 
-The index points to the owner, not the full chronology. Comments can supersede a stale body until it is reconciled. Actual branch/runtime observations still decide what already happened. Merging, pausing or superseding a proposal is not proof that every acceptance criterion is complete.
+Projects may be only partially planned. Do not require a global roadmap, enumerate every open Issue, or reconstruct unrelated work before beginning a bounded task. Comments can supersede a stale Issue body until it is reconciled. Actual branch/runtime observations still decide what already happened. Merging, pausing or superseding a proposal is not proof that every acceptance criterion is complete.
 
 ### 5. Rationale and evidence
 
@@ -171,7 +169,7 @@ Keep each at its existing owner: accepted behavior in docs/resources, rationale 
 3. Keep a material contradiction explicit; do not synthesize an unsupported compromise.
 4. Apply the authority appropriate to that claim, not a single global ranking.
 5. Escalate unresolved authorization/product ambiguity; do not ask about facts tools can establish.
-6. Reconcile the owning current doc/Issue/index after a decision. Leave historical evidence historical.
+6. Reconcile the owning current doc/Issue/PR after a decision. Leave historical evidence historical.
 
 Examples:
 
@@ -214,9 +212,9 @@ OMP owns tool/session/resource visibility enforcement. omp-kit owns workflow sco
 
 ## Current mechanism
 
-This policy uses existing surfaces: docs and design records for accepted knowledge, `WORKING_STATE` for navigation, Issues for unfinished work, `omp-workflow` for Main judgment, subagent-context guidance for retrieval, and agent definitions for external-content boundaries. OMP owns session/history storage and capabilities.
+This policy uses existing surfaces: docs and design records for accepted knowledge, task-local Issues/PRs for unfinished work when available, `omp-workflow` for Main judgment, subagent-context guidance for retrieval, and agent definitions for external-content boundaries. OMP owns session/history storage and capabilities.
 
-No extra memory store, context broker, provenance database or runtime permission layer is introduced.
+No global work-state mirror, extra memory store, context broker, provenance database or runtime permission layer is introduced.
 
 ## Evaluation and limits
 
@@ -229,7 +227,7 @@ Important limits:
 - history retrieval can select a wrong session or superseded passage;
 - external evidence can be stale, low-quality or malicious;
 - source separation is guidance, not runtime sandboxing;
-- offline users cannot rely on reaching GitHub, so accepted truth and rationale must ship in the repository.
+- offline recovery can rely on accepted truth and rationale shipped in the repository, but remote unresolved Issue context may be unavailable; do not duplicate the complete remote backlog solely to make it offline.
 
 #11 evaluates real recovery, duplication and offline behavior. `.planning/` remains a deliberately selected specialized workflow; its maintained Skill is not obsolete merely because this repository uses issue-centered state.
 
@@ -240,7 +238,6 @@ Important limits:
 ## Related implementation / Issues
 
 - [Documentation map](../README.md)
-- [Working state](../WORKING_STATE.md)
 - [Design foundations](../design-foundations.md)
 - [OMP workflow](../../skills/omp-workflow/SKILL.md)
 - [Subagent context](../../skills/omp-workflow/references/subagent-context.md)
