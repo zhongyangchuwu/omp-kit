@@ -41,11 +41,11 @@ This mode works well for multi-session development without requiring a phase art
 
 ## Specialized phase mode
 
-Use the `.planning/` lifecycle only when the project deliberately needs a richer local/offline phase dossier, ordered roadmap/requirements artifacts, or explicit phase archival state.
+Use the `omp-planning-artifacts` Skill only when the project deliberately needs a richer local/offline `.planning/` dossier, ordered roadmap/requirements artifacts, reusable brownfield planning context, or explicit phase/release archival state.
 
-Its outputs may include PROJECT/REQUIREMENTS/ROADMAP/STATE plus phase-local context, plans, summaries, verification, and capture records. Do not select this mode merely because a task is large or lasts more than one session.
+That Skill owns bootstrap/root artifacts, phase lifecycle, codebase maps, state, handoffs, and release artifacts. Do not recreate those contracts inside `omp-workflow`.
 
-Load `initialization.md` and `phase-lifecycle.md` only after choosing this mode explicitly.
+Do not select specialized phase mode merely because a task is large or lasts more than one session.
 
 ## Rigor escalation
 
