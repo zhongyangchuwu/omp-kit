@@ -68,6 +68,6 @@ The original Phase-A, B1 web-search and B2 LSP bundles remain under [evidence/ex
 
 ## What is still not established
 
-Repeated fresh-session/offline project-state recovery (#11), robust delegation economics (#8), long-run capability value (#5), and systematic scaffolding ablation (#9) remain unfinished. Documentation cleanup does not supply those experiments.
+Repeated fresh-session issue-centered project-state recovery and GitHub-offline limitations (#11), robust delegation economics (#8), long-run capability value (#5), and systematic scaffolding ablation (#9) remain unfinished. Documentation cleanup does not supply those experiments.
 
 Retaining Skills also does not certify every external dependency/provider/version. Live AutoDL, cloud parser, profile, browser and LSP claims require relevant authorized runtime checks when they are actually the subject of work.

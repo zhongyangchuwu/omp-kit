@@ -43,6 +43,7 @@ omp-kit already follows this boundary:
 - delegation is optional rather than mandatory;
 - generic end-of-task reflection was removed after review showed it added recurring obligation without a demonstrated need;
 - duplicate unchanged full repository gates were removed while retaining one current integrated CI gate;
+- a separate `.planning/` phase dossier workflow was removed after issue-centered state became the preferred model and no current consumer justified maintaining a second project-state system;
 - OMP-native session/stats APIs replaced the obsolete local raw-session parser;
 - a real OMP capability-isolation audit demonstrated that prompt-described read-only intent is not a hard runtime boundary;
 - the feedback product was later deliberately narrowed in consequence rather than withheld: `omp_kit_feedback` is a shared evidence sink that cannot authorize or perform repository/policy/Issue mutation;
@@ -122,11 +123,11 @@ OMP CLI/public behavior
 -> small local fallback only for genuinely omp-kit-owned semantics
 ```
 
-The project deliberately avoids a second SessionManager, scheduler, task executor, worker-result store, raw-session parser, trace database, pricing layer, or profile/runtime clone.
+The project deliberately avoids a second SessionManager, scheduler, task executor, worker-result store, raw-session parser, trace database, pricing layer, profile/runtime clone, or parallel project-state system.
 
 ## Current-generation scaffolding inventory
 
-Issue #9 owns the future **systematic** audit. The rows below record current known mechanisms and two opportunistic accepted ablations; they do not mean #9 has been completed.
+Issue #9 owns the future **systematic** audit. The rows below record current known mechanisms and three opportunistic accepted ablations; they do not mean #9 has been completed.
 
 | Mechanism | Classification | Current decision |
 | --- | --- | --- |
@@ -137,8 +138,8 @@ Issue #9 owns the future **systematic** audit. The rows below record current kno
 | Full repository verification in every worker plus again after integration | repeated evidence/process overhead | removed as default; focused checks + current PR merge-ref gate |
 | Rewriting long parent context into every worker brief | context overhead | avoid; push bounded execution contract and retrieve rationale on demand |
 | Search-first history retrieval as a hard gate | model-compensation | not a hard gate; retrieve when relevant |
-| Issue-centered project state | state/context boundary | landed in PR #22; dogfood under #11 |
-| Durable `.planning/` lifecycle | specialized workflow mode | explicit optional/offline dossier mode pending #11 dogfood conclusion |
+| Issue-centered project state | state/context boundary | keep as the multi-session coordination model; continue dogfood under #11 |
+| Durable `.planning/` lifecycle | workflow scaffolding | removed; no current consumer justified a second phase/state dossier, and Git history retains the retired implementation |
 | Integrated deterministic repository verification | evidence boundary | keep; GitHub Actions runs repository-owned gate on PR merge-ref + landed main |
 | Runtime capability enforcement | runtime boundary | keep OMP-owned; never fake security with prompt conventions |
 | Structured feedback | evidence boundary | keep bounded/shared; `feedback != authorization` |
@@ -176,6 +177,26 @@ settled candidate
 
 A local/worker full gate remains available for a distinct purpose: isolated pre-merge safety, cross-slice diagnosis, explicit request, CI diagnosis, or a genuinely local/runtime claim.
 
+### Specialized `.planning/` dossier
+
+Current default:
+
+```text
+accepted behavior / rationale
+-> current docs and design records
+
+unfinished concrete work
+-> task-local Issue when useful
+
+implementation / review / CI
+-> PR + Actions
+
+chronology
+-> Git + Issue/PR history
+```
+
+The former `.planning/` tree duplicated root state, phase lifecycle, handoffs and release records beside these owners. The workflow remains recoverable from Git history, but omp-kit no longer maintains it without a concrete consumer. A future offline or formal-dossier need should be designed from that real use case rather than preserving a generic phase system speculatively.
+
 ## Evaluation / observed effect
 
 Current real-work evidence includes:
@@ -185,7 +206,8 @@ Current real-work evidence includes:
 - shared feedback runtime acceptance on OMP 18.1.21 showed bounded Main/worker reporting can ship without treating it as policy authority;
 - the obsolete local raw-session parser was removed after OMP-native observability proved sufficient;
 - the v0 session-evidence collector now supplies routine model/tool/delegation/timing observations for future #5/#8/#9 decisions;
-- deterministic repository acceptance moved to GitHub Actions while released-runtime claims remain separate.
+- deterministic repository acceptance moved to GitHub Actions while released-runtime claims remain separate;
+- issue-centered task ownership replaced both the global work-state mirror and the separate `.planning/` dossier, reducing duplicated current-state owners.
 
 The next phase is measured dogfood, not more speculative architecture. #5/#8/#11 should produce natural evidence; #9 reactivates when enough evidence exists for systematic subtraction.
 
@@ -198,10 +220,11 @@ The next phase is measured dogfood, not more speculative architecture. #5/#8/#11
 - The session-evidence v1 provider field is sampled, not an exact per-request routing ledger.
 - CI cannot replace an installed-runtime/profile smoke when the claim depends on local OMP state.
 - External strong-model discussion remains design input rather than benchmark truth.
+- Issue-centered coordination depends on remote Issue availability for unresolved remote-only details; accepted truth and rationale must therefore remain in the checkout rather than being left only in GitHub discussion.
 
 ## Current status
 
-**Accepted boundary principle; two opportunistic ablations accepted; systematic #9 audit not yet performed.**
+**Accepted boundary principle; three opportunistic ablations accepted; systematic #9 audit not yet performed.**
 
 Issue #9 remains inactive until routine session evidence is sufficient to inventory and evaluate current model-compensation scaffolding, or until repeated friction makes a specific rule decision-relevant.
 
@@ -220,7 +243,7 @@ Issue #9 remains inactive until routine session evidence is sufficient to invent
 - Issue #8 — delegation economics
 - Issue #9 — systematic model-compensation/process ablation
 - completed Issue #10 — context authority/provenance design
-- Issue #11 — project-state / `.planning/` dogfood
+- Issue #11 — issue-centered project-state/recovery dogfood
 - completed Issue #21 — routine session evidence product
 
 ## Revisit triggers

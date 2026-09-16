@@ -60,13 +60,7 @@ PR    -> non-trivial implementation/review
 Docs  -> accepted behavior or durable rationale
 ```
 
-No empty directory, global state file, complete Issue registry, or generic handoff bundle is required. If later recovery genuinely needs richer local/offline state, select the explicit `.planning/` mode instead of growing an ad hoc mirror.
-
-## Explicit `.planning/` mode
-
-The maintained `omp-planning-artifacts` Skill is the sole owner of the specialized `.planning/` dossier: root project artifacts, phase lifecycle, optional reusable brownfield maps, state, handoffs, and release archives. Select it deliberately when those artifacts solve a real local/offline continuity or traceability need; multi-session work alone does not imply this mode.
-
-Once selected, use that Skill's own support files rather than maintaining a second phase lifecycle or artifact contract in `omp-workflow`.
+No empty directory, global state file, complete Issue registry, generic handoff bundle, or parallel planning dossier is required. If GitHub is unavailable, accepted truth and rationale should still be recoverable from the checkout; unresolved remote Issue details may simply be unavailable rather than copied into a shadow local backlog.
 
 ## Preserve at task end
 

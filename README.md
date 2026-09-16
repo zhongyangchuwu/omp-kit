@@ -5,7 +5,7 @@ OMP Kit combines a model-neutral workflow for Oh My Pi (OMP) with a personally m
 ## What is included
 
 - Four task-shaped agents: `luna-code`, `luna-deep`, `luna-doc`, and `sol-review`.
-- Fifteen maintained Skills covering workflow, code taste, product design, debugging, research, testing, verification, language tooling, Skill authoring, specialized planning, AutoDL and document parsing.
+- Fourteen maintained Skills covering workflow, code taste, product design, debugging, research, testing, verification, language tooling, Skill authoring, AutoDL and document parsing.
 - A Main-session workflow rule, bounded shared feedback, local session evidence, and human-facing assurance.
 - Current usage documentation, mechanism-level design records, and compact experiment evidence.
 
@@ -50,7 +50,7 @@ current user/task intent
 -> relevant current docs and accepted design
 ```
 
-Projects may be only partially planned. Do not reconstruct a complete backlog or maintain a global work-state mirror merely so an agent can start. Accepted knowledge belongs in the checkout, not only in GitHub discussion. The specialized `.planning/` Skill remains available for deliberately selected phase/offline dossiers; it is not initialized merely because work spans sessions. See [workflows](docs/workflows.md) and [design foundations](docs/design-foundations.md).
+Projects may be only partially planned. Do not reconstruct a complete backlog, maintain a global work-state mirror, or create a parallel phase dossier merely so an agent can start. Accepted knowledge belongs in the checkout, not only in GitHub discussion; unresolved task coordination belongs in task-local Issues/PRs when useful. See [workflows](docs/workflows.md) and [design foundations](docs/design-foundations.md).
 
 ## Feedback, evidence and assurance
 
@@ -81,7 +81,7 @@ just verify
 
 CI runs the same provider-free gate on PR merge refs and on `main` after landing. It covers repository/native-plugin consistency, Skill support files, AutoDL mocked tests, TypeScript typecheck/tests, changed-line hygiene and tracked-file drift. It does not run paid providers, cloud operations or live OMP acceptance scenarios.
 
-Do not delete a maintained Skill, accepted design, or compact experiment simply because it is not needed for the smallest runtime. Remove confirmed obsolete material, or make a targeted correction supported by a concrete defect.
+Do not delete a maintained Skill, accepted design, or compact experiment simply because it is not needed for the smallest runtime. Remove confirmed obsolete material, or make a targeted correction supported by a concrete defect or maintainer decision.
 
 ## Documentation
 

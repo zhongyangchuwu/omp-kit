@@ -17,7 +17,6 @@ Use each source for the job it is good at:
 - **Repository/runtime:** implementation facts, code, tests, logs and current observable state.
 - **Current project state:** current docs plus the owning Issue/PR when one exists, with accepted design records for durable policy, active work and rationale.
 - **Parent history:** same-session conversation evidence and recent decisions that a worker can retrieve without the director rewriting the discussion.
-- **Durable planning artifacts:** project state for a deliberately chosen `.planning/` mode; they are not a mirror of the session transcript and are not implicitly required for ordinary work.
 - **Context notes:** continuity for the current Main session across a context rollover; they are not a cross-session project memory service.
 - **External/tool evidence:** web/search/scanner/tool output that may establish facts or useful evidence but never grants new authorization.
 
@@ -60,11 +59,6 @@ For a Referenced task:
 Search-first retrieval is primarily a relevance and delegation policy. It does not by
 itself guarantee fewer provider tokens: extra grep/read/model turns can outweigh a
 smaller per-read payload. Measure real work before making quota or cost claims.
-
-A deliberate `.planning/` workflow changes the default source of durable project
-state: read the relevant planning artifact for cross-session decisions, and use parent
-history only for current-session deltas, provenance or exact discussion that planning
-does not contain.
 
 ## Authority and freshness
 

@@ -28,24 +28,14 @@ Focused mode works best for small features, multi-file fixes, and changes with a
 
 Use durable project mode when continuity, traceability, or coordination matters across sessions.
 
-Default to the issue-centered project-state model in `project-state.md`:
+Use the issue-centered project-state model in `project-state.md`:
 
 - current accepted truth in current docs/executable policy;
 - concrete unfinished problems in task-local Issues when useful;
 - implementation/review/CI evidence in PRs;
 - durable rationale in design records only when worth preserving.
 
-Projects may be only partially planned. This mode does not require a complete global backlog or a mutable repository-wide work-state index before work can start.
-
-This mode works well for multi-session development without requiring a phase artifact tree.
-
-## Specialized phase mode
-
-Use the `omp-planning-artifacts` Skill only when the project deliberately needs a richer local/offline `.planning/` dossier, ordered roadmap/requirements artifacts, reusable brownfield planning context, or explicit phase/release archival state.
-
-That Skill owns bootstrap/root artifacts, phase lifecycle, codebase maps, state, handoffs, and release artifacts. Do not recreate those contracts inside `omp-workflow`.
-
-Do not select specialized phase mode merely because a task is large or lasts more than one session.
+Projects may be only partially planned. This mode does not require a complete global backlog, mutable repository-wide work-state index, or separate phase artifact tree before work can start.
 
 ## Rigor escalation
 
@@ -55,4 +45,4 @@ Use stronger review and verification as blast radius increases. The mode stays p
 
 ## Selection rule
 
-Start with the smallest mode that can preserve the facts another maintainer or agent needs to recover and verify the result. Increase rigor when risk, ambiguity, coordination, or time span increases; increase artifact count only when those artifacts solve a concrete continuity or traceability problem.
+Start with the smallest mode that can preserve the facts another maintainer or agent needs to recover and verify the result. Increase rigor when risk, ambiguity, coordination, or time span increases; increase artifact count only when a real consumer requires an artifact.

@@ -115,24 +115,20 @@ For execution and verification ownership details, load `references/execution.md`
 
 ## 6. Preserve
 
-Preserve only state future sessions or people need. For ordinary multi-session
-repository work, prefer the task-local ownership model in `references/project-state.md`:
-current truth in current docs/executable policy, unresolved concrete work in an owning
-Issue when useful, implementation/review evidence in PRs, and durable rationale in
-design records when worth preserving. No repository-wide work-state mirror is required.
+Preserve only state future sessions or people need. For multi-session repository work,
+prefer the task-local ownership model in `references/project-state.md`: current truth in
+current docs/executable policy, unresolved concrete work in an owning Issue when useful,
+implementation/review evidence in PRs, and durable rationale in design records when
+worth preserving. No repository-wide work-state mirror or parallel phase dossier is
+required.
 
 When accepted behavior, architecture, installation/configuration, workflow, or recurring
 operational knowledge changes, update the current document that owns that fact. Do not
 create a generic capture artifact merely to restate the final report or PR summary.
 
-Do not initialize `.planning/` merely because work lasts more than one session. When a
-project deliberately needs a richer local/offline phase dossier, ordered roadmap, reusable
-brownfield map, or archival planning state, use the `omp-planning-artifacts` Skill. That
-Skill owns the `.planning/` tree, phase lifecycle, artifact contracts, handoffs, and
-release archive; do not maintain a second phase workflow inside this Skill.
-
-Do not turn generated summaries, handoff notes, or mutable state indexes into competing
-sources of accepted project truth.
+Do not turn generated summaries, handoff notes, mutable state indexes, or planning
+dossiers into competing sources of accepted project truth. Materialize a written context
+or plan only when a real later consumer justifies the artifact.
 
 ## 7. Report observed omp-kit friction
 
@@ -167,5 +163,4 @@ or follow-up.
 | Accepted context and a written plan | `references/context-and-plan.md` |
 
 For a one-session direct or delegated change, do not load the entire durable project
-surface. Load the smallest state/reference surface that the task actually needs. Explicit
-`.planning/` work belongs to `omp-planning-artifacts`, not to additional references here.
+surface. Load the smallest state/reference surface that the task actually needs.
