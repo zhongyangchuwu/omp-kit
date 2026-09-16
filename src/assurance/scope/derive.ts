@@ -19,7 +19,7 @@ const MAX_ENTRY_HOPS = 8;
 
 interface ToolCandidate {
 	actionId: string;
-	trackId: string;
+	trackKey: string;
 	position: number;
 	trackFile: string;
 	entryId?: string;
@@ -90,7 +90,12 @@ async function recoverToolCall(
 			pending = reader.getEntry(file, current, signal);
 			cache.set(key, pending);
 		}
-		const read = await pending;
+		let read: Awaited<ReturnType<SessionEntryReader["getEntry"]>>;
+		try {
+			read = await pending;
+		} catch {
+			return "unavailable";
+		}
 		if (read.status !== "available") return "unavailable";
 		const found = toolCallFromEntry(read.data.entry, toolCallId);
 		if (found === "invalid") return "invalid";
@@ -104,7 +109,7 @@ function candidateForSpan(input: TraceInput, track: TraceTrack, span: TraceSpan,
 	const sessionKey = assuranceId("session-file", input.sessionFile);
 	return {
 		actionId: traceActionId(input.sourceId, track, span),
-		trackId: track.id,
+		trackKey: assuranceId("scope-track-file", track.file),
 		position,
 		trackFile: track.file,
 		// The root trace exposes only the root cwd. Child relative paths still mean that child's workspace,
@@ -137,20 +142,19 @@ function collectCandidates(inputs: readonly TraceInput[], normalized: AssuranceI
 				byAction.set(candidate.actionId, {
 					...existing,
 					position: Math.min(existing.position, candidate.position),
-					// Keep a known root only when both views agree; otherwise preserve uncertainty.
 					workspaceRoot: existing.workspaceRoot === candidate.workspaceRoot ? existing.workspaceRoot : null,
 					evidence,
 				});
 			}
 		}
 	}
-	return [...byAction.values()].sort((a, b) => a.trackId < b.trackId ? -1 : a.trackId > b.trackId ? 1 : a.position - b.position || a.actionId.localeCompare(b.actionId));
+	return [...byAction.values()].sort((a, b) => a.trackKey < b.trackKey ? -1 : a.trackKey > b.trackKey ? 1 : a.position - b.position || a.actionId.localeCompare(b.actionId));
 }
 
 function coverage(candidate: ToolCandidate, status: ScopeActionCoverage["status"], reason?: ScopeActionCoverage["reason"]): ScopeActionCoverage {
 	return {
 		actionId: candidate.actionId,
-		trackId: candidate.trackId,
+		trackKey: candidate.trackKey,
 		position: candidate.position,
 		status,
 		...(reason ? { reason } : {}),
@@ -205,7 +209,7 @@ export async function deriveTraceScopeEvidence(
 		}
 		const call: ScopeToolCall = {
 			actionId: candidate.actionId,
-			trackId: candidate.trackId,
+			trackKey: candidate.trackKey,
 			position: candidate.position,
 			toolName: recovered.toolName,
 			arguments: recovered.arguments,
@@ -223,7 +227,7 @@ export async function deriveTraceScopeEvidence(
 				observations.push({
 					id: assuranceId("scope", candidate.actionId, classifier.meta.id, String(classifier.meta.version), descriptor.boundary, descriptor.access, descriptor.resource),
 					actionId: candidate.actionId,
-					trackId: candidate.trackId,
+					trackKey: candidate.trackKey,
 					position: candidate.position,
 					...descriptor,
 					classifier: { ...classifier.meta },
@@ -237,7 +241,7 @@ export async function deriveTraceScopeEvidence(
 	return {
 		traceCoverage: traceCoverage(inputs),
 		observations: deduped,
-		actionCoverage: actionCoverage.sort((a, b) => a.trackId < b.trackId ? -1 : a.trackId > b.trackId ? 1 : a.position - b.position || a.actionId.localeCompare(b.actionId)),
+		actionCoverage: actionCoverage.sort((a, b) => a.trackKey < b.trackKey ? -1 : a.trackKey > b.trackKey ? 1 : a.position - b.position || a.actionId.localeCompare(b.actionId)),
 		limitations: ["declared-targets-only", "generic-shell-unclassified", "path-symlink-target-unverified", "child-workspace-root-unverified", "cross-track-order-unavailable"],
 	};
 }
