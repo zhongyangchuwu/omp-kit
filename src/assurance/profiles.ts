@@ -5,6 +5,7 @@ export const DEFAULT_ASSURANCE_PROFILE: readonly string[] = Object.freeze([
 	"omp-kit.tool-error",
 	"omp-kit.terminal-missing",
 	"omp-kit.coverage-gap",
+	"omp-kit.scope-expansion",
 ]);
 
 export function resolveAssuranceProfile(
