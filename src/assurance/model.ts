@@ -49,29 +49,52 @@ export interface AssuranceInput {
 	readonly coverage: readonly SourceCoverage[];
 }
 
-export type FindingKind = "tool-error" | "terminal-missing" | "coverage-gap";
-export interface Finding {
+export interface RulePresentation {
+	readonly section: "attention" | "coverage";
+	readonly summaryLabel?: string;
+}
+
+/** Rule-owned metadata. Engines and renderers must not hard-code concrete rule IDs. */
+export interface AssuranceRuleMeta {
 	readonly id: string;
-	readonly kind: FindingKind;
-	readonly ruleId: string;
-	readonly ruleVersion: number;
+	readonly version: number;
+	readonly title: string;
+	readonly description: string;
+	readonly messages: Readonly<Record<string, string>>;
+	readonly presentation: RulePresentation;
+}
+
+/** A rule reports local findings only; the engine attaches global identity and provenance. */
+export interface RuleFinding {
+	readonly kind: string;
 	readonly subjectId: string;
 	readonly code: string;
 	readonly evidence: readonly EvidenceRef[];
 }
 
+export interface Finding extends RuleFinding {
+	readonly id: string;
+	readonly ruleId: string;
+	readonly ruleVersion: number;
+}
+
+export interface RuleEvaluation {
+	readonly status: "evaluated" | "partial" | "skipped";
+	readonly findings: readonly RuleFinding[];
+}
+
 export interface RuleResult {
 	readonly ruleId: string;
 	readonly ruleVersion: number;
-	readonly status: "evaluated" | "partial" | "skipped" | "failed";
+	readonly status: RuleEvaluation["status"] | "failed";
+	readonly failure?: "exception" | "invalid-output";
 	readonly findings: readonly Finding[];
 }
 
-/** Rules receive data, never a reader, shell, database or mutable shared report. */
+/** Rules receive immutable observations, never a reader, shell, database or mutable report. */
 export interface AssuranceRule {
-	readonly id: string;
-	readonly version: number;
-	evaluate(input: AssuranceInput): Pick<RuleResult, "status" | "findings">;
+	readonly meta: AssuranceRuleMeta;
+	evaluate(input: AssuranceInput): RuleEvaluation;
 }
 
 export interface AssuranceReport extends AssuranceInput {

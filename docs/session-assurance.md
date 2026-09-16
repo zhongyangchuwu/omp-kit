@@ -31,13 +31,14 @@ no extension or default background job is added by this slice.
 ## What is delivered
 
 `omp-kit.session-assurance/v1` carries normalized action observations, per-source
-coverage, rule execution results and three finding categories:
+coverage, rule execution results and generic evidence-linked findings. The current
+default profile enables three built-in rules:
 
-| Finding | Meaning | Not a claim that |
+| Rule/finding | Meaning | Not a claim that |
 | --- | --- | --- |
-| `tool-error` | A tool span explicitly reports an error | The entire task failed or no side effect occurred |
-| `terminal-missing` | Every available sample for this action marks its terminal missing | A process is still running or certainly failed |
-| `coverage-gap` | A scope limit, unavailable/unassessed source, conflicting observation or failed rule | An unobserved effect did not occur |
+| `omp-kit.tool-error` / `tool-error` | A tool span explicitly reports an error | The entire task failed or no side effect occurred |
+| `omp-kit.terminal-missing` / `terminal-missing` | Every available sample for an action marks its terminal missing | A process is still running or certainly failed |
+| `omp-kit.coverage-gap` / `coverage-gap` | A scope limit, unavailable/unassessed source, conflict or inherently unobserved surface | An unobserved effect did not occur |
 
 Tool-result return and background-job terminal are separate observations. Missing
 `isError` is represented as `errorReported: false` (no flag observed), never as a
@@ -45,32 +46,65 @@ verified process result. A mixed terminal history is preserved as conflicting
 observations, not silently promoted to recovered/successful or stale evidence.
 Checks, git operations and command intent are not classified in this slice.
 
-## Composition
+## Rule system boundaries
 
-- `src/assurance/trace-observations.ts` projects public OMP traces and validates
-  the fields it uses. The CLI reads one explicit root trace and its returned tracks;
-  library callers can combine multiple explicitly identified reads.
-- `model.ts` defines the small data contract independently of an OMP client or CLI.
-  A future retained-entry adapter can produce observations without rewriting rules.
-- `rules.ts` exports independent, versioned rules. Each consumes only observations
-  and coverage, not readers or execution callbacks. Custom rules are trusted local
-  code, not sandboxed extensions. No rule DSL or registry service is introduced.
-- `report.ts` composes an explicit rule list and renders bounded text. Input is
-  detached and deeply frozen before rules run. One rule cannot mutate another's
-  observations; a throwing/malformed rule produces a gap without its exception text.
-- `scripts/session_assurance.ts` owns selection, IO and process exit behavior.
+The rule system follows the same broad separation used by mature lint/analyzer
+systems: rule definitions are independent from execution, registration, enablement
+and presentation. No rule DSL or dynamic filesystem discovery is introduced.
+
+- `src/assurance/model.ts` defines normalized observations, the generic rule metadata
+  and local-finding contract, engine results and the report schema. Finding `kind`
+  and `code` are strings owned by rules; adding a normal rule does not extend a
+  central enum or database-shaped union.
+- `src/assurance/engine.ts` is the deterministic execution engine. It imports no
+  concrete rule, registry, profile, reader or renderer. It validates definitions
+  and outputs, clones/freezes inputs, isolates exceptions, assigns stable finding
+  IDs/provenance, orders results and aggregates the report.
+- `src/assurance/rules/` contains rule implementations. Each rule owns metadata,
+  message IDs/text and a pure `evaluate(input)` function. Rules receive observations
+  only; they cannot obtain readers, shell callbacks, databases or mutable reports.
+- `src/assurance/registry.ts` answers **which built-in rules exist**. Registry
+  membership alone does not enable a rule.
+- `src/assurance/profiles.ts` answers **which registered rules run**. The default
+  profile is an explicit list of rule IDs, so experimental rules can be registered
+  without becoming default policy.
+- `src/assurance/render.ts` owns shared terminal layout/escaping. Rule labels and
+  messages come from metadata rather than hard-coded rule IDs. Unknown metadata has
+  a bounded fallback rather than causing renderer failure.
+- `scripts/session_assurance.ts` composes the built-in registry, default profile,
+  generic engine and renderer, while owning selection, IO and process exit behavior.
+
+Adding an ordinary built-in rule should require its rule module and tests plus
+explicit registry/profile decisions. It should not require changes to the generic
+engine, report schema or renderer. Rules should not depend on other rules' outputs;
+shared semantics belong in normalized observations/derived facts instead of a rule DAG.
 
 Rule states distinguish `evaluated`, `partial` (some supplied sources unassessed),
 `skipped` (no usable action source) and `failed`. Evaluated means evaluated over the
-stated bounded scope, not exhaustive coverage. An omitted rule is not a zero-result
-rule. UI limits do not truncate the JSON findings or their evidence references.
+stated bounded scope, not exhaustive coverage. Engine execution failure is represented
+as rule status/failure metadata, not fabricated as a business finding from another
+rule. Exception text is discarded. An omitted rule is not a zero-result rule.
+UI limits do not truncate JSON findings or their evidence references.
+
+Rule metadata includes stable identity/version, human title/description, message
+catalog and a small presentation hint. Rules return local findings (`kind`, `code`,
+subject and evidence); the engine attaches rule identity/version and stable global
+finding IDs. This is analogous to diagnostic producers emitting stable codes while
+the presentation layer remains generic.
+
+## Observation composition
+
+`src/assurance/trace-observations.ts` projects public OMP traces and validates the
+fields it uses. The CLI reads one explicit root trace and its returned tracks;
+library callers can combine multiple explicitly identified reads. A future retained-
+entry adapter can produce the same normalized input without changing the rule engine.
 
 Tool observations from overlapping reads are correlated only by transcript identity
 and native `toolCallId`. No matching by command text, timestamps or labels occurs.
 Background spans and calls without native call IDs remain source-local conservatively;
 they may appear more than once across overlapping inputs. Conflicts retain samples.
-Finding IDs include rule identity/version and subject. Replaying the same input and
-rule set yields stable IDs and ordering; changing read metadata changes the snapshot.
+Replaying the same observations and rule set yields stable finding IDs and ordering;
+changing read metadata changes the snapshot.
 
 ## Evidence, privacy and coverage
 
@@ -93,9 +127,11 @@ remain outside these initial rules.
 ## Validation and next boundary
 
 Tests use synthetic public traces and injectable readers, including missing and
-conflicting observations, isolation, deterministic composition, privacy projection,
-CLI exit behavior and no-IO help. The repository CI validates the unmodified Bun/SDK
-suite. This is not acceptance in a user's installed OMP session.
+conflicting observations, engine isolation, deterministic composition, registry/profile
+separation, privacy projection, CLI exit behavior and no-IO help. A contract test adds
+a fourth ordinary rule through the public Rule API and generic renderer without
+changing either implementation. Repository CI validates the unmodified Bun/SDK suite.
+This is not acceptance in a user's installed OMP session.
 
 Still required by #31: opt-in `/assurance` integration, live-session/rewind/child-read
 dogfood, additional useful classifications and claim-specific verification. Neither

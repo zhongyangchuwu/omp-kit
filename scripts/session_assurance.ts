@@ -1,8 +1,13 @@
 #!/usr/bin/env bun
 import { createOmpStatsClient, withLocalOmpStats, type SessionTraceReader } from "../src/session/omp-stats";
-import type { AssuranceReport } from "../src/assurance/model";
-import { buildAssuranceReport, renderAssuranceReport } from "../src/assurance/report";
+import { buildAssuranceReport } from "../src/assurance/engine";
+import type { AssuranceReport, AssuranceRule } from "../src/assurance/model";
+import { DEFAULT_ASSURANCE_PROFILE, resolveAssuranceProfile } from "../src/assurance/profiles";
+import { BUILTIN_ASSURANCE_RULES } from "../src/assurance/registry";
+import { renderAssuranceReport } from "../src/assurance/render";
 import { normalizeTraceReads } from "../src/assurance/trace-observations";
+
+const DEFAULT_PROFILE_RULES = resolveAssuranceProfile(BUILTIN_ASSURANCE_RULES, DEFAULT_ASSURANCE_PROFILE);
 
 const HELP = `Usage: omp-kit-assurance --session PATH [--origin http://127.0.0.1:PORT] [--json]
 
@@ -38,9 +43,9 @@ export function parseAssuranceArgs(argv: readonly string[]): AssuranceOptions | 
 }
 
 export async function readAssuranceReport(reader: SessionTraceReader, sessionFile: string,
-	signal?: AbortSignal): Promise<AssuranceReport> {
+	signal?: AbortSignal, rules: readonly AssuranceRule[] = DEFAULT_PROFILE_RULES): Promise<AssuranceReport> {
 	const read = await reader.getTrace(sessionFile, signal);
-	return buildAssuranceReport(normalizeTraceReads([{ sourceId: "session", sessionFile, read }]));
+	return buildAssuranceReport(normalizeTraceReads([{ sourceId: "session", sessionFile, read }]), rules);
 }
 
 /** Injection is for hosts/tests; no UI/storage dependency in the report functions. */
@@ -52,7 +57,7 @@ export async function runAssuranceCli(argv: readonly string[], reader?: SessionT
 	const report = reader ? await use(reader) : options.origin
 		? await use(createOmpStatsClient(options.origin)) : await withLocalOmpStats(use);
 	const incomplete = report.coverage.some(source => !source.assessed) || report.rules.some(rule => rule.status === "failed");
-	return { output: options.json ? JSON.stringify(report, null, 2) : renderAssuranceReport(report), exitCode: incomplete ? 2 : 0 };
+	return { output: options.json ? JSON.stringify(report, null, 2) : renderAssuranceReport(report, BUILTIN_ASSURANCE_RULES), exitCode: incomplete ? 2 : 0 };
 }
 
 if (import.meta.main) {

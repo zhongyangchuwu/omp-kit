@@ -3,14 +3,18 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import type { SessionTrace, TraceSpan } from "@oh-my-pi/omp-stats/shared-types";
-import type { EvidenceRead } from "../../src/session/read-result";
-import { type AssuranceRule } from "../../src/assurance/model";
+import { buildAssuranceReport } from "../../src/assurance/engine";
+import type { AssuranceRule } from "../../src/assurance/model";
+import { DEFAULT_ASSURANCE_PROFILE, resolveAssuranceProfile } from "../../src/assurance/profiles";
+import { BUILTIN_ASSURANCE_RULES } from "../../src/assurance/registry";
+import { renderAssuranceReport } from "../../src/assurance/render";
+import { missingTerminalRule } from "../../src/assurance/rules/terminal-missing";
+import { toolErrorRule } from "../../src/assurance/rules/tool-error";
 import { normalizeTraceReads, type TraceInput } from "../../src/assurance/trace-observations";
-import { buildAssuranceReport, renderAssuranceReport } from "../../src/assurance/report";
-import { DEFAULT_ASSURANCE_RULES, toolErrorRule, missingTerminalRule } from "../../src/assurance/rules";
 import { parseAssuranceArgs, runAssuranceCli, readAssuranceReport } from "../../scripts/session_assurance";
 
 const file = "/private/root.jsonl";
+const DEFAULT_RULES = resolveAssuranceProfile(BUILTIN_ASSURANCE_RULES, DEFAULT_ASSURANCE_PROFILE);
 function span(overrides: Partial<TraceSpan> = {}): TraceSpan {
 	return { id: "main:request:call", kind: "tool", start: 1, end: 2, label: "bash", entryId: "result", toolCallId: "call", ...overrides };
 }
@@ -28,8 +32,23 @@ function failed(sourceId = "a"): TraceInput {
 	return { sourceId, sessionFile: file, read: { scope: { source: "omp-stats", view: "active-branch-trace" },
 		startedAt: 10, finishedAt: 11, limitations: [], consistency: "not-checked", status: "unavailable", reason: "http", httpStatus: 403 } };
 }
-const report = (...reads: TraceInput[]) => buildAssuranceReport(normalizeTraceReads(reads));
+const report = (...reads: TraceInput[]) => buildAssuranceReport(normalizeTraceReads(reads), DEFAULT_RULES);
+const render = (value: ReturnType<typeof report>, rules: readonly AssuranceRule[] = BUILTIN_ASSURANCE_RULES) => renderAssuranceReport(value, rules);
 const kinds = (value: ReturnType<typeof report>, kind: string) => value.findings.filter(item => item.kind === kind);
+
+function testRule(id: string, evaluate: AssuranceRule["evaluate"]): AssuranceRule {
+	return {
+		meta: {
+			id,
+			version: 1,
+			title: id,
+			description: "Test-only assurance rule.",
+			messages: { "test-finding": "Test finding." },
+			presentation: { section: "attention", summaryLabel: id },
+		},
+		evaluate,
+	};
+}
 
 test("tool errors retain native evidence rather than task failure claims", () => {
 	const value = report(input([span({ isError: true })]));
@@ -43,12 +62,12 @@ test("absence of an error flag is not a verified consequence", () => {
 	assert.equal(kinds(value, "tool-error").length, 0);
 	assert.equal("verified" in value.actions[0], false);
 	assert.equal("succeeded" in value.actions[0], false);
-	assert.match(renderAssuranceReport(value), /not process success/);
+	assert.match(render(value), /not process success/);
 });
 test("missing tool terminal and missing background terminal are separate observations", () => {
 	const value = report(input([span({ unterminated: true }), span({ id: "bg:job", kind: "background", toolCallId: undefined, unterminated: true })]));
 	assert.equal(kinds(value, "terminal-missing").length, 2);
-	assert.match(renderAssuranceReport(value), /not proof of a running process/);
+	assert.match(render(value), /not proof of a running process/);
 });
 test("a tool return does not complete its background job", () => {
 	const value = report(input([span(), span({ id: "bg:job", kind: "background", toolCallId: undefined, unterminated: true })]));
@@ -62,14 +81,14 @@ test("model errors are not mislabeled as tool errors", () => {
 test("unavailable sources skip action rules, not produce reassuring zeros", () => {
 	const value = report(failed());
 	assert.equal(value.actions.length, 0);
-	assert.equal(value.rules.find(rule => rule.ruleId === toolErrorRule.id)?.status, "skipped");
-	assert.match(renderAssuranceReport(value), /Tool errors reported: NOT ASSESSED/);
+	assert.equal(value.rules.find(rule => rule.ruleId === toolErrorRule.meta.id)?.status, "skipped");
+	assert.match(render(value), /Tool errors reported: NOT ASSESSED/);
 	assert.ok(value.findings.some(item => item.code === "http"));
 });
 test("mixed reads retain findings from readable sources and the failed component", () => {
 	const value = report(input([span({ isError: true })]), failed("child"));
 	assert.equal(kinds(value, "tool-error").length, 1);
-	assert.equal(value.rules.find(rule => rule.ruleId === toolErrorRule.id)?.status, "partial");
+	assert.equal(value.rules.find(rule => rule.ruleId === toolErrorRule.meta.id)?.status, "partial");
 	assert.equal(value.coverage.find(source => source.sourceId === "child")?.assessed, false);
 });
 test("source movement is not normalized into action claims", () => {
@@ -99,7 +118,7 @@ test("raw previews, title, cwd and file paths do not enter the report", () => {
 });
 test("terminal rendering escapes control and bidi characters in native references", () => {
 	const value = report(input([span({ isError: true, entryId: "\u001b[31m\n\u202eevil" })]));
-	assert.doesNotMatch(renderAssuranceReport(value), /\u001b|\u202e/);
+	assert.doesNotMatch(render(value), /\u001b|\u202e/);
 });
 test("stable identities and report order are independent of source and span ordering", () => {
 	const a = input([span({ isError: true }), span({ id: "second", toolCallId: "two", unterminated: true })]);
@@ -133,9 +152,9 @@ test("a later non-error flag never erases earlier error evidence", () => {
 	assert.ok(value.findings.some(item => item.code === "conflicting-observations"));
 });
 test("no input is distinct from an empty inspected trace", () => {
-	assert.equal(report().rules.find(rule => rule.ruleId === toolErrorRule.id)?.status, "skipped");
+	assert.equal(report().rules.find(rule => rule.ruleId === toolErrorRule.meta.id)?.status, "skipped");
 	assert.ok(report().findings.some(item => item.code === "no-trace-input"));
-	assert.equal(report(input()).rules.find(rule => rule.ruleId === toolErrorRule.id)?.status, "evaluated");
+	assert.equal(report(input()).rules.find(rule => rule.ruleId === toolErrorRule.meta.id)?.status, "evaluated");
 });
 test("scope limitations survive successful empty reads", () => {
 	const value = report(input());
@@ -145,31 +164,32 @@ test("scope limitations survive successful empty reads", () => {
 });
 test("omitted rules are not rendered as zero findings", () => {
 	const value = buildAssuranceReport(normalizeTraceReads([input()]), [toolErrorRule]);
-	assert.match(renderAssuranceReport(value), /Missing terminal evidence: NOT ASSESSED/);
-	assert.match(renderAssuranceReport(value), /active-branches-only/);
+	assert.match(renderAssuranceReport(value, BUILTIN_ASSURANCE_RULES), /Missing terminal evidence: NOT ASSESSED/);
 });
 test("rule composition is order-independent", () => {
 	const observations = normalizeTraceReads([input([span({ isError: true })])]);
-	assert.deepEqual(buildAssuranceReport(observations), buildAssuranceReport(observations, [...DEFAULT_ASSURANCE_RULES].reverse()));
+	assert.deepEqual(buildAssuranceReport(observations, DEFAULT_RULES), buildAssuranceReport(observations, [...DEFAULT_RULES].reverse()));
 });
-test("rule exceptions become a gap without exposing their raw message", () => {
-	const broken: AssuranceRule = { id: "test.broken", version: 1, evaluate() { throw new Error("PRIVATE_RULE_ERROR"); } };
+test("rule exceptions remain engine failures without becoming business findings", () => {
+	const broken = testRule("test.broken", () => { throw new Error("PRIVATE_RULE_ERROR"); });
 	const value = buildAssuranceReport(normalizeTraceReads([input()]), [broken]);
 	assert.equal(value.rules[0].status, "failed");
-	assert.equal(value.findings[0].code, "rule-failed");
+	assert.equal(value.rules[0].failure, "exception");
+	assert.equal(value.findings.length, 0);
+	assert.match(renderAssuranceReport(value, [broken]), /failed to evaluate/);
 	assert.doesNotMatch(JSON.stringify(value), /PRIVATE_RULE_ERROR/);
 });
 test("a mutating rule cannot change inputs seen by other rules", () => {
 	const observations = normalizeTraceReads([input([span({ isError: true })])]);
 	const before = JSON.stringify(observations);
-	const mutator: AssuranceRule = { id: "test.mutator", version: 1, evaluate(value) {
+	const mutator = testRule("test.mutator", value => {
 		(value.actions[0].samples[0] as { errorReported: boolean }).errorReported = false;
 		return { status: "evaluated", findings: [] };
-	} };
+	});
 	const value = buildAssuranceReport(observations, [mutator, toolErrorRule]);
 	assert.equal(kinds(value, "tool-error").length, 1);
 	assert.equal(JSON.stringify(observations), before);
-	assert.equal(value.rules.find(rule => rule.ruleId === mutator.id)?.status, "failed");
+	assert.equal(value.rules.find(rule => rule.ruleId === mutator.meta.id)?.status, "failed");
 });
 test("duplicate source and rule identities are rejected", () => {
 	assert.throws(() => normalizeTraceReads([input(), input()]));
@@ -182,6 +202,33 @@ test("normalization leaves source objects unchanged and detached", () => {
 	const value = normalizeTraceReads([source]);
 	(value.actions[0].samples[0].evidence as { entryId: string }).entryId = "changed";
 	assert.equal(JSON.stringify(source), before);
+});
+test("registry and default profile are separate and explicit", () => {
+	assert.ok(BUILTIN_ASSURANCE_RULES.length >= DEFAULT_ASSURANCE_PROFILE.length);
+	assert.deepEqual(DEFAULT_RULES.map(rule => rule.meta.id), DEFAULT_ASSURANCE_PROFILE);
+	assert.throws(() => resolveAssuranceProfile(BUILTIN_ASSURANCE_RULES, ["test.unknown"]));
+});
+test("a fourth ordinary rule needs no engine schema or renderer changes", () => {
+	const custom: AssuranceRule = {
+		meta: {
+			id: "test.custom-observation",
+			version: 1,
+			title: "Custom observation",
+			description: "Test extension rule.",
+			messages: { observed: "A custom observation was detected." },
+			presentation: { section: "attention", summaryLabel: "Custom observations" },
+		},
+		evaluate(value) {
+			return { status: "evaluated", findings: [{ kind: "custom-observation", subjectId: value.actions[0]?.id ?? "report",
+				code: "observed", evidence: value.actions[0]?.samples.slice(0, 1).map(sample => sample.evidence) ?? [] }] };
+		},
+	};
+	const value = buildAssuranceReport(normalizeTraceReads([input([span()])]), [custom]);
+	assert.equal(value.schemaVersion, "omp-kit.session-assurance/v1");
+	assert.equal(value.findings[0].ruleId, custom.meta.id);
+	assert.equal(value.findings[0].kind, "custom-observation");
+	assert.match(renderAssuranceReport(value, [custom]), /Custom observations: 1/);
+	assert.match(renderAssuranceReport(value, [custom]), /A custom observation was detected/);
 });
 test("CLI parsing rejects missing, unknown and repeated options without echoing values", () => {
 	for (const args of [[], ["--session"], ["--session", "--json"], ["PRIVATE_UNKNOWN"], ["--session", file, "--json", "--json"]]) {
@@ -220,5 +267,7 @@ test("CLI help works in a fresh process without loading the OMP SDK runtime", ()
 });
 test("skipped-with-findings is rejected rather than silently accepted", () => {
 	const bad: AssuranceRule = { ...missingTerminalRule, evaluate() { return { status: "skipped", findings: [{} as never] }; } };
-	assert.equal(buildAssuranceReport(normalizeTraceReads([input()]), [bad]).rules[0].status, "failed");
+	const value = buildAssuranceReport(normalizeTraceReads([input()]), [bad]);
+	assert.equal(value.rules[0].status, "failed");
+	assert.equal(value.rules[0].failure, "invalid-output");
 });
