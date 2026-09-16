@@ -31,10 +31,11 @@ Use durable project mode when continuity, traceability, or coordination matters 
 Default to the issue-centered project-state model in `project-state.md`:
 
 - current accepted truth in current docs/executable policy;
-- a short `docs/WORKING_STATE.md` navigation index when useful;
-- concrete unfinished problems in Issues;
+- concrete unfinished problems in task-local Issues when useful;
 - implementation/review/CI evidence in PRs;
 - durable rationale in design records only when worth preserving.
+
+Projects may be only partially planned. This mode does not require a complete global backlog or a mutable repository-wide work-state index before work can start.
 
 This mode works well for multi-session development without requiring a phase artifact tree.
 

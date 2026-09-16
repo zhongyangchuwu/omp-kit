@@ -9,7 +9,7 @@ description: Use when the project explicitly selects or already uses a .planning
 
 This maintained specialized Skill owns the `.planning/` structure when a project deliberately chooses a local/offline phase dossier. It preserves root planning files, phase state, traceability and handoff records without relying on conversation memory.
 
-Ordinary issue-centered projects use current docs, `WORKING_STATE.md`, Issues and PRs. The presence of this Skill does not authorize creating a parallel dossier or moving accepted design knowledge out of `docs/`.
+Ordinary issue-centered projects use current docs plus task-local Issues and PRs when useful. The presence of this Skill does not authorize creating a parallel dossier or moving accepted design knowledge out of `docs/`.
 
 ## Activation
 
