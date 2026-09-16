@@ -10,15 +10,13 @@ Keep useful Skills, references, templates, scripts and tests. `skills/<name>/SKI
 
 Review third-party material outside active discovery paths first, for example in an ignored `references/` checkout or a temporary branch/worktree. Only copy reviewed material into `skills/` when it is ready to be active. Git history is the recovery path for retired drafts and earlier designs; there is no mandatory draft registry or promotion metadata workflow.
 
-`just scan-risk PATH` remains an optional review aid for suspicious textual patterns. It is not a sandbox, policy engine or substitute for reading executable code and checking side effects.
-
-Consult `skill-authoring` for content review. Correct concrete errors and duplicated obligations. Do not remove personal design or code-quality experience simply because the guidance is general-purpose.
+Use `skill-authoring` for content and supply-chain review. Environment-native security scanners can provide additional evidence when useful, but omp-kit does not maintain a bespoke heuristic risk scanner. Correct concrete errors and duplicated obligations. Do not remove personal design or code-quality experience simply because the guidance is general-purpose.
 
 ## Implement, integrate, verify
 
 Use focused tests while making a change. Main reconciles writable scopes and shared consumers before accepting the combined tree. Workers report out-of-scope findings rather than expanding their task.
 
-`just verify` is the repository's provider-free gate. It runs retained Python/native-plugin and Skill-library checks, Skill-authoring tests, isolated AutoDL mocked tests, and TypeScript typecheck/tests. CI checks lockfile freshness, the candidate diff and tracked-file drift as well.
+`just verify` is the repository's provider-free gate. It runs Bun repository/native-resource/Skill/documentation contracts, isolated AutoDL mocked tests, TypeScript typecheck and runtime tests. CI also checks the committed Bun graph, the AutoDL lockfile, candidate diff and tracked-file drift.
 
 PR merge-ref CI is the normal pre-merge mechanical evidence. Post-landing `main` CI answers the distinct landed-tree question. Do not repeat a successful unchanged full gate merely because another worker or phase received ownership. A focused repair, changed candidate, local-runtime claim or CI diagnosis can justify new checks.
 

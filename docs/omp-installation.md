@@ -48,11 +48,7 @@ This installs a managed Git dependency under OMP's plugin root. It is appropriat
 
 Repository visibility and package publication are separate concerns. `package.json` may remain `private: true`; OMP can load the source checkout or a Git-installed plugin without publishing an npm package.
 
-## Skill-only library use
-
-`scripts/link_skills.py` remains an explicit helper for linking the maintained library into a chosen agent root. Read its `--help`, inspect the target and preserve user-owned files. Do not combine it with a native plugin installation that already discovers the same Skills: duplicate discovery is not an upgrade strategy.
-
-Use the normal plugin path for omp-kit agents/rules/extensions. Skill-only links are not equivalent to installing the full plugin.
+If only a portable Skill is needed outside the full plugin, use the target runtime's normal Skill installation mechanism or an explicit reviewed copy/link. omp-kit does not maintain a second repository-specific skill installer.
 
 ## Retired Harness v2 installer
 
