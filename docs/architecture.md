@@ -7,10 +7,10 @@ OMP Kit owns reusable workflow policy, a personally maintained Skill library, bo
 | Category | Current resources | Boundary |
 | --- | --- | --- |
 | Core Harness | Four task agents, Main rule, `omp-workflow`, `git-workflow`, `bounded-executor`, `omp-review`, feedback, session evidence and assurance | Defines routing, scope, integration, acceptance, observation and human-facing review |
-| Experience Skills | `code-taste`, `omp-design`, `omp-debug`, `omp-research`, `omp-test`, `omp-verification`, `program-language`, `skill-authoring`, `omp-planning-artifacts` | The maintainer's reusable judgment, methods and specialized workflows |
+| Experience Skills | `code-taste`, `omp-design`, `omp-debug`, `omp-research`, `omp-test`, `omp-verification`, `program-language`, `skill-authoring` | The maintainer's reusable judgment and methods |
 | Integrations | `autodl`, `document-parser`; future service/provider/MCP adapters | Separate dependencies, credentials, network, billing or data-disclosure consequences |
 
-These categories describe responsibility, not value, maturity, installation state or permission. All fifteen maintained Skills currently coexist under the same `skills/` discovery root. A category does not hide a Skill or change runtime behavior; any future behavior difference must be implemented by a real OMP/package/feature boundary rather than descriptive metadata.
+These categories describe responsibility, not value, maturity, installation state or permission. All fourteen maintained Skills currently coexist under the same `skills/` discovery root. A category does not hide a Skill or change runtime behavior; any future behavior difference must be implemented by a real OMP/package/feature boundary rather than descriptive metadata.
 
 A Skill need not depend on omp-kit to be worth maintaining here. `code-taste` and `omp-design`, for example, capture practical user preferences rather than missing OMP runtime features.
 
@@ -47,7 +47,7 @@ implementation/review       -> PRs
 chronology                  -> Git + Issue/PR history
 ```
 
-Issue-centered coordination is the normal multi-session workflow when an unfinished problem benefits from a durable owner. Projects may be only partially planned, and no complete global work-state index is required. The maintained `.planning/` Skill remains an explicit specialized option for projects that need a richer local/offline phase dossier. Neither mode justifies duplicate sources of current truth.
+Issue-centered coordination is the multi-session workflow when an unfinished problem benefits from a durable owner. Projects may be only partially planned, and no complete global work-state index or parallel phase dossier is required. When GitHub is unavailable, the checkout still carries accepted behavior and rationale; unresolved remote Issue details may remain unavailable rather than being duplicated into another mutable state system.
 
 ## Session evidence and assurance
 
