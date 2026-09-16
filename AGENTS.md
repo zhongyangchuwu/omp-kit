@@ -4,7 +4,7 @@
 
 omp-kit is an OMP workflow plus a personally maintained Skill library and distributable design knowledge. Preserve the maintainer's experience in Skills such as `code-taste` and `omp-design`. Generic applicability, low coupling and slow update frequency are not evidence of obsolescence.
 
-Review before editing. Remove only demonstrated duplication, incorrect guidance, obsolete historical copies, or retired mechanisms with no current consumer. A cleanup request does not authorize replacing the product with a minimal core or deleting its design/evidence assets.
+Review before editing. Remove only demonstrated duplication, incorrect guidance, obsolete historical copies, retired mechanisms with no current consumer, or material explicitly retired by the maintainer. A cleanup request does not authorize replacing the product with a minimal core or deleting its design/evidence assets.
 
 ## Recover current state
 
@@ -41,7 +41,7 @@ Root repository code and contracts use Bun/TypeScript. Python/uv belong to the A
 - Implementation/review/check results: PRs and Actions.
 - Obsolete chronology: Git and Issue/PR history, not another `docs/archive/` copy.
 
-Use `.planning/` only when explicitly selected for a project; do not remove its maintained Skill simply because this repository uses issue-centered state.
+Do not introduce a parallel phase dossier, mutable project-state mirror, or generic handoff bundle without a concrete consumer that the existing Issue/PR plus current-doc ownership model cannot serve.
 
 ## Completion and authorization
 
