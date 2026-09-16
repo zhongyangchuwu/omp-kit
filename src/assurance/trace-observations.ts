@@ -1,7 +1,7 @@
-import type { SessionTrace } from "@oh-my-pi/omp-stats/shared-types";
+import type { SessionTrace, TraceSpan, TraceTrack } from "@oh-my-pi/omp-stats/shared-types";
 import { isSessionTrace } from "../session/omp-stats-contract";
 import type { EvidenceRead, ReadLimit } from "../session/read-result";
-import { assuranceId, compareIds, type ActionObservation, type ActionSample, type AssuranceInput, type SourceCoverage } from "./model";
+import { assuranceId, compareIds, type ActionObservation, type ActionSample, type AssuranceInput, type EvidenceRef, type SourceCoverage } from "./model";
 
 export interface TraceInput {
 	readonly sourceId: string;
@@ -13,6 +13,32 @@ export interface TraceInput {
 const TRACE_LIMITS: readonly ReadLimit[] = [
 	"active-branches-only", "child-completeness-unknown", "details-are-previews", "not-an-atomic-snapshot",
 ];
+
+/** Native identity only. Never correlate actions by label, preview text or timestamp. */
+export function traceActionId(sourceId: string, track: TraceTrack, span: TraceSpan): string {
+	return span.kind === "tool" && span.toolCallId
+		? assuranceId("tool", track.file, span.toolCallId)
+		: assuranceId(span.kind, sourceId, track.file, span.id);
+}
+
+export function traceEvidenceRef(sourceId: string, sessionKey: string, track: TraceTrack, span: TraceSpan): EvidenceRef {
+	return {
+		sourceId,
+		sessionKey,
+		trackId: track.id,
+		spanId: span.id,
+		...(span.entryId ? { entryId: span.entryId } : {}),
+		...(span.toolCallId ? { toolCallId: span.toolCallId } : {}),
+	};
+}
+
+export function traceInputIsAssessed(input: TraceInput): boolean {
+	const { read, sessionFile } = input;
+	return read.status === "available" && read.consistency !== "source-changed" &&
+		read.scope.source === "omp-stats" && read.scope.view === "active-branch-trace" &&
+		isSessionTrace(read.data) && read.data.file === sessionFile &&
+		!read.data.tracks.some(track => !track.file || !track.id || track.spans.some(span => !span.id));
+}
 
 /** A pure projection of public traces; no raw journal parsing or payload persistence. */
 export function normalizeTraceReads(inputs: readonly TraceInput[]): AssuranceInput {
@@ -41,14 +67,8 @@ export function normalizeTraceReads(inputs: readonly TraceInput[]): AssuranceInp
 		for (const track of read.data.tracks) {
 			for (const span of track.spans) {
 				if (span.kind !== "tool" && span.kind !== "background") continue;
-				// Correlate only native identity. Never match commands, labels or timestamps.
-				// Background/legacy spans without a call ID remain source-local conservatively.
-				const id = span.kind === "tool" && span.toolCallId
-					? assuranceId("tool", track.file, span.toolCallId)
-					: assuranceId(span.kind, sourceId, track.file, span.id);
-				const evidence = { sourceId, sessionKey, trackId: track.id, spanId: span.id,
-					...(span.entryId ? { entryId: span.entryId } : {}),
-					...(span.toolCallId ? { toolCallId: span.toolCallId } : {}) };
+				const id = traceActionId(sourceId, track, span);
+				const evidence = traceEvidenceRef(sourceId, sessionKey, track, span);
 				const sample: ActionSample = { toolName: span.label,
 					terminal: span.unterminated === true ? "missing" : "observed",
 					errorReported: span.isError === true, evidence };
