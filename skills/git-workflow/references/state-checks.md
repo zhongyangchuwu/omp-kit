@@ -4,7 +4,7 @@
 
 Git workflows are stateful. Read repository state before branch, worktree, staging, commit, push, PR, merge, or cleanup operations. Re-read state after branch or worktree changes.
 
-When the repository uses issue-centered project state, recover the current ownership context before non-trivial work: actual branch/HEAD first, then the short `docs/WORKING_STATE.md` index when present, then the owning Issue/PR.
+When the repository uses issue-centered coordination, recover only the ownership context relevant to the current task before non-trivial work: actual branch/HEAD first, then the owning Issue/PR when one exists. Do not require a repository-wide work-state index.
 
 ## State model
 
