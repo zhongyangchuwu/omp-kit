@@ -1,169 +1,55 @@
 # Codebase Exploration
 
-Map an existing codebase into structured documents under `.planning/codebase/` so that initialization, discussion, and planning phases can ground decisions in what already exists.
+Use this reference only inside an explicitly selected or existing `.planning/` workflow when a reusable brownfield map will be consumed by later planning work. Ordinary repository tasks should inspect the codebase directly; do not create `.planning/` merely to produce a map.
 
-## When to use
+## When a map earns its cost
 
-Use when:
+Create or refresh `.planning/codebase/` when one of these is true:
 
-- Initializing a brownfield project (existing code, no `.planning/`).
-- A phase discussion or plan needs current codebase context beyond what memory provides.
-- The codebase has changed significantly since the last map was written.
+- a selected brownfield planning dossier needs durable repository context before root artifacts or phases can be defined;
+- several later phases are likely to reuse the same architecture, stack, convention, or concern observations;
+- an existing map is materially stale and that stale fact would affect a current planning decision.
 
-## Detection
+Skip the map when direct inspection for the current task is cheaper and sufficiently reliable.
 
-Check whether `.planning/codebase/` already exists:
+## Possible artifacts
 
-- If it exists: offer refresh, update specific documents, or skip.
-- If it does not exist: proceed with exploration.
+Create only the documents with a real downstream consumer:
 
-If AGENTS.md (or equivalent) exists, read it first — it contains project conventions and constraints that scope the exploration.
-
-## Exploration strategy
-
-Parallel exploration using `task` subagents is preferred when the agent tool is available. Each agent explores one dimension and writes its document directly. Fall back to sequential exploration when subagents are unavailable.
-
-**Do not use browser subagents for codebase exploration.** Use filesystem tools only: `read`, `search`, `find`, `lsp`.
-
-## Parallel exploration (preferred)
-
-Create `.planning/codebase/` and spawn 3-4 `task` subagents in parallel. Each agent writes its document(s) directly to `.planning/codebase/`.
-
-### Agent assignments
-
-**Agent 1: Structure & Architecture**
-
-```
-# Target
-Write observations to .planning/codebase/STRUCTURE.md and
-.planning/codebase/ARCHITECTURE.md.
-
-# What to map
-- Directory layout: key directories at each depth, what lives where.
-- Entry points: main files, CLI commands, server start, build targets.
-- Module boundaries: where subsystems meet, import/export patterns.
-- Data flow: how data moves through the system — sources, transforms, sinks.
-- Design patterns: MVC, layered, hexagonal, pipeline, plugin, event-driven.
-
-# Output format
-Include actual file paths formatted with backticks (`src/services/auth.ts`).
-Each document should be >20 lines of substantive content, not boilerplate.
+```text
+.planning/codebase/
+  MAP.md
+  STRUCTURE.md
+  ARCHITECTURE.md
+  STACK.md
+  CONVENTIONS.md
+  CONCERNS.md
 ```
 
-**Agent 2: Tech Stack**
+Typical ownership:
 
-```
-# Target
-Write observations to .planning/codebase/STACK.md.
+- `STRUCTURE.md` — key directories, entry points, and module boundaries;
+- `ARCHITECTURE.md` — data flow, subsystem relationships, and important design patterns;
+- `STACK.md` — languages, runtimes, dependencies, configuration, and external integrations;
+- `CONVENTIONS.md` — implementation, testing, error-handling, build, and CI conventions;
+- `CONCERNS.md` — concrete technical risks or gaps grounded in repository evidence;
+- `MAP.md` — mapped date/revision context, links to the artifacts that actually exist, and a compact set of key takeaways.
 
-# What to map
-- Languages, runtime, and version constraints.
-- Package manager (npm, uv, cargo, go mod) and key dependencies.
-- Frameworks and major libraries with versions.
-- Configuration: env vars, config files, feature flags.
-- External integrations: databases, APIs, auth providers, message queues, storage.
+There is no line-count quota and not every map needs every file. Empty boilerplate is worse than an omitted artifact.
 
-# Output format
-Include actual file paths and version numbers where discoverable.
-Document should be >20 lines.
-```
+## Exploration workflow
 
-**Agent 3: Conventions & Testing**
+1. Read the repository's current agent/contributor instructions and inspect actual repository state.
+2. Name the planning decision or later phase that will consume the map, then select only the dimensions needed for it.
+3. Choose Main-direct, one bounded delegate, or parallel independent delegates using normal `omp-workflow` economics. Parallelism is not preferred by default.
+4. Ground observations in current repository evidence: concrete paths, symbols, configuration, dependency versions, tests, or CI where relevant.
+5. Write only the selected artifacts, then make `MAP.md` a small index and summary rather than another full copy.
+6. Root-artifact creation or later phase work reads only the map sections relevant to its decision.
 
-```
-# Target
-Write observations to .planning/codebase/CONVENTIONS.md.
-
-# What to map
-- Code style: formatting, linting, naming conventions.
-- Error handling patterns: how errors propagate, log, recover.
-- Common patterns: how things are typically done in this codebase.
-- State management: stores, reducers, contexts, singletons.
-- Testing: framework, test file location convention, mocking approach, coverage expectations.
-- Build and CI: build steps, lint gates, test commands.
-
-# Output format
-Include concrete code snippets showing the convention, with file paths.
-Document should be >20 lines.
-```
-
-**Agent 4: Concerns**
-
-```
-# Target
-Write observations to .planning/codebase/CONCERNS.md.
-
-# What to map
-- Technical debt: TODO comments, deprecated patterns, known workarounds.
-- Fragile areas: tight coupling, god objects, untested critical paths.
-- Security: hardcoded secrets, missing input validation, unsafe dependencies.
-- Performance: N+1 queries, unbounded collections, blocking I/O, memory patterns.
-- Missing pieces: gaps in test coverage, missing error handling, absent documentation.
-
-# Output format
-Each concern should name the file, line (if known), the risk, and the impact.
-Document should be >20 lines.
-```
-
-### Collect and verify
-
-Wait for all agents to complete, then verify:
-
-- All documents exist and are >20 lines.
-- No document is empty or pure boilerplate.
-
-If an agent failed, note which documents are missing and offer to fill them sequentially.
-
-### Write MAP.md
-
-Create `.planning/codebase/MAP.md` as a summary index:
-
-```markdown
-# Codebase Map
-
-**Mapped:** <date>
-
-## Documents
-
-| Document | Lines | Summary |
-|---|---|---|
-| STRUCTURE.md | <N> | <One-line key finding> |
-| ARCHITECTURE.md | <N> | <One-line key finding> |
-| STACK.md | <N> | <One-line key finding> |
-| CONVENTIONS.md | <N> | <One-line key finding> |
-| CONCERNS.md | <N> | <One-line key finding> |
-
-## Key Takeaways
-
-<3-5 most important facts for planning>
-```
-
-## Sequential fallback
-
-When `task` subagents are unavailable, explore in order:
-
-1. Structure & Architecture → STRUCTURE.md, ARCHITECTURE.md
-2. Tech Stack → STACK.md
-3. Conventions & Testing → CONVENTIONS.md
-4. Concerns → CONCERNS.md
-
-Each pass uses `read`, `search`, `find`, and `lsp` to explore. Write each document before starting the next pass. Follow the same content requirements as the parallel agents.
-
-Use `search` to find patterns (e.g., `pattern: "TODO|FIXME|HACK"` for concerns), `find` to map directory structure, `read` to inspect representative files, and `lsp` for symbol-aware navigation (references, definitions).
-
-## Usage
-
-After exploration completes:
-
-- `initialization.md` (brownfield path) reads MAP.md, ARCHITECTURE.md, and STRUCTURE.md to populate PROJECT.md Validated requirements.
-- `discuss-phase` / `plan-phase` may read relevant codebase documents for current implementation context.
-- CONCERNS.md feeds into phase planning as potential tasks or risks to address.
+Filesystem/repository inspection is the authority for codebase facts. A concern is an observation to investigate, not a security, quality, or priority verdict by itself.
 
 ## Refresh
 
-If `.planning/codebase/` already exists and the codebase has changed:
+Before refreshing, identify what became stale. Update only the affected map artifacts when practical; do not delete and regenerate the whole directory by ritual.
 
-1. Show existing documents and their mapped dates.
-2. Offer: refresh all, update specific documents, or skip.
-3. If refreshing, delete `.planning/codebase/` and re-run exploration.
-4. If updating, re-run only the selected agent assignments.
+If the map's assumptions no longer match the repository, record the new observed facts and update `MAP.md` so later consumers do not treat the older snapshot as current. Preserve useful still-valid context instead of rewriting unrelated sections.
