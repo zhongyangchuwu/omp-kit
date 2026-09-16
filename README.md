@@ -41,16 +41,16 @@ The retired Harness v2 config-copy installer is no longer a supported install pa
 
 Main chooses direct execution, one bounded delegate, or independent parallel delegates according to the work. Delegation is not mandatory. Workers have scoped responsibilities; Main owns product decisions, integration and final acceptance.
 
-For multi-session projects, the default is:
+For multi-session projects, recover only the context the current task needs:
 
 ```text
-actual repository state
--> current docs and accepted design
--> WORKING_STATE navigation
--> owning Issue and active PR
+current user/task intent
+-> actual repository/runtime state
+-> owning Issue and active PR when one exists
+-> relevant current docs and accepted design
 ```
 
-Accepted knowledge belongs in the checkout, not only in GitHub discussion. The specialized `.planning/` Skill remains available for deliberately selected phase/offline dossiers; it is not initialized merely because work spans sessions. See [workflows](docs/workflows.md) and [design foundations](docs/design-foundations.md).
+Projects may be only partially planned. Do not reconstruct a complete backlog or maintain a global work-state mirror merely so an agent can start. Accepted knowledge belongs in the checkout, not only in GitHub discussion. The specialized `.planning/` Skill remains available for deliberately selected phase/offline dossiers; it is not initialized merely because work spans sessions. See [workflows](docs/workflows.md) and [design foundations](docs/design-foundations.md).
 
 ## Feedback, evidence and assurance
 
@@ -85,6 +85,6 @@ Do not delete a maintained Skill, accepted design, or compact experiment simply 
 
 ## Documentation
 
-Start with the [documentation map](docs/README.md). It separates current usage, design rationale, evidence and maintenance. [WORKING_STATE](docs/WORKING_STATE.md) is only the current work index; Issues own unfinished problems and PRs own implementation/review. Closed Issues mean completed acceptance criteria, not merely deferred work.
+Start with the [documentation map](docs/README.md). It separates current usage, design rationale, evidence and maintenance. Issues own concrete unfinished problems when they are used; PRs own implementation/review. No repository-wide work-state mirror is required. Closed Issues mean completed acceptance criteria, not merely deferred work.
 
 `v0.1.0` is the first published baseline. Ongoing development follows `main`; the package remains private because omp-kit is distributed as an OMP plugin/source checkout rather than an npm package.
