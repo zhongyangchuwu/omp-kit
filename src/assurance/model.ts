@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { ReadConsistency, ReadFailureReason, ReadLimit, ReadScope } from "../session/read-result";
+import type { ScopeEvidence } from "./scope/model";
 
 export const ASSURANCE_SCHEMA = "omp-kit.session-assurance/v1" as const;
 
@@ -47,6 +48,8 @@ export interface SourceCoverage {
 export interface AssuranceInput {
 	readonly actions: readonly ActionObservation[];
 	readonly coverage: readonly SourceCoverage[];
+	/** Optional additive fact surface; absence means scope was not assessed. */
+	readonly scope?: ScopeEvidence;
 }
 
 export interface RulePresentation {
