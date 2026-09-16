@@ -49,9 +49,10 @@ export function renderAssuranceReport(report: AssuranceReport, registry: readonl
 	if (attentionFindings.length > 8) lines.push("  More findings and all evidence references are in JSON output.");
 
 	lines.push("", "Scope");
-	if (!report.scope) {
+	if (!report.scope || report.scope.traceCoverage === "unavailable") {
 		lines.push("  NOT ASSESSED");
 	} else {
+		lines.push(`  Trace coverage: ${report.scope.traceCoverage}`);
 		const observed = new Set(report.scope.observations.map(item => item.boundary));
 		const boundaries = BOUNDARY_ORDER.filter(boundary => observed.has(boundary));
 		lines.push(`  Observed boundaries: ${boundaries.length ? boundaries.join(", ") : "none classified"}`);
