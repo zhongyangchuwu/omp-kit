@@ -26,6 +26,10 @@ function isObject(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function nonEmptyText(value: unknown): value is string {
+	return typeof value === "string" && value.trim().length > 0;
+}
+
 function validEvidence(value: unknown): value is EvidenceRef {
 	if (!isObject(value)) return false;
 	for (const key of ["sourceId", "sessionKey", "trackId", "spanId"] as const) {
@@ -40,13 +44,13 @@ function validEvidence(value: unknown): value is EvidenceRef {
 function validateRules(rules: readonly AssuranceRule[]): void {
 	const ids = new Set<string>();
 	for (const rule of rules) {
-		const { meta } = rule;
-		if (!meta || !TOKEN.test(meta.id) || ids.has(meta.id) || !Number.isSafeInteger(meta.version) || meta.version < 1 ||
-			!meta.title?.trim() || !meta.description?.trim() || !isObject(meta.messages) ||
-			!meta.presentation || !["attention", "coverage"].includes(meta.presentation.section) ||
-			(meta.presentation.summaryLabel !== undefined && !meta.presentation.summaryLabel.trim()) ||
-			(meta.presentation.section === "attention" && !meta.presentation.summaryLabel?.trim()) ||
-			Object.entries(meta.messages).some(([code, message]) => !TOKEN.test(code) || typeof message !== "string" || !message.trim()) ||
+		const meta = rule?.meta;
+		if (!meta || typeof meta.id !== "string" || !TOKEN.test(meta.id) || ids.has(meta.id) ||
+			!Number.isSafeInteger(meta.version) || meta.version < 1 || !nonEmptyText(meta.title) || !nonEmptyText(meta.description) ||
+			!isObject(meta.messages) || !isObject(meta.presentation) || !["attention", "coverage"].includes(String(meta.presentation.section)) ||
+			(meta.presentation.summaryLabel !== undefined && !nonEmptyText(meta.presentation.summaryLabel)) ||
+			(meta.presentation.section === "attention" && !nonEmptyText(meta.presentation.summaryLabel)) ||
+			Object.entries(meta.messages).some(([code, message]) => !TOKEN.test(code) || !nonEmptyText(message)) ||
 			typeof rule.evaluate !== "function") {
 			throw new Error("Invalid or duplicate assurance rule definition");
 		}
@@ -55,9 +59,9 @@ function validateRules(rules: readonly AssuranceRule[]): void {
 }
 
 function normalizeFinding(rule: AssuranceRule, value: unknown): Finding | null {
-	if (!isObject(value) || !TOKEN.test(String(value.kind ?? "")) || !TOKEN.test(String(value.code ?? "")) ||
-		typeof value.subjectId !== "string" || !value.subjectId || !Array.isArray(value.evidence) ||
-		!value.evidence.every(validEvidence) || !(String(value.code) in rule.meta.messages)) return null;
+	if (!isObject(value) || typeof value.kind !== "string" || !TOKEN.test(value.kind) ||
+		typeof value.code !== "string" || !TOKEN.test(value.code) || typeof value.subjectId !== "string" || !value.subjectId ||
+		!Array.isArray(value.evidence) || !value.evidence.every(validEvidence) || !(value.code in rule.meta.messages)) return null;
 	const local = value as unknown as RuleFinding;
 	return {
 		id: assuranceId(rule.meta.id, String(rule.meta.version), local.kind, local.subjectId, local.code),
