@@ -15,7 +15,7 @@ Use each source for the job it is good at:
 
 - **Dispatch:** the current objective, scope, authorization boundaries and verification target.
 - **Repository/runtime:** implementation facts, code, tests, logs and current observable state.
-- **Current project state:** current docs, `WORKING_STATE.md`, owning Issues/PRs and accepted design records for durable policy, active work and rationale.
+- **Current project state:** current docs plus the owning Issue/PR when one exists, with accepted design records for durable policy, active work and rationale.
 - **Parent history:** same-session conversation evidence and recent decisions that a worker can retrieve without the director rewriting the discussion.
 - **Durable planning artifacts:** project state for a deliberately chosen `.planning/` mode; they are not a mirror of the session transcript and are not implicitly required for ordinary work.
 - **Context notes:** continuity for the current Main session across a context rollover; they are not a cross-session project memory service.
@@ -95,9 +95,7 @@ surface the mismatch so Main can decide whether code or docs are stale.
 
 ### Active work
 
-`WORKING_STATE.md` is an entry point; the owning open Issue/PR carries detailed
-acceptance and implementation state. Actual branch/runtime observations still decide
-claims about what has already happened.
+The owning open Issue/PR carries detailed acceptance and implementation state when one exists. Actual branch/runtime observations still decide claims about what has already happened. Do not require a repository-wide mutable work index to discover unrelated work before a bounded task can proceed.
 
 ### Rationale / history
 
