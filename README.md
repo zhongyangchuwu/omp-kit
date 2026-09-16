@@ -6,10 +6,10 @@ OMP Kit combines a model-neutral workflow for Oh My Pi (OMP) with a personally m
 
 - Four task-shaped agents: `luna-code`, `luna-deep`, `luna-doc`, and `sol-review`.
 - Fifteen maintained Skills covering workflow, code taste, product design, debugging, research, testing, verification, language tooling, Skill authoring, specialized planning, AutoDL and document parsing.
-- A Main-session workflow rule, bounded shared feedback, and a local session-evidence collector.
+- A Main-session workflow rule, bounded shared feedback, local session evidence, and human-facing assurance.
 - Current usage documentation, mechanism-level design records, and compact experiment evidence.
 
-Core workflow, maintained experience Skills, and service integrations are responsibility categories, not a ranking of value or a requirement to split repositories. Skills such as `code-taste` and `omp-design` preserve the maintainer's practical experience even when they are useful outside omp-kit. See [architecture](docs/architecture.md).
+Core Harness resources, maintained experience Skills, and integrations are responsibility categories, not a ranking of value or a requirement to split repositories. Skills such as `code-taste` and `omp-design` preserve the maintainer's practical experience even when they are useful outside omp-kit. See [architecture](docs/architecture.md).
 
 ## Install for active development
 
@@ -52,7 +52,7 @@ actual repository state
 
 Accepted knowledge belongs in the checkout, not only in GitHub discussion. The specialized `.planning/` Skill remains available for deliberately selected phase/offline dossiers; it is not initialized merely because work spans sessions. See [workflows](docs/workflows.md) and [design foundations](docs/design-foundations.md).
 
-## Feedback and session evidence
+## Feedback, evidence and assurance
 
 `omp_kit_feedback` records bounded observations encountered during real work. Main and workers may report; recording feedback does not authorize repository, configuration, policy or Issue mutation. There is no mandatory end-of-task reflection.
 
@@ -66,18 +66,20 @@ bun run evidence:report -- --folder /absolute/path/to/project --json
 
 Collection is not a new model turn or an automatically installed daemon. Derived summaries stay outside Git. Selected material decision evidence may be committed under `evidence/experiments/`; full transcripts and raw telemetry do not belong there.
 
-OMP 18.1.21 has claim-specific Main/worker feedback and collector runtime evidence. Folder filtering uses public trace `cwd` to handle the stats storage-key mismatch. Provider identity is sampled per track/model, not an exact request-routing ledger. See [session evidence](docs/session-evidence.md) and [validation](docs/VALIDATION.md) for limits.
+The assurance CLI derives bounded, evidence-linked review findings from OMP session evidence. It is a review snapshot, not a safety proof. See [session assurance](docs/session-assurance.md) and [scope](docs/assurance-scope.md).
+
+See [session evidence](docs/session-evidence.md) and [validation](docs/VALIDATION.md) for current evidence limits.
 
 ## Maintenance
 
-Python/uv remain necessary for the maintained Skill-library tooling and tests; Bun owns the TypeScript runtime/test surface. AutoDL retains its own dependency environment.
+Python/uv remain necessary for retained repository/Skill-library helpers and tests; Bun owns the TypeScript runtime/test surface. AutoDL retains its own dependency environment.
 
 ```sh
 bun install --frozen-lockfile
 just verify
 ```
 
-CI runs the same provider-free gate on PR merge refs and on `main` after landing. It covers repository/native-plugin consistency, Skill support files, metadata/registry checks, AutoDL mocked tests, TypeScript typecheck/tests, changed-line hygiene and tracked-file drift. It does not run paid providers, cloud operations or live OMP acceptance scenarios.
+CI runs the same provider-free gate on PR merge refs and on `main` after landing. It covers repository/native-plugin consistency, Skill support files, AutoDL mocked tests, TypeScript typecheck/tests, changed-line hygiene and tracked-file drift. It does not run paid providers, cloud operations or live OMP acceptance scenarios.
 
 Do not delete a maintained Skill, accepted design, or compact experiment simply because it is not needed for the smallest runtime. Remove confirmed obsolete material, or make a targeted correction supported by a concrete defect.
 

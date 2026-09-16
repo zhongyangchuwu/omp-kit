@@ -8,10 +8,11 @@ The checkout contains current product knowledge, accepted design rationale and c
 | --- | --- |
 | What is this and how do I start? | [Repository README](../README.md), [installation](omp-installation.md) |
 | What is installed and who owns configuration? | [Architecture](architecture.md), [configuration](omp-configuration.md) |
-| How do I use and maintain it? | [Workflows](workflows.md), [Skill design](skill-design.md), [resource metadata](resource-model.md) |
+| How do I use and maintain it? | [Workflows](workflows.md), [Skill design](skill-design.md) |
 | Why is it designed this way? | [Design foundations](design-foundations.md), [design records](design/README.md) |
 | What has been tested, and what has not? | [Validation](VALIDATION.md), [OMP compatibility](omp-compatibility.md) |
 | How are real sessions collected and analyzed? | [Session evidence](session-evidence.md) |
+| How are sessions reviewed for human attention? | [Session assurance](session-assurance.md), [observed scope](assurance-scope.md) |
 | Which observations justify a decision? | [Experiment lifecycle](experiments.md), [compact evidence bundles](../evidence/README.md) |
 | Which runtime primitive should an integration use? | [Runtime notes](omp-runtime-notes.md) |
 | What unfinished work is current? | [WORKING_STATE](WORKING_STATE.md), then the owning Issue/PR |
@@ -46,6 +47,6 @@ Routine sessions are not formal experiments. Keep raw transcripts, logs and broa
 - Remove duplicate archive copies and old handoff/roadmap chronology after preserving any unique accepted conclusion or useful evidence.
 - Link a specific Git revision when a retired implementation or historical report is the original source.
 - Review maintained Skills by correctness, duplication and practical value, not by whether they are tightly coupled to omp-kit.
-- Resource categories do not automatically change discovery or permission.
+- Resource categories describe responsibility; they do not automatically change discovery, installation or permission.
 
 The former `docs/archive/` is removed. Its source remains in Git; current conclusions and retained experiment bundles remain readable in this checkout.

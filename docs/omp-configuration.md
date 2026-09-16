@@ -9,7 +9,9 @@ OMP owns normal settings, model/provider routes, profiles, credentials, MCP sett
 - `skills/`: maintained task guidance and local support resources.
 - `rules/`: Main workflow activation.
 - `extensions/feedback.ts`: bounded feedback behavior.
-- Skill `resource.yaml` and generated registry: library maintenance metadata, not OMP settings.
+- `src/` and the session CLIs: derived evidence and assurance behavior.
+
+Core Harness, Experience Skill and Integration categories are architectural descriptions only. They do not configure OMP or grant permissions.
 
 ## Machine/project-owned
 

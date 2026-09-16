@@ -12,8 +12,6 @@ PORTABLE_REFERENCES = [
     "references/scripts-guide.md",
     "references/maintenance-guide.md",
     "references/third-party-review.md",
-    "references/resource-metadata.md",
-    "references/registry-generation.md",
 ]
 RUNTIME_REFERENCES = [
     "references/runtimes/README.md",
@@ -26,7 +24,6 @@ ASSETS = [
     "assets/skill-template.md",
     "assets/evals-template.json",
     "assets/maintenance-notes-template.md",
-    "assets/resource-template.yaml",
 ]
 
 
@@ -107,11 +104,10 @@ def test_runtime_specific_terms_are_isolated() -> None:
         assert term in runtime_text
 
 
-def test_templates_cover_skill_evals_maintenance_and_resources() -> None:
+def test_templates_cover_skill_evals_and_maintenance() -> None:
     skill_template = read("assets/skill-template.md")
     evals_template = read("assets/evals-template.json")
     notes_template = read("assets/maintenance-notes-template.md")
-    resource_template = read("assets/resource-template.yaml")
 
     assert "name: skill-name" in skill_template
     assert "description:" in skill_template
@@ -120,9 +116,6 @@ def test_templates_cover_skill_evals_maintenance_and_resources() -> None:
     assert '"assertions"' in evals_template
     assert "# Maintenance Notes" in notes_template
     assert "Quality checklist" in notes_template
-    assert "kind: skill" in resource_template
-    assert "relationships:" in resource_template
-    assert "verification:" in resource_template
 
 
 def test_no_missing_relative_links() -> None:

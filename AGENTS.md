@@ -18,17 +18,17 @@ OMP owns runtime, model selection, sessions, task lifecycle, tool enforcement an
 
 Main owns routing, material decisions, integration and acceptance. Workers perform bounded work and return evidence. Independent review is selected by risk. Structured feedback is a bounded evidence append available to Main/workers, not self-modification authority.
 
-Core workflow, maintained general Skills and integrations may coexist here. Categorization alone does not change installation, discovery, permissions or maintenance status. Preserve useful support files and their consumers.
+Core workflow, maintained experience Skills and integrations may coexist here. Their categories are architectural descriptions only; they do not change installation, discovery, permissions or maintenance status. Preserve useful support files and their consumers.
 
 ## Development and checks
 
 Use a focused branch/PR for non-trivial changes. Preserve unrelated user work. Run focused checks during implementation. The normal repository acceptance gate is GitHub Actions running `just verify` on the PR merge ref; `main` push CI verifies the landed commit separately.
 
-The gate covers Python/native-plugin/Skill-library tests, Skill-authoring tests, AutoDL mocked tests in its own uv environment, TypeScript checks, and registry consistency. CI additionally checks lockfiles, changed lines and tracked-file drift. Do not duplicate a passing unchanged full gate merely because a handoff happened.
+The gate covers Python/native-plugin and Skill-library tests, Skill-authoring tests, AutoDL mocked tests in its own uv environment, TypeScript checks, and documentation/support-file integrity. CI additionally checks lockfiles, changed lines and tracked-file drift. Do not duplicate a passing unchanged full gate merely because a handoff happened.
 
 No live model, paid cloud or private-profile operation is part of this gate. Runtime claims need claim-specific evidence. Report untested claims explicitly.
 
-Skill metadata is maintained in `resource.yaml`; `registry.yaml` is generated. Use `just build-registry` after relevant metadata changes. OMP discovers Skills from `SKILL.md`, not the registry. Keep the two roles distinct.
+`skills/<name>/SKILL.md` and the actual discovery path are the source of truth for maintained Skills. Do not add a shadow registry or parallel activation database unless a real consumer requires one. If a category must affect behavior, implement that distinction in the owning package/plugin/feature mechanism rather than descriptive metadata.
 
 ## Durable output
 

@@ -33,15 +33,15 @@ Use your agent or runtime's file listing and content search tools. In restricted
 
 ## Review workflow
 
-1. Keep external source material under `references/` while reviewing it.
+1. Keep external source material outside active discovery while reviewing it, such as an ignored checkout or temporary worktree.
 2. Read the main file and identify intended behavior.
 3. Inspect every executable file and manifest.
 4. Check links and assets for hidden instructions or unsafe placeholders.
 5. Remove or quarantine runtime-specific fields that are not needed.
-6. Copy only reviewed, useful material into a tracked `drafts/<name>` resource.
-7. Run structural validation if available.
+6. Copy only reviewed, useful material into the candidate Skill tree.
+7. Run structural and skill-specific validation when available.
 8. Decide: approve, modify before use, or reject.
-9. Record source references and review result in `resource.yaml` maintenance/source notes.
+9. Put accepted runtime boundaries in the Skill itself. Let the PR/commit history retain review chronology rather than creating mandatory provenance metadata.
 
 ## Verdict format
 
@@ -50,10 +50,7 @@ Use your agent or runtime's file listing and content search tools. In restricted
 approved / modify before use / reject
 
 ## Source
-Where it came from and when it was reviewed.
-
-## Risk
-low / medium / high
+Where it came from, when that matters to the review.
 
 ## Findings
 - ...
@@ -61,6 +58,8 @@ low / medium / high
 ## Required changes before activation
 - ...
 ```
+
+Avoid reducing review to a single low/medium/high label. Record the concrete capability or side effect that matters: external writes, credential access, billing, uploads, global installs, deletion, or similar boundaries.
 
 ## Safe handling
 

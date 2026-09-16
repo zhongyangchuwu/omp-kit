@@ -6,16 +6,11 @@ Use the [native plugin workflow](omp-installation.md). Install the committed Bun
 
 ## Maintain Skills
 
-Keep the user's useful Skills, references, templates, scripts, tests and provenance. Review third-party material in ignored `references/`, stage a new resource in `drafts/` when useful, and use the existing promotion/metadata helpers. Drafts are not active resources.
+Keep useful Skills, references, templates, scripts and tests. `skills/<name>/SKILL.md` plus its support files own current Skill behavior; OMP discovers the active tree directly.
 
-```sh
-just build-registry
-just check-registry
-just validate-registry
-just build-index
-```
+Review third-party material outside active discovery paths first, for example in an ignored `references/` checkout or a temporary branch/worktree. Only copy reviewed material into `skills/` when it is ready to be active. Git history is the recovery path for retired drafts and earlier designs; there is no mandatory draft registry or promotion metadata workflow.
 
-`resource.yaml` owns local provenance/risk/activation metadata; `registry.yaml` is generated. These are maintained library tools, not an OMP runtime registry. A risk scan is a review aid, not a sandbox or a substitute for checking side effects.
+`just scan-risk PATH` remains an optional review aid for suspicious textual patterns. It is not a sandbox, policy engine or substitute for reading executable code and checking side effects.
 
 Consult `skill-authoring` for content review. Correct concrete errors and duplicated obligations. Do not remove personal design or code-quality experience simply because the guidance is general-purpose.
 
@@ -23,7 +18,7 @@ Consult `skill-authoring` for content review. Correct concrete errors and duplic
 
 Use focused tests while making a change. Main reconciles writable scopes and shared consumers before accepting the combined tree. Workers report out-of-scope findings rather than expanding their task.
 
-`just verify` is the repository's provider-free gate. It runs retained Python/native-plugin/metadata checks, Skill-authoring tests, isolated AutoDL mocked tests, TypeScript typecheck/tests and registry consistency. CI checks lockfile freshness, the candidate diff and tracked-file drift as well.
+`just verify` is the repository's provider-free gate. It runs retained Python/native-plugin and Skill-library checks, Skill-authoring tests, isolated AutoDL mocked tests, and TypeScript typecheck/tests. CI checks lockfile freshness, the candidate diff and tracked-file drift as well.
 
 PR merge-ref CI is the normal pre-merge mechanical evidence. Post-landing `main` CI answers the distinct landed-tree question. Do not repeat a successful unchanged full gate merely because another worker or phase received ownership. A focused repair, changed candidate, local-runtime claim or CI diagnosis can justify new checks.
 
