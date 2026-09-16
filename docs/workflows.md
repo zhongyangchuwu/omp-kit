@@ -26,7 +26,7 @@ Review judges semantics, intent and risk; tests prove only exercised properties.
 
 Main uses `omp-workflow` and chooses direct work or bounded delegation. The various maintained design, research, test and quality Skills contribute when their task boundary matches; they do not all need to be loaded for every task.
 
-Use issue-centered project state for ordinary multi-session work. Keep accepted behavior and rationale in current docs/design records, not only in Issues. Use the preserved `.planning/` workflow only when deliberately selected for a project needing that specialized dossier.
+Use task-local Issue/PR ownership for ordinary multi-session work when durable coordination is useful. Keep accepted behavior and rationale in current docs/design records, not only in Issues. Use the preserved `.planning/` workflow only when deliberately selected for a project needing that specialized dossier.
 
 ## Observe and preserve
 
@@ -34,4 +34,4 @@ Main or a worker may record reusable friction already encountered through `omp_k
 
 After normal work, use `evidence:collect` and `evidence:report` for quantitative session summaries. The CLI does not install a background scheduler. Routine data stays outside Git; select compact decision evidence into `evidence/experiments/` only when useful. See [session evidence](session-evidence.md) and [experiment lifecycle](experiments.md).
 
-Preserve stable accepted decisions in their owning docs. Keep current navigation short, unfinished work in Issues, review/CI in PRs, and pure historical chronology in Git rather than duplicate archive files.
+Preserve stable accepted decisions in their owning docs. Keep unresolved coordination task-local in Issues/PRs when useful, review/CI in PRs, and pure historical chronology in Git rather than introducing another global navigation or archive mirror.
