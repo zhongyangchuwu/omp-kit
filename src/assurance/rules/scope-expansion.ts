@@ -24,7 +24,7 @@ export const scopeExpansionRule: AssuranceRule = {
 	},
 	evaluate(input) {
 		const scope = input.scope;
-		if (!scope) return { status: "skipped", findings: [] };
+		if (!scope || scope.traceCoverage === "unavailable") return { status: "skipped", findings: [] };
 		const classified = scope.actionCoverage.filter(item => item.status === "classified");
 		if (scope.actionCoverage.length > 0 && classified.length === 0) return { status: "skipped", findings: [] };
 		const byTrack = new Map<string, ScopeObservation[]>();
@@ -61,7 +61,7 @@ export const scopeExpansionRule: AssuranceRule = {
 				for (const boundary of boundaries) seen.add(boundary);
 			}
 		}
-		const hasUnclassified = scope.actionCoverage.some(item => item.status === "unclassified");
-		return { status: hasUnclassified ? "partial" : "evaluated", findings };
+		const partial = scope.traceCoverage === "partial" || scope.actionCoverage.some(item => item.status === "unclassified");
+		return { status: partial ? "partial" : "evaluated", findings };
 	},
 };
