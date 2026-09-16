@@ -64,10 +64,10 @@ function chain(callId: string, toolName: string, args: Record<string, unknown>, 
 	};
 }
 
-async function scopeFor(value: SessionTrace, entries: Record<string, unknown>, reader: SessionEntryReader | undefined = entryReader(entries)) {
+async function scopeFor(value: SessionTrace, entries: Record<string, unknown>, reader: SessionEntryReader | null = entryReader(entries)) {
 	const source = input(value);
 	const normalized = normalizeTraceReads([source]);
-	return deriveTraceScopeEvidence([source], normalized, reader, BUILTIN_SCOPE_CLASSIFIERS, { homeDir: "/home/test" });
+	return deriveTraceScopeEvidence([source], normalized, reader ?? undefined, BUILTIN_SCOPE_CLASSIFIERS, { homeDir: "/home/test" });
 }
 
 test("scope enrichment follows result -> start -> assistant entry chain without retaining raw arguments", async () => {
@@ -126,10 +126,18 @@ test("generic shell remains explicitly unclassified even when its command looks 
 
 test("missing entry reader is coverage loss rather than zero scope", async () => {
 	const value = trace([track("main", [toolSpan("s1", "c1", "result-one", "read", 1)])]);
-	const scope = await scopeFor(value, {}, undefined);
+	const scope = await scopeFor(value, {}, null);
 	assert.equal(scope.traceCoverage, "available");
 	assert.equal(scope.observations.length, 0);
 	assert.equal(scope.actionCoverage[0].reason, "entry-reader-unavailable");
+});
+
+test("throwing entry reads are bounded as unavailable tool input", async () => {
+	const value = trace([track("main", [toolSpan("s1", "c1", "result-one", "read", 1)])]);
+	const scope = await scopeFor(value, {}, { async getEntry() { throw new Error("PRIVATE_ENTRY_FAILURE"); } });
+	assert.equal(scope.observations.length, 0);
+	assert.equal(scope.actionCoverage[0].reason, "tool-input-unavailable");
+	assert.doesNotMatch(JSON.stringify(scope), /PRIVATE_ENTRY_FAILURE/);
 });
 
 test("successful empty trace is assessed while failed trace is not", async () => {
