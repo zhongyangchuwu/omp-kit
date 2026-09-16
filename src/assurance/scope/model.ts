@@ -55,6 +55,8 @@ export type ScopeLimitation =
 	| "cross-track-order-unavailable";
 
 export interface ScopeEvidence {
+	/** Whether the supplied trace sources needed for scope derivation were readable. */
+	readonly traceCoverage: "available" | "partial" | "unavailable";
 	readonly observations: readonly ScopeObservation[];
 	readonly actionCoverage: readonly ScopeActionCoverage[];
 	readonly limitations: readonly ScopeLimitation[];
