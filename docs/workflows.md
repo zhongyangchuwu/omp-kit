@@ -18,7 +18,7 @@ Use focused tests while making a change. Main reconciles writable scopes and sha
 
 `just verify` is the repository's provider-free gate. It runs Bun repository/native-resource/Skill/documentation contracts, isolated AutoDL mocked tests, TypeScript typecheck and runtime tests. CI also checks the committed Bun graph, the AutoDL lockfile, candidate diff and tracked-file drift.
 
-PR merge-ref CI is the normal pre-merge mechanical evidence. Post-landing `main` CI answers the distinct landed-tree question. Do not repeat a successful unchanged full gate merely because another worker or phase received ownership. A focused repair, changed candidate, local-runtime claim or CI diagnosis can justify new checks.
+PR merge-ref CI is the normal pre-merge mechanical evidence. Post-landing `main` CI answers the distinct landed-tree question. Do not repeat a successful unchanged full gate merely because another worker received ownership. A focused repair, changed candidate, local-runtime claim or CI diagnosis can justify new checks.
 
 Review judges semantics, intent and risk; tests prove only exercised properties. No documentation cleanup authorizes live cloud resources, provider calls or user-profile mutation.
 
@@ -26,7 +26,7 @@ Review judges semantics, intent and risk; tests prove only exercised properties.
 
 Main uses `omp-workflow` and chooses direct work or bounded delegation. The various maintained design, research, test and quality Skills contribute when their task boundary matches; they do not all need to be loaded for every task.
 
-Use task-local Issue/PR ownership for ordinary multi-session work when durable coordination is useful. Keep accepted behavior and rationale in current docs/design records, not only in Issues. Use the preserved `.planning/` workflow only when deliberately selected for a project needing that specialized dossier.
+Use task-local Issue/PR ownership for multi-session work when durable coordination is useful. Keep accepted behavior and rationale in current docs/design records, not only in Issues. Do not create a parallel phase dossier or local backlog mirror merely to preserve cross-session state.
 
 ## Observe and preserve
 
