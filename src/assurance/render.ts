@@ -23,17 +23,20 @@ function message(meta: AssuranceRuleMeta, finding: Finding): string {
 /** Generic renderer: layout is shared, concrete labels/messages come from rule metadata. */
 export function renderAssuranceReport(report: AssuranceReport, registry: readonly AssuranceRule[]): string {
 	const metaById = new Map(registry.map(rule => [rule.meta.id, rule.meta]));
+	const resultById = new Map(report.rules.map(result => [result.ruleId, result]));
 	const metaFor = (result: RuleResult) => metaById.get(result.ruleId) ?? fallbackMeta(result);
 	const lines = ["Session review (evidence snapshot)", "", "Attention"];
-	const attentionRules = report.rules.filter(result => metaFor(result).presentation.section === "attention");
-	for (const result of attentionRules) {
-		const meta = metaFor(result);
+	const attentionMeta = registry.map(rule => rule.meta).filter(meta => meta.presentation.section === "attention");
+	for (const meta of attentionMeta) {
+		const result = resultById.get(meta.id);
 		const label = meta.presentation.summaryLabel ?? meta.title;
-		const count = result.status === "evaluated" || result.status === "partial" ? result.findings.length : "NOT ASSESSED";
+		const count = result && (result.status === "evaluated" || result.status === "partial") ? result.findings.length : "NOT ASSESSED";
 		lines.push(`  ${atom(label)}: ${count}`);
 	}
-	if (attentionRules.length === 0) lines.push("  No attention rules selected.");
-	const attentionFindings = attentionRules.flatMap(result => result.findings.map(finding => ({ result, finding })));
+	if (attentionMeta.length === 0) lines.push("  No attention rules registered.");
+	const attentionFindings = report.rules
+		.filter(result => metaFor(result).presentation.section === "attention")
+		.flatMap(result => result.findings.map(finding => ({ result, finding })));
 	for (const { result, finding } of attentionFindings.slice(0, 8)) {
 		const meta = metaFor(result);
 		lines.push(`  [${finding.id.slice(0, 12)}] ${atom(message(meta, finding))}`);
@@ -45,8 +48,9 @@ export function renderAssuranceReport(report: AssuranceReport, registry: readonl
 	lines.push("", "Coverage");
 	for (const source of report.coverage) lines.push(
 		`  ${atom(source.sourceId)}: ${source.assessed ? "assessed bounded view" : "NOT ASSESSED"} (${atom(source.scope.view)}; ${atom(source.consistency)})`);
-	const coverageRules = report.rules.filter(result => metaFor(result).presentation.section === "coverage");
-	const coverageFindings = coverageRules.flatMap(result => result.findings.map(finding => ({ result, finding })));
+	const coverageFindings = report.rules
+		.filter(result => metaFor(result).presentation.section === "coverage")
+		.flatMap(result => result.findings.map(finding => ({ result, finding })));
 	const conflicts = coverageFindings.filter(({ finding }) => finding.code === "conflicting-observations").length;
 	if (conflicts) lines.push(`  Evidence conflicts: ${conflicts} (not resolved)`);
 	const seenCoverage = new Set<string>();
