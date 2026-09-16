@@ -121,9 +121,11 @@ current truth in current docs/executable policy, unresolved concrete work in an 
 Issue when useful, implementation/review evidence in PRs, and durable rationale in
 design records when worth preserving. No repository-wide work-state mirror is required.
 
-Do not initialize `.planning/` merely because work lasts more than one session. Use the
-phase lifecycle only when the project deliberately needs its richer local/offline phase
-artifacts, ordered roadmap, or archival dossier.
+Do not initialize `.planning/` merely because work lasts more than one session. When a
+project deliberately needs a richer local/offline phase dossier, ordered roadmap, reusable
+brownfield map, or archival planning state, use the `omp-planning-artifacts` Skill. That
+Skill owns the `.planning/` tree, phase lifecycle, artifact contracts, handoffs, and
+release archive; do not maintain a second phase workflow inside this Skill.
 
 Do not turn generated summaries, handoff notes, or mutable state indexes into competing
 sources of accepted project truth.
@@ -158,13 +160,10 @@ or follow-up.
 | Observed reusable omp-kit friction / self-hosting feedback | `references/self-improvement.md` |
 | Built-in `/vibe` used explicitly | `references/vibe-compat.md` |
 | Workflow mode selection | `references/modes.md` |
-| Explicit specialized `.planning/` phase lifecycle | `references/phase-lifecycle.md` |
-| Explicit specialized `.planning/` initialization | `references/initialization.md` |
-| Bounded codebase exploration | `references/codebase-exploration.md` |
 | Accepted context and a written plan | `references/context-and-plan.md` |
 | Meaningful phase gates | `references/gates.md` |
 | Durable documentation capture | `references/capture.md` |
-| Release/archive work explicitly requested | `references/release.md` |
 
-For a one-session direct or delegated change, do not load the entire durable project or
-phase lifecycle. Load the smallest state/reference surface that the task actually needs.
+For a one-session direct or delegated change, do not load the entire durable project
+surface. Load the smallest state/reference surface that the task actually needs. Explicit
+`.planning/` work belongs to `omp-planning-artifacts`, not to additional references here.
