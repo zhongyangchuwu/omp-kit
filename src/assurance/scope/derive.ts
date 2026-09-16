@@ -21,7 +21,6 @@ interface ToolCandidate {
 	actionId: string;
 	trackId: string;
 	position: number;
-	toolName: string;
 	trackFile: string;
 	entryId?: string;
 	toolCallId?: string;
@@ -49,8 +48,11 @@ function validateClassifiers(classifiers: readonly ScopeClassifier[]): void {
 	}
 }
 
-function validDescriptor(value: ScopeDescriptor): boolean {
-	return BOUNDARIES.has(value.boundary) && ACCESS.has(value.access) && RESOURCES.has(value.resource);
+function validDescriptor(value: unknown): value is ScopeDescriptor {
+	return isObject(value) && typeof value.boundary === "string" && BOUNDARIES.has(value.boundary) &&
+		typeof value.access === "string" && ACCESS.has(value.access) &&
+		typeof value.resource === "string" && RESOURCES.has(value.resource) &&
+		Object.keys(value).every(key => key === "boundary" || key === "access" || key === "resource");
 }
 
 function toolCallFromEntry(entry: unknown, toolCallId: string): RecoveredToolCall | "invalid" | null {
@@ -104,9 +106,10 @@ function candidateForSpan(input: TraceInput, track: TraceTrack, span: TraceSpan,
 		actionId: traceActionId(input.sourceId, track, span),
 		trackId: track.id,
 		position,
-		toolName: span.label,
 		trackFile: track.file,
-		workspaceRoot: input.read.status === "available" ? input.read.data.cwd ?? null : null,
+		// The root trace exposes only the root cwd. Child relative paths still mean that child's workspace,
+		// but absolute child paths are not compared against the root cwd.
+		workspaceRoot: track.parentId === null && input.read.status === "available" ? input.read.data.cwd ?? null : null,
 		...(span.entryId ? { entryId: span.entryId } : {}),
 		...(span.toolCallId ? { toolCallId: span.toolCallId } : {}),
 		evidence: [traceEvidenceRef(input.sourceId, sessionKey, track, span)],
@@ -131,7 +134,13 @@ function collectCandidates(inputs: readonly TraceInput[], normalized: AssuranceI
 				}
 				const evidence = [...existing.evidence, ...candidate.evidence]
 					.filter((ref, index, all) => all.findIndex(other => JSON.stringify(other) === JSON.stringify(ref)) === index);
-				byAction.set(candidate.actionId, { ...existing, position: Math.min(existing.position, candidate.position), evidence });
+				byAction.set(candidate.actionId, {
+					...existing,
+					position: Math.min(existing.position, candidate.position),
+					// Keep a known root only when both views agree; otherwise preserve uncertainty.
+					workspaceRoot: existing.workspaceRoot === candidate.workspaceRoot ? existing.workspaceRoot : null,
+					evidence,
+				});
 			}
 		}
 	}
@@ -147,6 +156,13 @@ function coverage(candidate: ToolCandidate, status: ScopeActionCoverage["status"
 		...(reason ? { reason } : {}),
 		evidence: structuredClone(candidate.evidence),
 	};
+}
+
+function traceCoverage(inputs: readonly TraceInput[]): ScopeEvidence["traceCoverage"] {
+	if (inputs.length === 0) return "unavailable";
+	const available = inputs.filter(traceInputIsAssessed).length;
+	if (available === 0) return "unavailable";
+	return available === inputs.length ? "available" : "partial";
 }
 
 /**
@@ -219,8 +235,9 @@ export async function deriveTraceScopeEvidence(
 	}
 	const deduped = [...new Map(observations.map(value => [value.id, value])).values()].sort(compareIds);
 	return {
+		traceCoverage: traceCoverage(inputs),
 		observations: deduped,
 		actionCoverage: actionCoverage.sort((a, b) => a.trackId < b.trackId ? -1 : a.trackId > b.trackId ? 1 : a.position - b.position || a.actionId.localeCompare(b.actionId)),
-		limitations: ["declared-targets-only", "generic-shell-unclassified", "path-symlink-target-unverified", "cross-track-order-unavailable"],
+		limitations: ["declared-targets-only", "generic-shell-unclassified", "path-symlink-target-unverified", "child-workspace-root-unverified", "cross-track-order-unavailable"],
 	};
 }
