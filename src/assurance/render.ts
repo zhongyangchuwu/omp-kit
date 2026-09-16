@@ -1,4 +1,5 @@
 import type { AssuranceReport, AssuranceRule, AssuranceRuleMeta, Finding, RuleResult } from "./model";
+import type { ScopeBoundary } from "./scope/model";
 
 /** Escape terminal controls/bidi and bound identifiers. This is display safety, not redaction. */
 function atom(text: string): string {
@@ -19,6 +20,8 @@ function fallbackMeta(result: RuleResult): AssuranceRuleMeta {
 function message(meta: AssuranceRuleMeta, finding: Finding): string {
 	return meta.messages[finding.code] ?? finding.code;
 }
+
+const BOUNDARY_ORDER: readonly ScopeBoundary[] = ["workspace", "host-user", "host-system", "external", "unknown"];
 
 /** Generic renderer: layout is shared, concrete labels/messages come from rule metadata. */
 export function renderAssuranceReport(report: AssuranceReport, registry: readonly AssuranceRule[]): string {
@@ -45,9 +48,26 @@ export function renderAssuranceReport(report: AssuranceReport, registry: readonl
 	}
 	if (attentionFindings.length > 8) lines.push("  More findings and all evidence references are in JSON output.");
 
+	lines.push("", "Scope");
+	if (!report.scope || report.scope.traceCoverage === "unavailable") {
+		lines.push("  NOT ASSESSED");
+	} else {
+		lines.push(`  Trace coverage: ${report.scope.traceCoverage}`);
+		const observed = new Set(report.scope.observations.map(item => item.boundary));
+		const boundaries = BOUNDARY_ORDER.filter(boundary => observed.has(boundary));
+		lines.push(`  Observed boundaries: ${boundaries.length ? boundaries.join(", ") : "none classified"}`);
+		const classified = report.scope.actionCoverage.filter(item => item.status === "classified").length;
+		const unclassified = report.scope.actionCoverage.length - classified;
+		lines.push(`  Tool actions classified: ${classified}`);
+		lines.push(`  Tool actions unclassified: ${unclassified}`);
+	}
+
 	lines.push("", "Coverage");
 	for (const source of report.coverage) lines.push(
 		`  ${atom(source.sourceId)}: ${source.assessed ? "assessed bounded view" : "NOT ASSESSED"} (${atom(source.scope.view)}; ${atom(source.consistency)})`);
+	if (report.scope) {
+		for (const limitation of report.scope.limitations) lines.push(`  scope: ${atom(limitation)}`);
+	}
 	const coverageFindings = report.rules
 		.filter(result => metaFor(result).presentation.section === "coverage")
 		.flatMap(result => result.findings.map(finding => ({ result, finding })));
@@ -66,7 +86,8 @@ export function renderAssuranceReport(report: AssuranceReport, registry: readonl
 
 	lines.push("", "Rules");
 	for (const result of report.rules) lines.push(`  ${atom(result.ruleId)}@${result.ruleVersion}: ${result.status}`);
-	lines.push("", "No task-quality or safety verdict. Tool return is not process success; a missing terminal is not proof of a running process.",
+	lines.push("", "No task-quality, authorization or safety verdict. Observed scope is not requested or authorized scope.",
+		"Tool return is not process success; a missing terminal is not proof of a running process.",
 		"Private local metadata, not approved for publication. Native trace/entry references are for local drill-down.");
 	return lines.join("\n");
 }
