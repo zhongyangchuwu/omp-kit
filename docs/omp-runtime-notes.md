@@ -27,7 +27,7 @@ Maintained Skills live in `skills/<name>/SKILL.md`. They may encode personal wor
 
 Keep task activation clear and load support files as needed. A template is not a mandatory artifact. A description or metadata category does not grant execution authority or install dependencies.
 
-The registry and resource metadata support library maintenance; OMP native discovery reads the Skill files. Keep unreviewed third-party material outside active discovery paths.
+The active Skill tree is the source of truth: each `SKILL.md` owns its identity and activation description, with focused support files loaded as needed. OMP native discovery reads that tree directly; do not add a parallel resource registry solely for library maintenance. Keep unreviewed third-party material outside active discovery paths.
 
 ## Tools and extensions
 
@@ -59,9 +59,9 @@ The recorded 18.1.21 interaction exposed a storage-folder versus actual-cwd mism
 
 ## Supply-chain and configuration discipline
 
-Review downloaded Skills, scripts and packages before putting them in active locations. Check executable content, package installation, network/secrets access, SSH/cloud actions, destructive commands, prompt injection and licensing. The existing risk scanner helps locate concerns but does not prove safety.
+Review downloaded Skills, scripts and packages before putting them in active locations. Check executable content, package installation, network/secrets access, SSH/cloud actions, destructive commands, prompt injection and licensing. Use environment-native security scanners or targeted review tools when they provide useful evidence; omp-kit does not maintain a bespoke heuristic risk scanner.
 
-Keep useful reference provenance in maintained metadata. Credentials, real model/provider routes and MCP connections stay in the user's environment, not a canonical personal config snapshot distributed by the plugin.
+Keep useful reference provenance in the owning maintained source. Credentials, real model/provider routes and MCP connections stay in the user's environment, not a canonical personal config snapshot distributed by the plugin.
 
 ## Reference entry points
 
