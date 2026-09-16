@@ -121,6 +121,10 @@ current truth in current docs/executable policy, unresolved concrete work in an 
 Issue when useful, implementation/review evidence in PRs, and durable rationale in
 design records when worth preserving. No repository-wide work-state mirror is required.
 
+When accepted behavior, architecture, installation/configuration, workflow, or recurring
+operational knowledge changes, update the current document that owns that fact. Do not
+create a generic capture artifact merely to restate the final report or PR summary.
+
 Do not initialize `.planning/` merely because work lasts more than one session. When a
 project deliberately needs a richer local/offline phase dossier, ordered roadmap, reusable
 brownfield map, or archival planning state, use the `omp-planning-artifacts` Skill. That
@@ -161,8 +165,6 @@ or follow-up.
 | Built-in `/vibe` used explicitly | `references/vibe-compat.md` |
 | Workflow mode selection | `references/modes.md` |
 | Accepted context and a written plan | `references/context-and-plan.md` |
-| Meaningful phase gates | `references/gates.md` |
-| Durable documentation capture | `references/capture.md` |
 
 For a one-session direct or delegated change, do not load the entire durable project
 surface. Load the smallest state/reference surface that the task actually needs. Explicit
