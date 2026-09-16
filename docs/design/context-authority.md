@@ -55,7 +55,7 @@ Notes can preserve decisions, invariants and blockers across current-session rol
 
 Earlier project work used `WORKING_STATE.md + owning Issue + actual branch/files/runtime` to recover an objective. It also exposed stale durable state: local verification reported OMP 18.1.20 while docs still said 18.1.19. Subsequent dogfood showed that a repository-wide mutable work index duplicates Issue-local context and creates another synchronization obligation. The current design therefore keeps Issue-centered coordination while dropping the required global index.
 
-These operational examples do not prove the remaining genuinely fresh-session/offline acceptance criteria in #11. Same-conversation recovery is not fresh-session evidence.
+These operational examples still do not complete #11's fresh-session recovery acceptance. Same-conversation recovery is not fresh-session evidence.
 
 ### External research and tools
 
@@ -214,7 +214,7 @@ OMP owns tool/session/resource visibility enforcement. omp-kit owns workflow sco
 
 This policy uses existing surfaces: docs and design records for accepted knowledge, task-local Issues/PRs for unfinished work when available, `omp-workflow` for Main judgment, subagent-context guidance for retrieval, and agent definitions for external-content boundaries. OMP owns session/history storage and capabilities.
 
-No global work-state mirror, extra memory store, context broker, provenance database or runtime permission layer is introduced.
+No global work-state mirror, extra memory store, context broker, provenance database, parallel phase dossier or runtime permission layer is introduced.
 
 ## Evaluation and limits
 
@@ -229,7 +229,7 @@ Important limits:
 - source separation is guidance, not runtime sandboxing;
 - offline recovery can rely on accepted truth and rationale shipped in the repository, but remote unresolved Issue context may be unavailable; do not duplicate the complete remote backlog solely to make it offline.
 
-#11 evaluates real recovery, duplication and offline behavior. `.planning/` remains a deliberately selected specialized workflow; its maintained Skill is not obsolete merely because this repository uses issue-centered state.
+#11 continues to evaluate real fresh-session recovery and GitHub-offline behavior. The absence of remote unresolved Issue details while offline is an acknowledged limitation, not a reason to maintain a second project-state system.
 
 ## Current status
 
