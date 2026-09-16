@@ -13,7 +13,7 @@ export const scopeExpansionRule: AssuranceRule = {
 		id: "omp-kit.scope-expansion",
 		version: 1,
 		title: "Observed scope expansion",
-		description: "Reports a scope boundary when it first appears after earlier classified activity on the same trace track.",
+		description: "Reports a scope boundary when it first appears after earlier classified activity on the same transcript.",
 		messages: {
 			"new-boundary-workspace": "Activity on this track later reached the workspace boundary for the first time.",
 			"new-boundary-host-user": "Activity on this track later reached the host-user boundary for the first time.",
@@ -30,12 +30,12 @@ export const scopeExpansionRule: AssuranceRule = {
 		const byTrack = new Map<string, ScopeObservation[]>();
 		for (const observation of scope.observations) {
 			if (observation.boundary === "unknown") continue;
-			const list = byTrack.get(observation.trackId) ?? [];
+			const list = byTrack.get(observation.trackKey) ?? [];
 			list.push(observation);
-			byTrack.set(observation.trackId, list);
+			byTrack.set(observation.trackKey, list);
 		}
 		const findings: RuleFinding[] = [];
-		for (const [trackId, observations] of byTrack) {
+		for (const [trackKey, observations] of byTrack) {
 			const byPosition = new Map<number, ScopeObservation[]>();
 			for (const observation of observations) {
 				const list = byPosition.get(observation.position) ?? [];
@@ -52,7 +52,7 @@ export const scopeExpansionRule: AssuranceRule = {
 						const evidence = group.filter(item => item.boundary === boundary).flatMap(item => item.evidence);
 						findings.push({
 							kind: "scope-expansion",
-							subjectId: assuranceId("scope-expansion", trackId, String(position), boundary),
+							subjectId: assuranceId("scope-expansion", trackKey, String(position), boundary),
 							code: CODE[boundary],
 							evidence,
 						});
