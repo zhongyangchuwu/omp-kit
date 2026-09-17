@@ -1,0 +1,33 @@
+name: Temporary Bun lock refresh
+
+on:
+  push:
+    branches:
+      - feat/omp-18.2.3-assurance-performance
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/omp-18.2.3-assurance-performance
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Refresh lockfile
+        run: bun install --lockfile-only
+      - name: Commit lockfile
+        run: |
+          if git diff --quiet -- bun.lock; then
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add bun.lock
+          git commit -m "chore: refresh Bun lock for OMP 18.2.3"
+          git push origin HEAD:feat/omp-18.2.3-assurance-performance
