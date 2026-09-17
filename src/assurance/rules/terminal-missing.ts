@@ -4,14 +4,14 @@ import { actionRuleStatus } from "./shared";
 export const missingTerminalRule: AssuranceRule = {
 	meta: {
 		id: "omp-kit.terminal-missing",
-		version: 1,
-		title: "Missing terminal evidence",
-		description: "Reports actions for which every available sample lacks terminal evidence.",
+		version: 2,
+		title: "Missing terminal observations",
+		description: "Preserves actions for which every available sample lacks terminal evidence as supporting review evidence.",
 		messages: {
 			"tool-terminal-missing": "Tool terminal evidence is missing.",
-			"background-terminal-missing": "Background-task terminal evidence is missing.",
+			"background-terminal-missing": "Background-job async-result delivery is not observed.",
 		},
-		presentation: { section: "attention", summaryLabel: "Missing terminal evidence" },
+		presentation: { section: "evidence", summaryLabel: "Missing terminal observations" },
 	},
 	evaluate(input) {
 		return {
