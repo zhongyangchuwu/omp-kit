@@ -64,6 +64,7 @@ export interface AssuranceScanOptions extends BaseOptions {
 }
 export type AssuranceOptions = AssuranceReportOptions | AssuranceScanOptions;
 export type SessionAssuranceReader = SessionTraceReader & Partial<SessionEntryReader> & Partial<Pick<OmpStatsClient, "sync" | "listSessions">>;
+export type SessionAssuranceCatalogReader = SessionAssuranceReader & Required<Pick<OmpStatsClient, "sync" | "listSessions">>;
 type TraceRead = Awaited<ReturnType<SessionTraceReader["getTrace"]>>;
 
 function optionValue(argv: readonly string[], index: number): string {
@@ -166,12 +167,12 @@ export async function readTraceOnlyAssuranceReport(
 	return reportFromTraceRead(reader, sessionFile, await reader.getTrace(sessionFile, signal), signal, TRACE_SCAN_RULES, false);
 }
 
-function asCatalogReader(reader: SessionAssuranceReader): OmpStatsClient {
-	if (!reader.sync || !reader.listSessions || !reader.getEntry) throw new Error("The selected reader does not support session discovery");
-	return reader as OmpStatsClient;
+function asCatalogReader(reader: SessionAssuranceReader): SessionAssuranceCatalogReader {
+	if (!reader.sync || !reader.listSessions) throw new Error("The selected reader does not support session discovery");
+	return reader as SessionAssuranceCatalogReader;
 }
 
-async function resolveSessionFile(reader: OmpStatsClient, key: string, limit: number): Promise<string> {
+async function resolveSessionFile(reader: SessionAssuranceCatalogReader, key: string, limit: number): Promise<string> {
 	const signal = AbortSignal.timeout(30_000);
 	const sync = await reader.sync(signal);
 	if (sync.status !== "available") throw new Error("Could not synchronize the bounded OMP session catalog");
@@ -182,7 +183,7 @@ async function resolveSessionFile(reader: OmpStatsClient, key: string, limit: nu
 	return match.file;
 }
 
-export async function scanAssuranceReports(reader: OmpStatsClient, options: AssuranceScanOptions): Promise<{ report: AssuranceScanReport; incomplete: boolean }> {
+export async function scanAssuranceReports(reader: SessionAssuranceCatalogReader, options: AssuranceScanOptions): Promise<{ report: AssuranceScanReport; incomplete: boolean }> {
 	const discoverySignal = AbortSignal.timeout(30_000);
 	const sync = await reader.sync(discoverySignal);
 	const listed = await reader.listSessions(options.limit, discoverySignal);
