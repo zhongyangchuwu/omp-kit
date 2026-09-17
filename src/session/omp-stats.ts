@@ -98,6 +98,18 @@ export interface LocalStatsOptions {
 	start?: () => Promise<LocalStatsServer>;
 	fetch?: StatsFetch;
 	now?: () => number;
+	startLogsToStderr?: boolean;
+}
+
+async function startOwnedServer(start: () => Promise<LocalStatsServer>, logsToStderr: boolean): Promise<LocalStatsServer> {
+	if (!logsToStderr) return start();
+	const originalLog = console.log;
+	console.log = (...args: unknown[]) => console.error(...args);
+	try {
+		return await start();
+	} finally {
+		console.log = originalLog;
+	}
 }
 
 /** Own only this server; release it on success, read failure or consumer failure. */
@@ -109,7 +121,7 @@ export async function withLocalOmpStats<T>(
 		const { startServer } = await import("@oh-my-pi/omp-stats");
 		return startServer(0, "127.0.0.1");
 	});
-	const server = await start();
+	const server = await startOwnedServer(start, options.startLogsToStderr ?? false);
 	try {
 		return await use(createOmpStatsClient(`http://${server.hostname}:${server.port}`, options.fetch, options.now));
 	} finally {
