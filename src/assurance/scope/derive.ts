@@ -17,11 +17,38 @@ const ACCESS = new Set(["read", "write", "execute", "unknown"]);
 const RESOURCES = new Set(["filesystem", "process", "configuration", "package", "version-control", "service", "network", "unknown"]);
 const MAX_ENTRY_HOPS = 8;
 
+export interface ScopeDerivationDiagnostics {
+	candidates: number;
+	prefilteredUnsupported: number;
+	recoveryAttempts: number;
+	entryReadRequests: number;
+	entryCacheHits: number;
+	parentHops: number;
+	recoveryMs: number;
+	classificationMs: number;
+	totalMs: number;
+}
+
+export function createScopeDerivationDiagnostics(): ScopeDerivationDiagnostics {
+	return {
+		candidates: 0,
+		prefilteredUnsupported: 0,
+		recoveryAttempts: 0,
+		entryReadRequests: 0,
+		entryCacheHits: 0,
+		parentHops: 0,
+		recoveryMs: 0,
+		classificationMs: 0,
+		totalMs: 0,
+	};
+}
+
 interface ToolCandidate {
 	actionId: string;
 	trackKey: string;
 	position: number;
 	trackFile: string;
+	toolNameHint: string | null;
 	entryId?: string;
 	toolCallId?: string;
 	workspaceRoot: string | null;
@@ -78,18 +105,21 @@ async function recoverToolCall(
 	toolCallId: string,
 	signal: AbortSignal | undefined,
 	cache: Map<string, ReturnType<SessionEntryReader["getEntry"]>>,
+	diagnostics?: ScopeDerivationDiagnostics,
 ): Promise<RecoveredToolCall | "unavailable" | "not-found" | "invalid"> {
 	let current: string | null = entryId;
 	const seen = new Set<string>();
 	for (let hop = 0; hop < MAX_ENTRY_HOPS && current; hop++) {
+		diagnostics && (diagnostics.parentHops += 1);
 		if (seen.has(current)) return "not-found";
 		seen.add(current);
 		const key = `${file}\u0000${current}`;
 		let pending = cache.get(key);
 		if (!pending) {
+			diagnostics && (diagnostics.entryReadRequests += 1);
 			pending = reader.getEntry(file, current, signal);
 			cache.set(key, pending);
-		}
+		} else if (diagnostics) diagnostics.entryCacheHits += 1;
 		let read: Awaited<ReturnType<SessionEntryReader["getEntry"]>>;
 		try {
 			read = await pending;
@@ -112,8 +142,7 @@ function candidateForSpan(input: TraceInput, track: TraceTrack, span: TraceSpan,
 		trackKey: assuranceId("scope-track-file", track.file),
 		position,
 		trackFile: track.file,
-		// The root trace exposes only the root cwd. Child relative paths still mean that child's workspace,
-		// but absolute child paths are not compared against the root cwd.
+		toolNameHint: span.label || null,
 		workspaceRoot: track.parentId === null && input.read.status === "available" ? input.read.data.cwd ?? null : null,
 		...(span.entryId ? { entryId: span.entryId } : {}),
 		...(span.toolCallId ? { toolCallId: span.toolCallId } : {}),
@@ -142,6 +171,7 @@ function collectCandidates(inputs: readonly TraceInput[], normalized: AssuranceI
 				byAction.set(candidate.actionId, {
 					...existing,
 					position: Math.min(existing.position, candidate.position),
+					toolNameHint: existing.toolNameHint === candidate.toolNameHint ? existing.toolNameHint : null,
 					workspaceRoot: existing.workspaceRoot === candidate.workspaceRoot ? existing.workspaceRoot : null,
 					evidence,
 				});
@@ -178,14 +208,27 @@ export async function deriveTraceScopeEvidence(
 	normalized: AssuranceInput,
 	reader: SessionEntryReader | undefined,
 	classifiers: readonly ScopeClassifier[],
-	options: { readonly homeDir?: string | null; readonly signal?: AbortSignal } = {},
+	options: {
+		readonly homeDir?: string | null;
+		readonly signal?: AbortSignal;
+		readonly toolNamePrefilter?: (toolName: string) => boolean;
+		readonly diagnostics?: ScopeDerivationDiagnostics;
+	} = {},
 ): Promise<ScopeEvidence> {
+	const totalStarted = performance.now();
 	validateClassifiers(classifiers);
 	const candidates = collectCandidates(inputs, normalized);
+	const diagnostics = options.diagnostics;
+	if (diagnostics) diagnostics.candidates += candidates.length;
 	const observations: ScopeObservation[] = [];
 	const actionCoverage: ScopeActionCoverage[] = [];
 	const entryCache = new Map<string, ReturnType<SessionEntryReader["getEntry"]>>();
 	for (const candidate of candidates) {
+		if (candidate.toolNameHint && options.toolNamePrefilter && !options.toolNamePrefilter(candidate.toolNameHint)) {
+			if (diagnostics) diagnostics.prefilteredUnsupported += 1;
+			actionCoverage.push(coverage(candidate, "unclassified", "unsupported-tool"));
+			continue;
+		}
 		if (!reader) {
 			actionCoverage.push(coverage(candidate, "unclassified", "entry-reader-unavailable"));
 			continue;
@@ -194,7 +237,10 @@ export async function deriveTraceScopeEvidence(
 			actionCoverage.push(coverage(candidate, "unclassified", "tool-input-not-found"));
 			continue;
 		}
-		const recovered = await recoverToolCall(reader, candidate.trackFile, candidate.entryId, candidate.toolCallId, options.signal, entryCache);
+		if (diagnostics) diagnostics.recoveryAttempts += 1;
+		const recoveryStarted = performance.now();
+		const recovered = await recoverToolCall(reader, candidate.trackFile, candidate.entryId, candidate.toolCallId, options.signal, entryCache, diagnostics);
+		if (diagnostics) diagnostics.recoveryMs += performance.now() - recoveryStarted;
 		if (recovered === "unavailable") {
 			actionCoverage.push(coverage(candidate, "unclassified", "tool-input-unavailable"));
 			continue;
@@ -216,6 +262,7 @@ export async function deriveTraceScopeEvidence(
 			evidence: candidate.evidence,
 		};
 		let matched = false;
+		const classificationStarted = performance.now();
 		for (const classifier of classifiers) {
 			const result = classifier.classify(call, { workspaceRoot: candidate.workspaceRoot, homeDir: options.homeDir ?? null });
 			if (result === "not-applicable") continue;
@@ -235,9 +282,11 @@ export async function deriveTraceScopeEvidence(
 				});
 			}
 		}
+		if (diagnostics) diagnostics.classificationMs += performance.now() - classificationStarted;
 		actionCoverage.push(coverage(candidate, matched ? "classified" : "unclassified", matched ? undefined : "unsupported-tool"));
 	}
 	const deduped = [...new Map(observations.map(value => [value.id, value])).values()].sort(compareIds);
+	if (diagnostics) diagnostics.totalMs += performance.now() - totalStarted;
 	return {
 		traceCoverage: traceCoverage(inputs),
 		observations: deduped,

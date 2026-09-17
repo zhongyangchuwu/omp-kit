@@ -7,7 +7,7 @@ import { parseAssuranceArgs, runAssuranceCli, scanAssuranceReports } from "../..
 
 const LIMITS = ["active-branches-only", "child-completeness-unknown", "details-are-previews", "not-an-atomic-snapshot"] as const;
 
-function summary(file: string, endedAt: number, folder = "-project-omp-kit"): SessionSummary {
+function summary(file: string, endedAt: number, folder = "/work/omp-kit"): SessionSummary {
 	return {
 		file,
 		folder,
@@ -66,7 +66,7 @@ function availableTrace(value: SessionTrace) {
 	};
 }
 
-function catalogReader(summaries: SessionSummary[], traces: Map<string, SessionTrace>, entryCall?: () => void): OmpStatsClient {
+function catalogReader(summaries: SessionSummary[], traces: Map<string, SessionTrace>, entryCall?: () => void, traceCall?: (file: string) => void): OmpStatsClient {
 	return {
 		async sync() {
 			return { scope: { source: "omp-stats", view: "sync" }, startedAt: 1, finishedAt: 2, limitations: [], consistency: "not-checked", status: "available", data: {} };
@@ -83,6 +83,7 @@ function catalogReader(summaries: SessionSummary[], traces: Map<string, SessionT
 			};
 		},
 		async getTrace(file) {
+			traceCall?.(file);
 			const value = traces.get(file);
 			if (!value) return { scope: { source: "omp-stats", view: "active-branch-trace" }, startedAt: 1, finishedAt: 2, limitations: [...LIMITS], consistency: "not-checked", status: "unavailable", reason: "http", httpStatus: 404 };
 			return availableTrace(value);
@@ -135,12 +136,15 @@ test("default history scan is trace-only and never performs selected-entry enric
 	assert.doesNotMatch(JSON.stringify(result.report), /\/private\//);
 });
 
-test("scan applies since and real-cwd folder filters while keeping catalog bounds explicit", async () => {
+test("scan applies since and summary-folder filters before trace reads", async () => {
 	const a = "/private/a.jsonl";
 	const b = "/private/b.jsonl";
+	let traceCalls = 0;
 	const reader = catalogReader(
-		[summary(a, 200, "storage-a"), summary(b, 100, "storage-b")],
-		new Map([[a, trace(a, [span()], "/work/target")], [b, trace(b, [span()], "/work/other")]]),
+		[summary(a, 200, "/work/target"), summary(b, 200, "/work/other")],
+		new Map([[a, trace(a, [span()], "/stale/trace-cwd")], [b, trace(b, [span()], "/work/other")]]),
+		undefined,
+		() => { traceCalls += 1; },
 	);
 	const result = await scanAssuranceReports(reader, {
 		command: "scan",
@@ -150,10 +154,34 @@ test("scan applies since and real-cwd folder filters while keeping catalog bound
 		since: 150,
 		full: false,
 	});
+	assert.equal(traceCalls, 1);
 	assert.equal(result.report.sessions.scanned, 1);
 	assert.deepEqual(result.report.discovery.limitations, ["bounded-session-list", "list-limit-reached"]);
 	assert.equal(result.report.filters.folderApplied, true);
 	assert.equal(result.report.filters.since, 150);
+});
+
+test("full scan prefilters unsupported tool names before selected-entry reads", async () => {
+	const file = "/private/bash-only.jsonl";
+	let entryCalls = 0;
+	const reader = catalogReader(
+		[summary(file, 200)],
+		new Map([[file, trace(file, [span({ label: "bash" })])]]),
+		() => { entryCalls += 1; },
+	);
+	const result = await scanAssuranceReports(reader, {
+		command: "scan",
+		json: true,
+		limit: 1000,
+		folder: null,
+		since: null,
+		full: true,
+	});
+	assert.equal(entryCalls, 0);
+	assert.equal(result.report.performance?.scope.candidates, 1);
+	assert.equal(result.report.performance?.scope.prefilteredUnsupported, 1);
+	assert.equal(result.report.performance?.scope.recoveryAttempts, 0);
+	assert.equal(result.report.performance?.scope.entryReadRequests, 0);
 });
 
 test("scan keys can be resolved for a later full single-session drill-down without exposing paths", async () => {

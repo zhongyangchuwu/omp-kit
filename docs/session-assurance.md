@@ -39,7 +39,10 @@ than claiming exhaustive history.
 A full Scope V1 report may read selected public session entries for each tool action
 and walk a bounded parent chain to recover structured tool-call input. That is useful
 for one session, but multiplying it across a large history can create many local
-entry reads.
+entry reads. On OMP 18.2.3, built-in full scans first use the trace tool label as a
+conservative prefilter: tool names that no built-in Scope V1 classifier supports are
+recorded as `unsupported-tool` without selected-entry recovery. Supported tool names
+still recover structured arguments before classification.
 
 The default scan therefore performs a cheap first pass:
 
@@ -85,6 +88,8 @@ assurance results rather than another raw trace store. It contains:
 - filter presence, `since`, and requested limit;
 - scanned/assessed/candidate counts;
 - aggregate action, subagent, attention-finding and dynamic-coverage-gap counts;
+- optional full-scan scope diagnostics (`candidates`, prefiltered unsupported actions,
+  recovery attempts, actual entry reads/cache hits, parent hops and timing);
 - finding-code counts;
 - candidate rows with opaque session key, timestamps and bounded finding codes.
 
@@ -210,8 +215,9 @@ remain outside complete observation.
 Tests use synthetic public traces and injectable readers, including missing and
 conflicting observations, engine isolation, deterministic composition, registry/profile
 separation, privacy projection, selected-entry scope recovery, explicit unclassified
-actions, per-track scope expansion, batch catalog/filter behavior, zero-entry default
-scan, opaque-key drill-down, CLI exit behavior and no-IO help. Repository CI validates
+actions, per-track scope expansion, batch catalog/filter behavior, pre-trace folder
+pruning, zero-entry default scan, unsupported-tool prefiltering, full-scan diagnostics,
+opaque-key drill-down, CLI exit behavior and no-IO help. Repository CI validates
 the unmodified Bun/SDK suite. This is not acceptance in a user's installed OMP session.
 
 Still required by #31: run the new scan over real historical/normal sessions, inspect

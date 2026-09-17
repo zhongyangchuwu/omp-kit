@@ -1,6 +1,7 @@
 import type { SessionSummary } from "@oh-my-pi/omp-stats/shared-types";
 import { sessionKey } from "../evidence/session-evidence";
 import type { AssuranceReport } from "./model";
+import type { ScopeDerivationDiagnostics } from "./scope/derive";
 
 export const ASSURANCE_SCAN_SCHEMA = "omp-kit.session-assurance-scan/v1" as const;
 
@@ -16,6 +17,7 @@ const BASELINE_COVERAGE_CODES = new Set([
 export interface AssuranceScanRow {
 	readonly summary: SessionSummary;
 	readonly report: AssuranceReport;
+	readonly scopeDiagnostics?: Readonly<ScopeDerivationDiagnostics>;
 }
 
 export interface AssuranceScanCandidate {
@@ -56,6 +58,9 @@ export interface AssuranceScanReport {
 		readonly attentionFindings: number;
 		readonly dynamicCoverageGaps: number;
 	};
+	readonly performance?: {
+		readonly scope: Readonly<ScopeDerivationDiagnostics>;
+	};
 	readonly findingCounts: Readonly<Record<string, number>>;
 	readonly candidates: readonly AssuranceScanCandidate[];
 }
@@ -81,6 +86,34 @@ function candidateFor(row: AssuranceScanRow): AssuranceScanCandidate | null {
 		dynamicCoverageGaps: dynamicCoverage.length,
 		codes,
 	};
+}
+
+function aggregateScopeDiagnostics(rows: readonly AssuranceScanRow[]): ScopeDerivationDiagnostics | null {
+	const diagnostics = rows.flatMap(row => row.scopeDiagnostics ? [row.scopeDiagnostics] : []);
+	if (diagnostics.length === 0) return null;
+	const total: ScopeDerivationDiagnostics = {
+		candidates: 0,
+		prefilteredUnsupported: 0,
+		recoveryAttempts: 0,
+		entryReadRequests: 0,
+		entryCacheHits: 0,
+		parentHops: 0,
+		recoveryMs: 0,
+		classificationMs: 0,
+		totalMs: 0,
+	};
+	for (const item of diagnostics) {
+		total.candidates += item.candidates;
+		total.prefilteredUnsupported += item.prefilteredUnsupported;
+		total.recoveryAttempts += item.recoveryAttempts;
+		total.entryReadRequests += item.entryReadRequests;
+		total.entryCacheHits += item.entryCacheHits;
+		total.parentHops += item.parentHops;
+		total.recoveryMs += item.recoveryMs;
+		total.classificationMs += item.classificationMs;
+		total.totalMs += item.totalMs;
+	}
+	return total;
 }
 
 export function buildAssuranceScanReport(
@@ -123,6 +156,7 @@ export function buildAssuranceScanReport(
 		b.endedAt - a.endedAt ||
 		a.key.localeCompare(b.key),
 	);
+	const scopeDiagnostics = aggregateScopeDiagnostics(rows);
 	return {
 		schemaVersion: ASSURANCE_SCAN_SCHEMA,
 		generatedAt: new Date().toISOString(),
@@ -137,6 +171,7 @@ export function buildAssuranceScanReport(
 		},
 		sessions: { scanned: rows.length, assessed, candidates: candidates.length },
 		totals: { actions, subagents, attentionFindings, dynamicCoverageGaps },
+		...(scopeDiagnostics ? { performance: { scope: scopeDiagnostics } } : {}),
 		findingCounts: Object.fromEntries(Object.entries(findingCounts).sort(([a], [b]) => a.localeCompare(b))),
 		candidates,
 	};

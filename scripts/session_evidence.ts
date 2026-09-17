@@ -171,6 +171,7 @@ async function collect(options: CliOptions): Promise<{ collected: number; skippe
 		const summaries = requireEvidence(await client.listSessions(options.limit));
 		for (const summary of summaries) {
 			if (options.since !== null && summary.endedAt < options.since) continue;
+			if (options.folder && !folderFilterMatches(options.folder, summary.folder, null)) continue;
 			const revision = sessionRevision(summary);
 			const key = sessionKey(summary.file);
 			const outputPath = join(sessionsDir, `${key}.json`);
@@ -178,12 +179,11 @@ async function collect(options: CliOptions): Promise<{ collected: number; skippe
 			const stored = previous?.revision === revision ? await readStoredEvidence(outputPath) : null;
 			const storedHasCwd = stored !== null && Object.prototype.hasOwnProperty.call(stored.session, "cwd");
 			if (stored?.source.revision === revision && storedHasCwd) {
-				if (!options.folder || folderFilterMatches(options.folder, stored.session.folder, stored.session.cwd)) skipped += 1;
+				skipped += 1;
 				continue;
 			}
 
 			const trace = requireEvidence(await client.getTrace(summary.file));
-			if (options.folder && !folderFilterMatches(options.folder, summary.folder, trace.cwd)) continue;
 
 			const providerCache = new Map<string, string | null>();
 			const resolveProvider: ProviderResolver = async (trackFile, span) => {
@@ -268,7 +268,7 @@ function printHumanReport(report: EvidenceReport): void {
 }
 
 function printHelp(): void {
-	console.log(`omp-kit session evidence\n\nUsage:\n  bun run evidence:collect [--limit N] [--folder TEXT] [--since ISO] [--root PATH] [--json]\n  bun run evidence:report  [--folder TEXT] [--since ISO] [--root PATH] [--json]\n\n--folder accepts the normal project filesystem path (or a folder substring). Matching prefers the public trace cwd and also accepts OMP's summary folder value.\n\nOMP remains the raw session/stat recorder. The collector incrementally derives compact summaries; it does not require per-session logging turns.\n\nDefault derived-data root:\n  ${defaultEvidenceRoot()}\n`);
+	console.log(`omp-kit session evidence\n\nUsage:\n  bun run evidence:collect [--limit N] [--folder TEXT] [--since ISO] [--root PATH] [--json]\n  bun run evidence:report  [--folder TEXT] [--since ISO] [--root PATH] [--json]\n\n--folder accepts the normal project filesystem path (or a folder substring). OMP 18.2.1+ exposes the real working directory through SessionSummary.folder, so filtering happens before trace reads.\n\nOMP remains the raw session/stat recorder. The collector incrementally derives compact summaries; it does not require per-session logging turns.\n\nDefault derived-data root:\n  ${defaultEvidenceRoot()}\n`);
 }
 
 async function main(): Promise<void> {
