@@ -6,11 +6,11 @@ export const toolErrorRule: AssuranceRule = {
 		id: "omp-kit.tool-error",
 		version: 1,
 		title: "Tool-reported errors",
-		description: "Reports tool spans that explicitly carry an error flag.",
+		description: "Reports tool spans that explicitly carry an error flag as review context, not an automatic attention trigger.",
 		messages: {
 			"tool-reported-error": "The tool explicitly reported an error.",
 		},
-		presentation: { section: "attention", summaryLabel: "Tool errors reported" },
+		presentation: { section: "evidence", summaryLabel: "Tool errors reported" },
 	},
 	evaluate(input) {
 		return {
