@@ -64,6 +64,20 @@ A changelog/source review is not a full runtime test. Existing smoke evidence re
 
 ## Recorded baseline
 
+### OMP 18.2.3 triage — 2026-09-17
+
+OMP 18.2.3 is the current exact dependency for omp-kit. Review covered 18.2.1–18.2.3 and the released stats/session source used by evidence and assurance.
+
+Relevant findings:
+
+- **Session folder contract repaired:** 18.2.1 fixed `/api/sessions` so `SessionSummary.folder` is the real working directory instead of an encoded storage key. Evidence and assurance collectors now apply `--folder` before trace reads; the old trace-`cwd` filtering workaround is retired.
+- **Tool-error evidence improved:** 18.2.1 preserves non-throwing tool failure status through extension result rewrites and eval-defined subagent tools. Historical pre-18.2.1 error counts remain useful samples but are not directly comparable to current-runtime coverage.
+- **Background/subagent terminal semantics changed:** 18.2.2 settles stopped-subagent parent jobs correctly and adjusts consumed/recovered background-job retention; 18.2.3 keeps cancelled jobs tracked until execution actually finishes. Historical `terminal-missing` findings must therefore retain runtime-version context.
+- **Selected-entry bulk bottleneck remains:** 18.2.3 still serves `/api/session/entry` through single-entry lookup over the transcript. omp-kit avoids unnecessary calls by prefiltering unsupported built-in Scope tool names, but a future OMP batch/indexed selected-entry surface may still be justified by measured dogfood.
+- **No maintained contract break found:** agent frontmatter, native plugin installation, feedback provenance, public trace/span shapes used by omp-kit, and stable result/history retrieval remain compatible for current use.
+
+The 18.2.3 exact pin is validated by the repository deterministic gate. This source/type compatibility evidence is separate from the local historical full-scan timing measurement that motivated the Scope read optimization.
+
 ### OMP 18.2.0 triage — 2026-09-15
 
 OMP 18.2.0 is the latest release inspected for current omp-kit contracts. The review covered changes since 18.1.21 and the relevant released source.
@@ -88,6 +102,6 @@ Feedback and collector acceptance remain claim-specific evidence from OMP 18.1.2
 /api/session/trace.cwd -> real project cwd
 ```
 
-The collector uses public trace cwd for path filtering, with the upstream report `can1357/oh-my-pi#12060`. See [validation](VALIDATION.md) for exact evidence and retest limitations.
+That historical mismatch was fixed in OMP 18.2.1. On the current 18.2.3 baseline, collectors use `SessionSummary.folder` for pre-trace path filtering; trace `cwd` remains evidence metadata rather than the folder-filter workaround. See [validation](VALIDATION.md) for the older acceptance evidence and its historical limitation.
 
 Historical #9521 preview experiments remain useful hardening evidence, not a current release blocker. #4 accepted feedback shared between Main/workers with bounded reporting consequences. Future scoping changes should be assessed on their actual benefit and impact.
