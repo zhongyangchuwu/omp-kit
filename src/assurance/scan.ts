@@ -1,6 +1,6 @@
 import type { SessionSummary } from "@oh-my-pi/omp-stats/shared-types";
 import { sessionKey } from "../evidence/session-evidence";
-import type { AssuranceReport } from "./model";
+import type { AssuranceReport, RulePresentation } from "./model";
 import type { ScopeDerivationDiagnostics } from "./scope/derive";
 
 export const ASSURANCE_SCAN_SCHEMA = "omp-kit.session-assurance-scan/v1" as const;
@@ -69,13 +69,26 @@ function findingKey(kind: string, code: string): string {
 	return `${kind}:${code}`;
 }
 
+function sectionByRule(report: AssuranceReport): Map<string, RulePresentation["section"]> {
+	return new Map(report.rules.map(rule => [rule.ruleId, rule.presentation.section]));
+}
+
+function isDynamicCoverage(kind: string, code: string, section: RulePresentation["section"] | undefined): boolean {
+	return section === "coverage" && kind === "coverage-gap" && !BASELINE_COVERAGE_CODES.has(code);
+}
+
 function candidateFor(row: AssuranceScanRow): AssuranceScanCandidate | null {
-	const attention = row.report.findings.filter(finding => finding.kind !== "coverage-gap");
-	const dynamicCoverage = row.report.findings.filter(
-		finding => finding.kind === "coverage-gap" && !BASELINE_COVERAGE_CODES.has(finding.code),
+	const sections = sectionByRule(row.report);
+	const attention = row.report.findings.filter(finding => sections.get(finding.ruleId) === "attention");
+	const dynamicCoverage = row.report.findings.filter(finding =>
+		isDynamicCoverage(finding.kind, finding.code, sections.get(finding.ruleId)),
 	);
 	if (attention.length === 0 && dynamicCoverage.length === 0) return null;
-	const codes = [...new Set([...attention, ...dynamicCoverage].map(finding => findingKey(finding.kind, finding.code)))].sort();
+	const context = row.report.findings.filter(finding => {
+		const section = sections.get(finding.ruleId);
+		return section === "attention" || section === "evidence" || isDynamicCoverage(finding.kind, finding.code, section);
+	});
+	const codes = [...new Set(context.map(finding => findingKey(finding.kind, finding.code)))].sort();
 	return {
 		key: sessionKey(row.summary.file),
 		startedAt: row.summary.startedAt,
@@ -141,11 +154,13 @@ export function buildAssuranceScanReport(
 		actions += row.report.actions.length;
 		subagents += row.summary.subagents;
 		if (row.report.coverage.every(source => source.assessed) && row.report.rules.every(rule => rule.status !== "failed")) assessed += 1;
+		const sections = sectionByRule(row.report);
 		for (const finding of row.report.findings) {
 			const key = findingKey(finding.kind, finding.code);
 			findingCounts[key] = (findingCounts[key] ?? 0) + 1;
-			if (finding.kind !== "coverage-gap") attentionFindings += 1;
-			else if (!BASELINE_COVERAGE_CODES.has(finding.code)) dynamicCoverageGaps += 1;
+			const section = sections.get(finding.ruleId);
+			if (section === "attention") attentionFindings += 1;
+			else if (isDynamicCoverage(finding.kind, finding.code, section)) dynamicCoverageGaps += 1;
 		}
 		const candidate = candidateFor(row);
 		if (candidate) candidates.push(candidate);
