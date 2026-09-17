@@ -49,7 +49,7 @@ The default scan therefore performs a cheap first pass:
 ```text
 sync + bounded session list
 -> matching active-branch trace per session
--> tool-error / terminal-missing / coverage-conflict rules
+-> tool-error / terminal-missing / resolution-gap / coverage-conflict rules
 -> keep tool-error as supporting evidence; select candidates from attention/dynamic coverage
 -> aggregate counts + candidate session keys
 -> full Scope V1 drill-down only where useful
@@ -109,20 +109,21 @@ candidates had no side effects.
 
 `omp-kit.session-assurance/v1` carries normalized action observations, per-source
 coverage, optional observed-scope facts, rule execution results and generic
-evidence-linked findings. The current default full-report profile enables four
+evidence-linked findings. The current default full-report profile enables five
 built-in rules:
 
 | Rule/finding | Meaning | Not a claim that |
 | --- | --- | --- |
-| `omp-kit.tool-error` / `tool-error` | A tool span explicitly reports an error | The entire task failed or no side effect occurred |
-| `omp-kit.terminal-missing` / `terminal-missing` | Every available sample for an action marks its terminal missing | A process is still running or certainly failed |
+| `omp-kit.tool-error` / `tool-error` | A tool span explicitly reports an error; supporting evidence only | The entire task failed or no side effect occurred |
+| `omp-kit.terminal-missing` / `terminal-missing` | Every available sample for an action lacks terminal evidence; supporting evidence only | A process is still running or certainly failed |
+| `omp-kit.resolution-gap` / `resolution-gap` | Promotes a missing terminal into bounded review semantics, including a yielded task result with no observed parent delivery | The work is still executing, failed, or was unauthorized |
 | `omp-kit.coverage-gap` / `coverage-gap` | A trace limit, unavailable/unassessed source, conflict or inherently unobserved surface | An unobserved effect did not occur |
 | `omp-kit.scope-expansion` / `scope-expansion` | A later classified action on one track first reaches a previously unseen observed boundary | The action was unauthorized, risky, or semantically out of scope |
 
 Tool-result return and background-job terminal are separate observations. Missing
 `isError` is represented as `errorReported: false` (no flag observed), never as a
 verified process result. A mixed terminal history is preserved as conflicting
-observations, not silently promoted to recovered/successful or stale evidence. `tool-error` is presented in the Evidence section rather than Attention: it records an observed failure signal, while terminal gaps and scope expansion remain current attention triggers. A future post-failure consequence rule should be derived from ordered session evidence rather than treating every tool error as equivalent.
+observations, not silently promoted to recovered/successful or stale evidence. `tool-error` and raw `terminal-missing` findings are presented in the Evidence section rather than Attention. `resolution-gap` is the attention layer for missing closure: a normal missing background span remains `background-resolution-unobserved`; for OMP 18.2.3 async task jobs, a child track that has a successful observed `yield` while the parent background span remains unterminated is reported as `task-result-undelivered`. OMP stats opens a background span on `async-running` and closes it only on parent `async-result` delivery, so child yield is not treated as parent resolution. Scope expansion remains a separate attention signal.
 
 Observed scope is documented separately in [assurance-scope.md](assurance-scope.md).
 It distinguishes `workspace`, `host-user`, `host-system`, `external`, and `unknown`
@@ -223,7 +224,7 @@ pruning, zero-entry default scan, unsupported-tool prefiltering, full-scan diagn
 opaque-key drill-down, CLI exit behavior and no-IO help. Repository CI validates
 the unmodified Bun/SDK suite. This is not acceptance in a user's installed OMP session.
 
-Historical scanning has now been exercised over 136 normal OMP sessions and used to reduce tool-error triage noise. Still required by #31: inspect representative attention candidates and non-candidates, exercise rewind/child-read behavior, and use ordered real-session evidence to decide whether a post-failure recovery/consequence slice materially helps human review. The opt-in `/assurance` UI
+Historical scanning has now been exercised over 136 normal OMP sessions and used to reduce tool-error triage noise. Three representative terminal candidates were then inspected: a task child that yielded without observed parent delivery, a mixed error/background session, and a scope-expansion session. This motivated separating raw missing-terminal evidence from resolution attention without yet dropping bash/background candidates. Still required by #31: rerun the historical scan to inspect the distribution of `task-result-undelivered` versus generic resolution gaps, sample both families, and exercise rewind/child-read behavior before further triage changes. The opt-in `/assurance` UI
 remains deferred until the report proves useful enough to justify product integration.
 The possible Agent-as-prover / Assurance-as-verifier direction remains an open design
 hypothesis rather than an implemented protocol. Neither #31 nor #33 is complete.

@@ -14,6 +14,7 @@ import { DEFAULT_ASSURANCE_PROFILE, resolveAssuranceProfile } from "../src/assur
 import { BUILTIN_ASSURANCE_RULES } from "../src/assurance/registry";
 import { renderAssuranceReport } from "../src/assurance/render";
 import { coverageGapRule } from "../src/assurance/rules/coverage-gap";
+import { resolutionGapRule } from "../src/assurance/rules/resolution-gap";
 import { missingTerminalRule } from "../src/assurance/rules/terminal-missing";
 import { toolErrorRule } from "../src/assurance/rules/tool-error";
 import { buildAssuranceScanReport, type AssuranceScanReport, type AssuranceScanRow } from "../src/assurance/scan";
@@ -22,7 +23,7 @@ import { BUILTIN_SCOPE_CLASSIFIERS, BUILTIN_SCOPE_TOOL_NAMES } from "../src/assu
 import { normalizeTraceReads, type TraceInput } from "../src/assurance/trace-observations";
 
 const DEFAULT_PROFILE_RULES = resolveAssuranceProfile(BUILTIN_ASSURANCE_RULES, DEFAULT_ASSURANCE_PROFILE);
-const TRACE_SCAN_RULES: readonly AssuranceRule[] = [toolErrorRule, missingTerminalRule, coverageGapRule];
+const TRACE_SCAN_RULES: readonly AssuranceRule[] = [toolErrorRule, missingTerminalRule, resolutionGapRule, coverageGapRule];
 const DEFAULT_LIMIT = 1000;
 const SESSION_KEY = /^[a-f0-9]{32}$/;
 
@@ -36,7 +37,8 @@ printing the underlying session path.
 
 scan synchronizes and lists the bounded OMP session catalog, then reads matching
 active-branch traces. The default first pass is trace-only: it evaluates tool errors,
-missing terminals and coverage/conflicts without selected-entry scope enrichment.
+missing-terminal evidence, resolution gaps and coverage/conflicts without selected-entry
+scope enrichment.
 Use --full explicitly to run the complete Scope V1 report for every matched session;
 this can issue many selected-entry reads on large histories.
 

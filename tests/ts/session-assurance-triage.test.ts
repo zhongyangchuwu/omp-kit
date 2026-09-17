@@ -5,6 +5,8 @@ import { buildAssuranceReport } from "../../src/assurance/engine";
 import { DEFAULT_ASSURANCE_PROFILE, resolveAssuranceProfile } from "../../src/assurance/profiles";
 import { BUILTIN_ASSURANCE_RULES } from "../../src/assurance/registry";
 import { renderAssuranceReport } from "../../src/assurance/render";
+import { resolutionGapRule } from "../../src/assurance/rules/resolution-gap";
+import { missingTerminalRule } from "../../src/assurance/rules/terminal-missing";
 import { toolErrorRule } from "../../src/assurance/rules/tool-error";
 import { buildAssuranceScanReport } from "../../src/assurance/scan";
 import { normalizeTraceReads, type TraceInput } from "../../src/assurance/trace-observations";
@@ -110,6 +112,7 @@ test("attention findings select a candidate while tool errors stay visible as co
 	assert.equal(result.sessions.candidates, 1);
 	assert.equal(result.totals.attentionFindings, 1);
 	assert.deepEqual(result.candidates[0].codes, [
+		"resolution-gap:tool-resolution-unobserved",
 		"terminal-missing:tool-terminal-missing",
 		"tool-error:tool-reported-error",
 	]);
@@ -118,8 +121,10 @@ test("attention findings select a candidate while tool errors stay visible as co
 test("single-session rendering separates attention from supporting error evidence", () => {
 	const value = report("/private/render.jsonl", [span({ isError: true })]);
 	const rendered = renderAssuranceReport(value, BUILTIN_ASSURANCE_RULES);
-	assert.match(rendered, /Attention[\s\S]*Missing terminal evidence: 0/);
-	assert.match(rendered, /Evidence[\s\S]*Tool errors reported: 1/);
+	assert.match(rendered, /Attention[\s\S]*Resolution gaps: 0/);
+	assert.match(rendered, /Evidence[\s\S]*Missing terminal observations: 0[\s\S]*Tool errors reported: 1/);
 	assert.match(rendered, /Supporting evidence is retained for review context/);
 	assert.equal(value.rules.find(rule => rule.ruleId === toolErrorRule.meta.id)?.presentation.section, "evidence");
+	assert.equal(value.rules.find(rule => rule.ruleId === missingTerminalRule.meta.id)?.presentation.section, "evidence");
+	assert.equal(value.rules.find(rule => rule.ruleId === resolutionGapRule.meta.id)?.presentation.section, "attention");
 });
