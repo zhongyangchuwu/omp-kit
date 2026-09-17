@@ -53,7 +53,7 @@ export interface AssuranceInput {
 }
 
 export interface RulePresentation {
-	readonly section: "attention" | "coverage";
+	readonly section: "attention" | "evidence" | "coverage";
 	readonly summaryLabel?: string;
 }
 
@@ -89,6 +89,7 @@ export interface RuleEvaluation {
 export interface RuleResult {
 	readonly ruleId: string;
 	readonly ruleVersion: number;
+	readonly presentation: RulePresentation;
 	readonly status: RuleEvaluation["status"] | "failed";
 	readonly failure?: "exception" | "invalid-output";
 	readonly findings: readonly Finding[];
