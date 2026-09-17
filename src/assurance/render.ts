@@ -13,7 +13,7 @@ function fallbackMeta(result: RuleResult): AssuranceRuleMeta {
 		title: result.ruleId,
 		description: "Rule metadata was not supplied to this renderer.",
 		messages: {},
-		presentation: { section: "attention", summaryLabel: result.ruleId },
+		presentation: result.presentation,
 	};
 }
 
@@ -38,7 +38,7 @@ export function renderAssuranceReport(report: AssuranceReport, registry: readonl
 	}
 	if (attentionMeta.length === 0) lines.push("  No attention rules registered.");
 	const attentionFindings = report.rules
-		.filter(result => metaFor(result).presentation.section === "attention")
+		.filter(result => result.presentation.section === "attention")
 		.flatMap(result => result.findings.map(finding => ({ result, finding })));
 	for (const { result, finding } of attentionFindings.slice(0, 8)) {
 		const meta = metaFor(result);
@@ -47,6 +47,17 @@ export function renderAssuranceReport(report: AssuranceReport, registry: readonl
 			`    ${atom(ref.sourceId)} / ${atom(ref.trackId)} / span ${atom(ref.spanId)}${ref.entryId ? ` / entry ${atom(ref.entryId)}` : ""}`);
 	}
 	if (attentionFindings.length > 8) lines.push("  More findings and all evidence references are in JSON output.");
+
+	lines.push("", "Evidence");
+	const evidenceMeta = registry.map(rule => rule.meta).filter(meta => meta.presentation.section === "evidence");
+	for (const meta of evidenceMeta) {
+		const result = resultById.get(meta.id);
+		const label = meta.presentation.summaryLabel ?? meta.title;
+		const count = result && (result.status === "evaluated" || result.status === "partial") ? result.findings.length : "NOT ASSESSED";
+		lines.push(`  ${atom(label)}: ${count}`);
+	}
+	if (evidenceMeta.length === 0) lines.push("  No supporting-evidence rules registered.");
+	else lines.push("  Supporting evidence is retained for review context and does not by itself trigger attention.");
 
 	lines.push("", "Scope");
 	if (!report.scope || report.scope.traceCoverage === "unavailable") {
@@ -69,7 +80,7 @@ export function renderAssuranceReport(report: AssuranceReport, registry: readonl
 		for (const limitation of report.scope.limitations) lines.push(`  scope: ${atom(limitation)}`);
 	}
 	const coverageFindings = report.rules
-		.filter(result => metaFor(result).presentation.section === "coverage")
+		.filter(result => result.presentation.section === "coverage")
 		.flatMap(result => result.findings.map(finding => ({ result, finding })));
 	const conflicts = coverageFindings.filter(({ finding }) => finding.code === "conflicting-observations").length;
 	if (conflicts) lines.push(`  Evidence conflicts: ${conflicts} (not resolved)`);
