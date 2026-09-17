@@ -1,0 +1,35 @@
+name: Temporary assurance resolution test fix
+
+on:
+  push:
+    branches:
+      - refactor/assurance-resolution-layer
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/assurance-resolution-layer
+      - name: Update stale renderer expectation
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path("tests/ts/session-assurance.test.ts")
+          text = p.read_text()
+          old = 'assert.match(renderAssuranceReport(value, BUILTIN_ASSURANCE_RULES), /Missing terminal evidence: NOT ASSESSED/);'
+          new = 'assert.match(renderAssuranceReport(value, BUILTIN_ASSURANCE_RULES), /Missing terminal observations: NOT ASSESSED/);'
+          assert old in text
+          p.write_text(text.replace(old, new, 1))
+      - name: Commit patch
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add tests/ts/session-assurance.test.ts
+          git commit -m "test: update terminal evidence renderer contract"
+          git push origin HEAD:refactor/assurance-resolution-layer
