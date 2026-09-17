@@ -47,9 +47,9 @@ function validateRules(rules: readonly AssuranceRule[]): void {
 		const meta = rule?.meta;
 		if (!meta || typeof meta.id !== "string" || !TOKEN.test(meta.id) || ids.has(meta.id) ||
 			!Number.isSafeInteger(meta.version) || meta.version < 1 || !nonEmptyText(meta.title) || !nonEmptyText(meta.description) ||
-			!isObject(meta.messages) || !isObject(meta.presentation) || !["attention", "coverage"].includes(String(meta.presentation.section)) ||
+			!isObject(meta.messages) || !isObject(meta.presentation) || !["attention", "evidence", "coverage"].includes(String(meta.presentation.section)) ||
 			(meta.presentation.summaryLabel !== undefined && !nonEmptyText(meta.presentation.summaryLabel)) ||
-			(meta.presentation.section === "attention" && !nonEmptyText(meta.presentation.summaryLabel)) ||
+			((meta.presentation.section === "attention" || meta.presentation.section === "evidence") && !nonEmptyText(meta.presentation.summaryLabel)) ||
 			Object.entries(meta.messages).some(([code, message]) => !TOKEN.test(code) || !nonEmptyText(message)) ||
 			typeof rule.evaluate !== "function") {
 			throw new Error("Invalid or duplicate assurance rule definition");
@@ -74,23 +74,37 @@ function normalizeFinding(rule: AssuranceRule, value: unknown): Finding | null {
 	};
 }
 
+function failedRuleResult(rule: AssuranceRule, failure: RuleResult["failure"]): RuleResult {
+	return {
+		ruleId: rule.meta.id,
+		ruleVersion: rule.meta.version,
+		presentation: structuredClone(rule.meta.presentation),
+		status: "failed",
+		failure,
+		findings: [],
+	};
+}
+
 function executeRule(rule: AssuranceRule, input: AssuranceInput): RuleResult {
 	let raw: RuleEvaluation;
 	try {
 		raw = rule.evaluate(input);
 	} catch {
-		return { ruleId: rule.meta.id, ruleVersion: rule.meta.version, status: "failed", failure: "exception", findings: [] };
+		return failedRuleResult(rule, "exception");
 	}
 	if (!raw || !["evaluated", "partial", "skipped"].includes(raw.status) || !Array.isArray(raw.findings) ||
 		(raw.status === "skipped" && raw.findings.length > 0)) {
-		return { ruleId: rule.meta.id, ruleVersion: rule.meta.version, status: "failed", failure: "invalid-output", findings: [] };
+		return failedRuleResult(rule, "invalid-output");
 	}
 	const findings = raw.findings.map(item => normalizeFinding(rule, item));
-	if (findings.some(item => item === null)) {
-		return { ruleId: rule.meta.id, ruleVersion: rule.meta.version, status: "failed", failure: "invalid-output", findings: [] };
-	}
-	return { ruleId: rule.meta.id, ruleVersion: rule.meta.version, status: raw.status,
-		findings: (findings as Finding[]).sort(compareIds) };
+	if (findings.some(item => item === null)) return failedRuleResult(rule, "invalid-output");
+	return {
+		ruleId: rule.meta.id,
+		ruleVersion: rule.meta.version,
+		presentation: structuredClone(rule.meta.presentation),
+		status: raw.status,
+		findings: (findings as Finding[]).sort(compareIds),
+	};
 }
 
 /** Generic deterministic rule engine. It imports no concrete rules, registry, profile, IO or renderer. */
