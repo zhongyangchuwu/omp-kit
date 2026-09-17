@@ -17,8 +17,8 @@ import { coverageGapRule } from "../src/assurance/rules/coverage-gap";
 import { missingTerminalRule } from "../src/assurance/rules/terminal-missing";
 import { toolErrorRule } from "../src/assurance/rules/tool-error";
 import { buildAssuranceScanReport, type AssuranceScanReport, type AssuranceScanRow } from "../src/assurance/scan";
-import { deriveTraceScopeEvidence } from "../src/assurance/scope/derive";
-import { BUILTIN_SCOPE_CLASSIFIERS } from "../src/assurance/scope/registry";
+import { createScopeDerivationDiagnostics, deriveTraceScopeEvidence, type ScopeDerivationDiagnostics } from "../src/assurance/scope/derive";
+import { BUILTIN_SCOPE_CLASSIFIERS, BUILTIN_SCOPE_TOOL_NAMES } from "../src/assurance/scope/registry";
 import { normalizeTraceReads, type TraceInput } from "../src/assurance/trace-observations";
 
 const DEFAULT_PROFILE_RULES = resolveAssuranceProfile(BUILTIN_ASSURANCE_RULES, DEFAULT_ASSURANCE_PROFILE);
@@ -140,6 +140,7 @@ async function reportFromTraceRead(
 	signal: AbortSignal | undefined,
 	rules: readonly AssuranceRule[],
 	includeScope: boolean,
+	diagnostics?: ScopeDerivationDiagnostics,
 ): Promise<AssuranceReport> {
 	const traceInput: TraceInput = { sourceId: "session", sessionFile, read };
 	const normalized = normalizeTraceReads([traceInput]);
@@ -152,7 +153,12 @@ async function reportFromTraceRead(
 		normalized,
 		entryReader,
 		BUILTIN_SCOPE_CLASSIFIERS,
-		{ homeDir: homedir(), signal },
+		{
+			homeDir: homedir(),
+			signal,
+			toolNamePrefilter: toolName => BUILTIN_SCOPE_TOOL_NAMES.has(toolName),
+			...(diagnostics ? { diagnostics } : {}),
+		},
 	);
 	return buildAssuranceReport({ ...normalized, scope }, rules);
 }
@@ -198,10 +204,10 @@ export async function scanAssuranceReports(reader: SessionAssuranceCatalogReader
 	if (listed.status === "available") {
 		for (const summary of listed.data) {
 			if (options.since !== null && summary.endedAt < options.since) continue;
+			if (options.folder && !folderFilterMatches(options.folder, summary.folder, null)) continue;
 			const signal = AbortSignal.timeout(15_000);
 			const read = await reader.getTrace(summary.file, signal);
-			const cwd = read.status === "available" ? read.data.cwd : null;
-			if (options.folder && !folderFilterMatches(options.folder, summary.folder, cwd)) continue;
+			const scopeDiagnostics = options.full ? createScopeDerivationDiagnostics() : undefined;
 			const report = await reportFromTraceRead(
 				reader,
 				summary.file,
@@ -209,8 +215,9 @@ export async function scanAssuranceReports(reader: SessionAssuranceCatalogReader
 				signal,
 				options.full ? DEFAULT_PROFILE_RULES : TRACE_SCAN_RULES,
 				options.full,
+				scopeDiagnostics,
 			);
-			rows.push({ summary, report });
+			rows.push({ summary, report, ...(scopeDiagnostics ? { scopeDiagnostics } : {}) });
 		}
 	}
 	const discoveryReason = listed.status !== "available"
@@ -242,6 +249,11 @@ function printScanReport(report: AssuranceScanReport): string {
 	];
 	if (!report.discovery.syncAvailable || !report.discovery.listAvailable)
 		lines.push(`Discovery incomplete: ${report.discovery.reason ?? "unknown"}`);
+	if (report.performance?.scope) {
+		const scope = report.performance.scope;
+		lines.push(`Scope recovery: ${scope.candidates} candidates | ${scope.prefilteredUnsupported} prefiltered unsupported | ${scope.recoveryAttempts} recovered | ${scope.entryReadRequests} entry reads | ${scope.entryCacheHits} cache hits`);
+		lines.push(`Scope timing: ${(scope.totalMs / 1000).toFixed(1)}s total | ${(scope.recoveryMs / 1000).toFixed(1)}s entry recovery | ${(scope.classificationMs / 1000).toFixed(3)}s classification | ${scope.parentHops} parent hops`);
+	}
 	if (report.candidates.length > 0) {
 		lines.push("Candidates:");
 		for (const candidate of report.candidates.slice(0, 20)) {
