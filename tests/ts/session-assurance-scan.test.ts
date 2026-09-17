@@ -108,7 +108,7 @@ test("scan parsing keeps historical scan separate from explicit-session reports"
 	assert.throws(() => parseAssuranceArgs(["--key", "not-a-key"]));
 });
 
-test("default history scan is trace-only and never performs selected-entry enrichment", async () => {
+test("default history scan preserves tool-error evidence without selected-entry enrichment", async () => {
 	const a = "/private/a.jsonl";
 	const b = "/private/b.jsonl";
 	let entryCalls = 0;
@@ -129,9 +129,8 @@ test("default history scan is trace-only and never performs selected-entry enric
 	assert.equal(result.incomplete, false);
 	assert.equal(result.report.mode, "trace-only");
 	assert.equal(result.report.sessions.scanned, 2);
-	assert.equal(result.report.sessions.candidates, 1);
-	assert.equal(result.report.candidates[0].key, sessionKey(a));
-	assert.deepEqual(result.report.candidates[0].codes, ["tool-error:tool-reported-error"]);
+	assert.equal(result.report.sessions.candidates, 0);
+	assert.equal(result.report.totals.attentionFindings, 0);
 	assert.equal(result.report.findingCounts["tool-error:tool-reported-error"], 1);
 	assert.doesNotMatch(JSON.stringify(result.report), /\/private\//);
 });
