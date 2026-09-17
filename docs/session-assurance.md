@@ -50,6 +50,7 @@ The default scan therefore performs a cheap first pass:
 sync + bounded session list
 -> matching active-branch trace per session
 -> tool-error / terminal-missing / coverage-conflict rules
+-> keep tool-error as supporting evidence; select candidates from attention/dynamic coverage
 -> aggregate counts + candidate session keys
 -> full Scope V1 drill-down only where useful
 ```
@@ -96,7 +97,9 @@ assurance results rather than another raw trace store. It contains:
 The candidate list does not copy session paths, cwd, titles, tool arguments, outputs
 or trace previews. Default trace limitations such as active-branch-only coverage are
 counted but do not make every session an attention candidate. Dynamic gaps such as a
-failed read or conflicting observation do.
+failed read or conflicting observation do. Rule presentation is carried in each rule result, so historical triage can distinguish `attention`, supporting `evidence`, and `coverage` without hard-coding rule IDs. A supporting-evidence finding remains counted and is included as context on a session selected for another reason, but does not create a candidate by itself.
+
+Historical OMP 18.2.3 dogfood over 136 sessions produced 85 candidates under the original all-non-coverage policy. Of those, 65 were selected only by `tool-error`, 19 combined tool errors with terminal-missing evidence, and 1 had terminal-missing alone. Treating tool errors as supporting evidence therefore reduces the same trace-only candidate set from 85/136 (62.5%) to 20/136 (14.7%) without dropping a terminal-missing session. This is a triage decision, not a claim that tool errors are unimportant.
 
 The scan is intended for #31 dogfood over both new omp-kit sessions and older normal
 OMP usage. It is not a quality score or a claim that sessions not selected as
@@ -119,7 +122,7 @@ built-in rules:
 Tool-result return and background-job terminal are separate observations. Missing
 `isError` is represented as `errorReported: false` (no flag observed), never as a
 verified process result. A mixed terminal history is preserved as conflicting
-observations, not silently promoted to recovered/successful or stale evidence.
+observations, not silently promoted to recovered/successful or stale evidence. `tool-error` is presented in the Evidence section rather than Attention: it records an observed failure signal, while terminal gaps and scope expansion remain current attention triggers. A future post-failure consequence rule should be derived from ordered session evidence rather than treating every tool error as equivalent.
 
 Observed scope is documented separately in [assurance-scope.md](assurance-scope.md).
 It distinguishes `workspace`, `host-user`, `host-system`, `external`, and `unknown`
@@ -220,9 +223,7 @@ pruning, zero-entry default scan, unsupported-tool prefiltering, full-scan diagn
 opaque-key drill-down, CLI exit behavior and no-IO help. Repository CI validates
 the unmodified Bun/SDK suite. This is not acceptance in a user's installed OMP session.
 
-Still required by #31: run the new scan over real historical/normal sessions, inspect
-candidate and non-candidate samples, exercise rewind/child-read behavior, and decide
-which next semantic slice materially helps human review. The opt-in `/assurance` UI
+Historical scanning has now been exercised over 136 normal OMP sessions and used to reduce tool-error triage noise. Still required by #31: inspect representative attention candidates and non-candidates, exercise rewind/child-read behavior, and use ordered real-session evidence to decide whether a post-failure recovery/consequence slice materially helps human review. The opt-in `/assurance` UI
 remains deferred until the report proves useful enough to justify product integration.
 The possible Agent-as-prover / Assurance-as-verifier direction remains an open design
 hypothesis rather than an implemented protocol. Neither #31 nor #33 is complete.
