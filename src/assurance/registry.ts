@@ -1,5 +1,6 @@
 import type { AssuranceRule } from "./model";
 import { coverageGapRule } from "./rules/coverage-gap";
+import { resolutionGapRule } from "./rules/resolution-gap";
 import { scopeExpansionRule } from "./rules/scope-expansion";
 import { missingTerminalRule } from "./rules/terminal-missing";
 import { toolErrorRule } from "./rules/tool-error";
@@ -7,6 +8,7 @@ import { toolErrorRule } from "./rules/tool-error";
 /** All built-in rules known to this package. Registry membership does not imply enablement. */
 export const BUILTIN_ASSURANCE_RULES: readonly AssuranceRule[] = Object.freeze([
 	coverageGapRule,
+	resolutionGapRule,
 	scopeExpansionRule,
 	missingTerminalRule,
 	toolErrorRule,
