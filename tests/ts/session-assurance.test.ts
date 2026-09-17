@@ -164,7 +164,7 @@ test("scope limitations survive successful empty reads", () => {
 });
 test("omitted rules are not rendered as zero findings", () => {
 	const value = buildAssuranceReport(normalizeTraceReads([input()]), [toolErrorRule]);
-	assert.match(renderAssuranceReport(value, BUILTIN_ASSURANCE_RULES), /Missing terminal evidence: NOT ASSESSED/);
+	assert.match(renderAssuranceReport(value, BUILTIN_ASSURANCE_RULES), /Missing terminal observations: NOT ASSESSED/);
 });
 test("rule composition is order-independent", () => {
 	const observations = normalizeTraceReads([input([span({ isError: true })])]);
