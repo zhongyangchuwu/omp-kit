@@ -26,10 +26,9 @@ const TRACE_SCAN_RULES: readonly AssuranceRule[] = [toolErrorRule, missingTermin
 const DEFAULT_LIMIT = 1000;
 const SESSION_KEY = /^[a-f0-9]{32}$/;
 
-const HELP = `Usage:
-  omp-kit-assurance --session PATH [--origin http://127.0.0.1:PORT] [--json]
-  omp-kit-assurance --key SESSION_KEY [--limit N] [--origin http://127.0.0.1:PORT] [--json]
-  omp-kit-assurance scan [--limit N] [--folder TEXT] [--since ISO] [--full] [--origin http://127.0.0.1:PORT] [--json]
+const HELP = `Usage: omp-kit-assurance --session PATH [--origin http://127.0.0.1:PORT] [--json]
+       omp-kit-assurance --key SESSION_KEY [--limit N] [--origin http://127.0.0.1:PORT] [--json]
+       omp-kit-assurance scan [--limit N] [--folder TEXT] [--since ISO] [--full] [--origin http://127.0.0.1:PORT] [--json]
 
 Single-session reports include observed Scope V1 and may read selected public OMP
 session entries in memory. --key resolves an opaque key emitted by scan without
@@ -49,17 +48,18 @@ means discovery or one or more reads/rules were incomplete.
 interface BaseOptions {
 	origin?: string;
 	json: boolean;
-	limit: number;
 }
 export interface AssuranceReportOptions extends BaseOptions {
-	command: "report";
+	command?: "report";
 	sessionFile?: string;
 	sessionKey?: string;
+	limit?: number;
 }
 export interface AssuranceScanOptions extends BaseOptions {
 	command: "scan";
 	folder: string | null;
 	since: number | null;
+	limit: number;
 	full: boolean;
 }
 export type AssuranceOptions = AssuranceReportOptions | AssuranceScanOptions;
@@ -88,7 +88,7 @@ function parseSince(value: string): number {
 export function parseAssuranceArgs(argv: readonly string[]): AssuranceOptions | null {
 	if (argv[0] === "--") argv = argv.slice(1);
 	if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) return null;
-	const command: AssuranceOptions["command"] = argv[0] === "scan" ? "scan" : "report";
+	const scan = argv[0] === "scan";
 	if (argv[0] === "scan" || argv[0] === "report") argv = argv.slice(1);
 	let sessionFile: string | undefined;
 	let key: string | undefined;
@@ -96,6 +96,7 @@ export function parseAssuranceArgs(argv: readonly string[]): AssuranceOptions | 
 	let folder: string | null = null;
 	let since: number | null = null;
 	let limit = DEFAULT_LIMIT;
+	let limitSpecified = false;
 	let json = false;
 	let full = false;
 	const seen = new Set<string>();
@@ -114,16 +115,22 @@ export function parseAssuranceArgs(argv: readonly string[]): AssuranceOptions | 
 		else if (flag === "--origin") origin = value;
 		else if (flag === "--folder") folder = value;
 		else if (flag === "--since") since = parseSince(value);
-		else limit = parseLimit(value);
+		else { limit = parseLimit(value); limitSpecified = true; }
 	}
-	if (command === "scan") {
+	if (scan) {
 		if (sessionFile || key) throw new Error("scan does not accept a single-session selector");
-		return { command, ...(origin ? { origin } : {}), json, limit, folder, since, full };
+		return { command: "scan", ...(origin ? { origin } : {}), json, limit, folder, since, full };
 	}
 	if (folder !== null || since !== null || full) throw new Error("report does not accept scan-only options");
 	if ((sessionFile ? 1 : 0) + (key ? 1 : 0) !== 1) throw new Error("Exactly one session selector is required");
 	if (key && !SESSION_KEY.test(key)) throw new Error("Invalid assurance session key");
-	return { command, ...(sessionFile ? { sessionFile } : {}), ...(key ? { sessionKey: key } : {}), ...(origin ? { origin } : {}), json, limit };
+	if (sessionFile && limitSpecified) throw new Error("--limit is only used with --key or scan");
+	return {
+		...(sessionFile ? { sessionFile } : {}),
+		...(key ? { sessionKey: key, limit } : {}),
+		...(origin ? { origin } : {}),
+		json,
+	};
 }
 
 async function reportFromTraceRead(
@@ -256,7 +263,7 @@ export async function runAssuranceCli(argv: readonly string[], reader?: SessionA
 			const result = await scanAssuranceReports(asCatalogReader(source), options);
 			return { output: options.json ? JSON.stringify(result.report, null, 2) : printScanReport(result.report), exitCode: result.incomplete ? 2 : 0 };
 		}
-		const sessionFile = options.sessionFile ?? await resolveSessionFile(asCatalogReader(source), options.sessionKey!, options.limit);
+		const sessionFile = options.sessionFile ?? await resolveSessionFile(asCatalogReader(source), options.sessionKey!, options.limit ?? DEFAULT_LIMIT);
 		const report = await readAssuranceReport(source, sessionFile, AbortSignal.timeout(15_000));
 		const incomplete = report.coverage.some(item => !item.assessed) || report.rules.some(rule => rule.status === "failed");
 		return { output: options.json ? JSON.stringify(report, null, 2) : renderAssuranceReport(report, BUILTIN_ASSURANCE_RULES), exitCode: incomplete ? 2 : 0 };
