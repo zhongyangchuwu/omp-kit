@@ -4,7 +4,45 @@ This is the first usable report slice of #31, built on the shared
 [session access](session-access.md) layer. It is an evidence snapshot, not a
 security audit, task-completion certificate or permission decision.
 
-## Run locally
+## Current-session commands
+
+Normal interactive use does not require locating a session id or JSONL path:
+
+```text
+/assurance
+/assurance full
+```
+
+`/assurance` is cheap current active-branch triage. `/assurance full` is
+current-session investigation: it keeps the existing full trace/Scope enrichment and
+also reads the public retained Main-session entries through `sessionManager`. Retained
+entries preserve their parent/child structure and are marked `active` or
+`off-branch`; sibling branches are not flattened into a causal timeline.
+
+Both commands persist regenerable private output under the active OMP agent root:
+
+```text
+<agent-dir>/omp-kit/assurance/<session-id>/
+  scan.txt
+  scan.json
+  full.txt
+  full.json
+```
+
+The files are derived cache/output, not a second session store. OMP remains authoritative
+for raw sessions. Re-running the same mode overwrites its derived pair.
+
+Full investigation is deliberately asymmetric: the current Main session can expose its
+retained entries, while child/subagent retained-history completeness is not established
+by the current public trace surface. That limitation stays explicit in Runtime/Coverage.
+
+A parent-observed terminal job snapshot is also usable lifecycle evidence. In particular,
+a background span that lacks `async-result` is not called unresolved when the retained
+Main-session evidence already records that job as `completed`, `failed`, or
+`cancelled`. The raw missing-terminal trace observation remains supporting Evidence.
+
+
+## Developer and batch CLI
 
 Single-session full report:
 
@@ -198,12 +236,13 @@ identifiers, timing, classifier identity and correlation hashes remain private
 metadata; this is NOT an anonymized or automatically publishable format. #33 still
 owns publication.
 
-Trace rules currently consume OMP's active-branch view. Even when the catalog contains
-older normal sessions, assurance does NOT inspect erased branches or claim to cover
-actions lost from the active conversation branch. Conversation rewind is not effect
-rollback. Returned child tracks do not prove exhaustive child coverage. Detected
-source movement, wrong views and invalid payloads are unassessed, not empty successful
-histories.
+CLI reports and historical scans consume OMP's active-branch trace view. The interactive
+`/assurance full` path additionally reads the current Main session's retained entries
+through the public runtime API, so retained off-branch Main evidence can remain visible
+after rewind. This is not erased-history recovery, and conversation rewind is not effect
+rollback. Returned child tracks still do not prove exhaustive retained child coverage.
+Detected source movement, cross-view mismatch, wrong views and invalid payloads are
+unassessed, not empty successful histories.
 
 Scope additionally records its own trace availability and per-tool classification
 coverage. A valid empty trace is distinct from an unavailable trace, and an unsupported
@@ -226,7 +265,7 @@ the unmodified Bun/SDK suite. This is not acceptance in a user's installed OMP s
 
 Historical scanning has now been exercised over 136 normal OMP sessions. The first pass selected 85 sessions; real-data triage showed 65 were selected only by `tool-error`, so #47 preserved tool errors as Evidence while reducing same-sample candidates to 20. #48 then separated raw `terminal-missing` Evidence from `resolution-gap` Attention. The rerun split 145 resolution findings into 90 `background-resolution-unobserved` and 55 `task-result-undelivered` findings.
 
-Event-level review of four small representative task/background candidates found that every sampled session predated OMP 18.2.2. Because 18.2.2/18.2.3 changed background/subagent settlement and retention semantics, that historical corpus remains useful compatibility evidence but should not be used to tune current Attention thresholds further. #31 now waits for a fresh OMP 18.2.5 natural-session cohort, plus explicit non-candidate, rewind and child-read checks, before another rule/classifier change. The opt-in `/assurance` UI remains deferred until the report proves useful enough to justify product integration.
+Event-level review of four small representative task/background candidates found that every sampled session predated OMP 18.2.2. Because 18.2.2/18.2.3 changed background/subagent settlement and retention semantics, that historical corpus remains useful compatibility evidence but should not be used to tune current Attention thresholds further. A fresh OMP 18.2.5 `shelf-go` session then exposed the first current-runtime lifecycle case: a long-running `CodeBoundaryScout` was explicitly cancelled by Main, so missing `async-result` alone was insufficient to call the job unresolved. That evidence justified the current-session `/assurance` and retained-tree `/assurance full` slice without broadening Attention policy.
 The possible Agent-as-prover / Assurance-as-verifier direction remains an open design
 hypothesis rather than an implemented protocol. Neither #31 nor #33 is complete.
 This slice does not provision a database or upload sessions.
