@@ -32,7 +32,7 @@ const trace: SessionTrace = {
 	cwd: summary.folder,
 	startedAt: 1_000,
 	endedAt: 11_000,
-	mtimeMs: 12_000, etag: "test-etag",
+	mtimeMs: 12_000, etag: "test-etag", etag: "test-etag",
 	tracks: [
 		{
 			id: "main",
