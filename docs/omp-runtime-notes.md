@@ -35,7 +35,7 @@ Use a tool/CLI when deterministic work or complex side effects warrant an implem
 
 Use an extension when actual OMP hooks, lifecycle or custom-tool registration are required. Do not wrap every CLI in an extension just to make the diagram uniform.
 
-The current feedback extension is deliberately bounded: append observed evidence with supported session provenance. It neither modifies the repository nor promotes reports to policy. No first-class caller-agent identity is fabricated when the public context does not provide it.
+The current feedback extension is deliberately bounded: append observed evidence with supported session provenance. It neither modifies the repository nor promotes reports to policy. No first-class caller-agent identity is fabricated when the public context does not provide it. The Assurance extension is likewise bounded: it reads the current public session/runtime surfaces, writes only regenerable derived reports beneath the OMP agent root, and does not invoke a model or turn the report into authorization/safety policy.
 
 ## MCP and service integrations
 
