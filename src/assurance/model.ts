@@ -79,7 +79,7 @@ export interface RuntimeToolAction {
 	readonly branch: RuntimeBranchState;
 	readonly terminal: "observed" | "missing";
 	readonly errorReported: boolean;
-	readonly scopeStatus: "classified" | "unclassified";
+	readonly scopeStatus: "classified" | "unclassified" | "not-assessed";
 	readonly scopes: readonly RuntimeToolScope[];
 }
 
