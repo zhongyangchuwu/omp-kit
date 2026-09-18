@@ -92,6 +92,7 @@ test("native plugin manifest exposes resources and distributed knowledge", () =>
   expect([...manifest.files].sort()).toEqual(expectedFiles);
   expect(manifest.omp.name).toBe("OMP Kit");
   expect(manifest.omp.description).toBeTruthy();
+  expect(manifest.dependencies["@oh-my-pi/omp-stats"]).toBe("18.2.5");
   expect(manifest.omp.extensions).toEqual(["./extensions/feedback.ts", "./extensions/assurance.ts"]);
   expect(manifest.bin).toEqual({
     "omp-kit-assurance": "./scripts/session_assurance.ts",
