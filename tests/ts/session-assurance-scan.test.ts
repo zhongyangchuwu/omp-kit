@@ -35,7 +35,7 @@ function trace(file: string, spans: TraceSpan[], cwd = "/work/omp-kit"): Session
 		title: null,
 		startedAt: 1,
 		endedAt: 2,
-		mtimeMs: 3, etag: "test-etag",
+		mtimeMs: 3, etag: "test-etag", etag: "test-etag",
 		tracks: [{ id: "main", parentId: null, label: "Main", agent: null, model: null, file, spans, markers: [] }],
 		summary: {
 			wallMs: 1,
