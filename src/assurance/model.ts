@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { ReadConsistency, ReadFailureReason, ReadLimit, ReadScope } from "../session/read-result";
-import type { ScopeEvidence } from "./scope/model";
+import type { ScopeAccess, ScopeBoundary, ScopeEvidence, ScopeResource } from "./scope/model";
 
 export const ASSURANCE_SCHEMA = "omp-kit.session-assurance/v1" as const;
 
@@ -64,6 +64,25 @@ export interface RuntimeJobResolution {
 	readonly entryId: string;
 }
 
+export interface RuntimeToolScope {
+	readonly boundary: ScopeBoundary;
+	readonly access: ScopeAccess;
+	readonly resource: ScopeResource;
+}
+
+export interface RuntimeToolAction {
+	readonly id: string;
+	readonly entryId: string;
+	readonly toolCallId: string;
+	readonly toolName: string;
+	readonly position: number;
+	readonly branch: RuntimeBranchState;
+	readonly terminal: "observed" | "missing";
+	readonly errorReported: boolean;
+	readonly scopeStatus: "classified" | "unclassified";
+	readonly scopes: readonly RuntimeToolScope[];
+}
+
 export type RuntimeEvidenceLimitation =
 	| "main-session-only"
 	| "child-retained-history-unavailable"
@@ -75,6 +94,7 @@ export interface RuntimeEvidence {
 	readonly leafId: string | null;
 	readonly retainedTree: boolean;
 	readonly entries: readonly RuntimeTreeEntry[];
+	readonly toolActions: readonly RuntimeToolAction[];
 	readonly jobResolutions: readonly RuntimeJobResolution[];
 	readonly limitations: readonly RuntimeEvidenceLimitation[];
 }
