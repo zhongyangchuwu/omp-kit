@@ -116,7 +116,7 @@ const VISIBILITY_LABELS: Readonly<Record<string, string>> = {
 	"no-trace-input": "No trace input was available.",
 	"process-network-unobserved": "Process and network effects are not exhaustively observed.",
 	"tool-and-background-only": "Current rules cover tool/background evidence, not task quality.",
-	"declared-targets-only": "Scope describes declared targets only.",
+	"declared-targets-only": "Structured action facts describe declared targets only.",
 	"generic-shell-unclassified": "Generic shell effects are not classified.",
 	"path-symlink-target-unverified": "Filesystem symlink targets are not verified.",
 	"child-workspace-root-unverified": "Child workspace roots are not verified.",
@@ -124,7 +124,7 @@ const VISIBILITY_LABELS: Readonly<Record<string, string>> = {
 	"main-session-only": "Retained-tree traversal covers the Main session only.",
 	"child-retained-history-unavailable": "Retained child/subagent branches are not fully available.",
 	"invalid-retained-entry-shape": "Some retained entries could not be interpreted.",
-	"retained-tool-scope-declared-targets-only": "Retained tool scope describes declared targets only.",
+	"retained-action-facts-declared-targets-only": "Retained action facts describe declared targets only.",
 	"retained-workspace-root-unverified": "Historical workspace roots are not verified.",
 	"retained-generic-shell-unclassified": "Generic shell effects in retained history are not classified.",
 };
