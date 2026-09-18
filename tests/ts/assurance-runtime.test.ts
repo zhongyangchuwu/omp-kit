@@ -15,7 +15,34 @@ type Entry = {
 };
 
 const root: Entry = { id: "root", parentId: null, type: "message", timestamp: "2026-09-18T10:00:00Z" };
-const discarded: Entry = { id: "discarded", parentId: "root", type: "message", timestamp: "2026-09-18T10:01:00Z" };
+const discarded: Entry = {
+	id: "discarded",
+	parentId: "root",
+	type: "message",
+	timestamp: "2026-09-18T10:01:00Z",
+	message: {
+		role: "assistant",
+		content: [{
+			type: "toolCall",
+			id: "web-call",
+			name: "web_search",
+			arguments: { query: "PRIVATE_RETAINED_QUERY" },
+		}],
+	},
+};
+const discardedResult: Entry = {
+	id: "discarded-result",
+	parentId: "discarded",
+	type: "message",
+	timestamp: "2026-09-18T10:01:30Z",
+	message: {
+		role: "toolResult",
+		toolCallId: "web-call",
+		toolName: "web_search",
+		isError: false,
+		content: [{ type: "text", text: "PRIVATE_RETAINED_RESULT" }],
+	},
+};
 const current: Entry = { id: "current", parentId: "root", type: "message", timestamp: "2026-09-18T10:02:00Z" };
 const cancelled: Entry = {
 	id: "cancel-result",
@@ -34,7 +61,7 @@ const cancelled: Entry = {
 };
 
 function source(): RuntimeEntrySource<Entry> {
-	const retained = [root, discarded, current, cancelled];
+	const retained = [root, discarded, discardedResult, current, cancelled];
 	return {
 		getSessionId: () => "session-1",
 		getSessionFile: () => "/sessions/session-1.jsonl",
@@ -53,6 +80,7 @@ test("retained runtime facts preserve active/off-branch identity and terminal ca
 	assert.deepEqual(runtime.entries.map(item => [item.id, item.branch]), [
 		["root", "active"],
 		["discarded", "off-branch"],
+		["discarded-result", "off-branch"],
 		["current", "active"],
 		["cancel-result", "active"],
 	]);
@@ -62,6 +90,44 @@ test("retained runtime facts preserve active/off-branch identity and terminal ca
 		branch: item.branch,
 	})), [{ jobId: "CodeBoundaryScout", status: "cancelled", branch: "active" }]);
 	assert.ok(runtime.limitations.includes("child-retained-history-unavailable"));
+});
+
+test("full retained-tree facts classify structured off-branch tools without persisting raw arguments or results", () => {
+	const active = readRuntimeEntries(source(), "active-branch-entries", () => 10);
+	const retained = readRuntimeEntries(source(), "all-retained-entries", () => 10);
+	const runtime = deriveRuntimeEvidence(retained, active, {
+		classifyTools: true,
+		workspaceRoot: "/workspace/project",
+		homeDir: "/home/user",
+	});
+	assert.ok(runtime);
+	assert.deepEqual(runtime.toolActions.map(action => ({
+		toolName: action.toolName,
+		branch: action.branch,
+		terminal: action.terminal,
+		errorReported: action.errorReported,
+		scopeStatus: action.scopeStatus,
+		scopes: action.scopes,
+	})), [{
+		toolName: "web_search",
+		branch: "off-branch",
+		terminal: "observed",
+		errorReported: false,
+		scopeStatus: "classified",
+		scopes: [{ boundary: "external", access: "read", resource: "service" }],
+	}]);
+	const serialized = JSON.stringify(runtime);
+	assert.doesNotMatch(serialized, /PRIVATE_RETAINED_QUERY|PRIVATE_RETAINED_RESULT/);
+	assert.ok(runtime.limitations.includes("retained-tool-scope-declared-targets-only"));
+	assert.ok(runtime.limitations.includes("retained-generic-shell-unclassified"));
+});
+
+test("simple runtime projection does not pretend retained tool scope was assessed", () => {
+	const active = readRuntimeEntries(source(), "active-branch-entries", () => 10);
+	const runtime = deriveRuntimeEvidence(active);
+	assert.ok(runtime);
+	assert.deepEqual(runtime.toolActions, []);
+	assert.equal(runtime.retainedTree, false);
 });
 
 test("runtime coverage retains the public runtime view and bounded limitations", () => {
@@ -94,10 +160,10 @@ test("invalid retained entry shapes become an explicit limitation instead of a c
 	assert.ok(runtime.limitations.includes("invalid-retained-entry-shape"));
 });
 
-test("renderer exposes retained-tree evidence without turning cancellation into a verdict", () => {
+test("renderer exposes retained-tree/tool evidence without turning cancellation or off-branch scope into a verdict", () => {
 	const active = readRuntimeEntries(source(), "active-branch-entries", () => 10);
 	const retained = readRuntimeEntries(source(), "all-retained-entries", () => 10);
-	const runtime = deriveRuntimeEvidence(retained, active);
+	const runtime = deriveRuntimeEvidence(retained, active, { classifyTools: true });
 	assert.ok(runtime);
 	const report = buildAssuranceReport({
 		actions: [],
@@ -105,7 +171,9 @@ test("renderer exposes retained-tree evidence without turning cancellation into 
 		runtime,
 	}, []);
 	const rendered = renderAssuranceReport(report, BUILTIN_ASSURANCE_RULES);
-	assert.match(rendered, /Retained Main tree: 4 entries \| 3 active \| 1 off-branch/);
+	assert.match(rendered, /Retained Main tree: 5 entries \| 3 active \| 2 off-branch/);
+	assert.match(rendered, /Retained Main tool actions: 1 \| 0 active \| 1 off-branch/);
+	assert.match(rendered, /Off-branch classified scope: external\/read\/service 1/);
 	assert.match(rendered, /CodeBoundaryScout: cancelled \(active\)/);
 	assert.doesNotMatch(rendered, /unauthorized|unsafe/i);
 });
