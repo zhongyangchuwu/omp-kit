@@ -83,7 +83,7 @@ export type RuntimeEvidenceLimitation =
 	| "child-retained-history-unavailable"
 	| "not-an-atomic-snapshot"
 	| "invalid-retained-entry-shape"
-	| "retained-tool-scope-declared-targets-only"
+	| "retained-action-facts-declared-targets-only"
 	| "retained-workspace-root-unverified"
 	| "retained-generic-shell-unclassified";
 
