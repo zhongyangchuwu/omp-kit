@@ -1,5 +1,5 @@
 import type { AssuranceRule } from "../model";
-import { actionRuleStatus } from "./shared";
+import { traceActionRuleStatus } from "./shared";
 
 export const missingTerminalRule: AssuranceRule = {
 	meta: {
@@ -15,7 +15,7 @@ export const missingTerminalRule: AssuranceRule = {
 	},
 	evaluate(input) {
 		return {
-			status: actionRuleStatus(input),
+			status: traceActionRuleStatus(input),
 			findings: input.actions
 				.filter(action => action.samples.length > 0 && action.samples.every(sample => sample.terminal === "missing"))
 				.map(action => ({
