@@ -62,12 +62,12 @@ test("absence of an error flag is not a verified consequence", () => {
 	assert.equal(kinds(value, "tool-error").length, 0);
 	assert.equal("verified" in value.actions[0], false);
 	assert.equal("succeeded" in value.actions[0], false);
-	assert.match(render(value), /not process success/);
+	assert.match(render(value), /not a task-quality, authorization, or safety verdict/);
 });
 test("missing tool terminal and missing background terminal are separate observations", () => {
 	const value = report(input([span({ unterminated: true }), span({ id: "bg:job", kind: "background", toolCallId: undefined, unterminated: true })]));
 	assert.equal(kinds(value, "terminal-missing").length, 2);
-	assert.match(render(value), /not proof of a running process/);
+	assert.match(render(value), /Supporting observations[\s\S]*Missing terminal observations: 2/);
 });
 test("a tool return does not complete its background job", () => {
 	const value = report(input([span(), span({ id: "bg:job", kind: "background", toolCallId: undefined, unterminated: true })]));
@@ -82,7 +82,7 @@ test("unavailable sources skip action rules, not produce reassuring zeros", () =
 	const value = report(failed());
 	assert.equal(value.actions.length, 0);
 	assert.equal(value.rules.find(rule => rule.ruleId === toolErrorRule.meta.id)?.status, "skipped");
-	assert.match(render(value), /Tool errors reported: NOT ASSESSED/);
+	assert.match(render(value), /Assessment incomplete[\s\S]*evidence source returned an HTTP failure/);
 	assert.ok(value.findings.some(item => item.code === "http"));
 });
 test("mixed reads retain findings from readable sources and the failed component", () => {
@@ -164,7 +164,7 @@ test("scope limitations survive successful empty reads", () => {
 });
 test("omitted rules are not rendered as zero findings", () => {
 	const value = buildAssuranceReport(normalizeTraceReads([input()]), [toolErrorRule]);
-	assert.match(renderAssuranceReport(value, BUILTIN_ASSURANCE_RULES), /Missing terminal observations: NOT ASSESSED/);
+	assert.doesNotMatch(renderAssuranceReport(value, BUILTIN_ASSURANCE_RULES), /Missing terminal observations/);
 });
 test("rule composition is order-independent", () => {
 	const observations = normalizeTraceReads([input([span({ isError: true })])]);
@@ -176,7 +176,7 @@ test("rule exceptions remain engine failures without becoming business findings"
 	assert.equal(value.rules[0].status, "failed");
 	assert.equal(value.rules[0].failure, "exception");
 	assert.equal(value.findings.length, 0);
-	assert.match(renderAssuranceReport(value, [broken]), /failed to evaluate/);
+	assert.match(renderAssuranceReport(value, [broken]), /Assessment incomplete[\s\S]*Assurance rule could not be evaluated/);
 	assert.doesNotMatch(JSON.stringify(value), /PRIVATE_RULE_ERROR/);
 });
 test("a mutating rule cannot change inputs seen by other rules", () => {
@@ -227,7 +227,7 @@ test("a fourth ordinary rule needs no engine schema or renderer changes", () => 
 	assert.equal(value.schemaVersion, "omp-kit.session-assurance/v1");
 	assert.equal(value.findings[0].ruleId, custom.meta.id);
 	assert.equal(value.findings[0].kind, "custom-observation");
-	assert.match(renderAssuranceReport(value, [custom]), /Custom observations: 1/);
+	assert.match(renderAssuranceReport(value, [custom]), /1 item worth reviewing/);
 	assert.match(renderAssuranceReport(value, [custom]), /A custom observation was detected/);
 });
 test("CLI parsing rejects missing, unknown and repeated options without echoing values", () => {
@@ -258,7 +258,7 @@ test("CLI JSON remains a report on failed reads, with a nonzero exit", async () 
 test("report production exit zero is not a no-error or safety verdict", async () => {
 	const result = await runAssuranceCli(["--session", file], { async getTrace() { return input([span({ isError: true })]).read; } });
 	assert.equal(result.exitCode, 0);
-	assert.match(result.output, /Tool errors reported: 1/);
+	assert.match(result.output, /Supporting observations[\s\S]*Tool errors reported: 1/);
 });
 test("CLI help works in a fresh process without loading the OMP SDK runtime", () => {
 	const result = spawnSync(process.execPath, [fileURLToPath(new URL("../../scripts/session_assurance.ts", import.meta.url)), "--help"], { encoding: "utf8", timeout: 10000 });
