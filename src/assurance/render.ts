@@ -45,6 +45,7 @@ interface ScopeView {
 
 interface AssurancePresentation {
 	readonly title: string;
+	readonly assessmentIncomplete: boolean;
 	readonly attention: readonly FindingView[];
 	readonly supporting: readonly SupportingView[];
 	readonly runtime: RuntimeView | null;
@@ -245,8 +246,13 @@ export function buildAssurancePresentation(
 		.sort((a, b) => coverageCodeOrder(a) - coverageCodeOrder(b) || a.localeCompare(b))
 		.map(code => VISIBILITY_LABELS[code] ?? atom(code));
 
+	const assessmentIncomplete =
+		report.coverage.some(source => !source.assessed) ||
+		report.rules.some(result => result.status === "failed");
+
 	return {
 		title: options.mode === "full" ? "Assurance · Full" : "Assurance",
+		assessmentIncomplete,
 		attention,
 		supporting,
 		runtime,
@@ -323,8 +329,11 @@ export function renderAssuranceReport(
 ): string {
 	const presentation = buildAssurancePresentation(report, registry, options);
 	const lines = [presentation.title, "", "Needs review"];
-	if (presentation.attention.length === 0) {
+	if (presentation.attention.length === 0 && !presentation.assessmentIncomplete) {
 		lines.push("  ✓ Nothing needs review");
+	} else if (presentation.attention.length === 0) {
+		lines.push("  ! Assessment incomplete · see Visibility");
+		lines.push("  · No review items found in the evidence that was available");
 	} else {
 		lines.push(`  ! ${presentation.attention.length} ${plural(presentation.attention.length, "item")} worth reviewing`);
 		for (const item of presentation.attention.slice(0, 8)) {
@@ -372,8 +381,11 @@ export function renderAssuranceWidgetLines(
 ): string[] {
 	const presentation = buildAssurancePresentation(report, registry, { mode });
 	const lines: string[] = [style("accent", presentation.title)];
-	if (presentation.attention.length === 0) {
+	if (presentation.attention.length === 0 && !presentation.assessmentIncomplete) {
 		lines.push(style("success", "✓ Nothing needs review"));
+	} else if (presentation.attention.length === 0) {
+		lines.push(style("warning", "! Assessment incomplete"));
+		lines.push(style("muted", "  No review items found in available evidence"));
 	} else {
 		lines.push(style("warning", `! ${presentation.attention.length} ${plural(presentation.attention.length, "item")} worth reviewing`));
 		for (const item of presentation.attention.slice(0, 2)) {
