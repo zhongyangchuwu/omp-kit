@@ -8,7 +8,7 @@ const trace: SessionTrace = {
 	cwd: "/work/project",
 	startedAt: 0,
 	endedAt: 1,
-	mtimeMs: 1, etag: "test-etag", etag: "test-etag",
+	mtimeMs: 1, etag: "test-etag",
 	tracks: [
 		{
 			id: "main",
