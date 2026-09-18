@@ -24,6 +24,37 @@ in-process. It does not start a stats dashboard HTTP server inside the running O
 extension. The owned-loopback server path remains for standalone CLI/batch consumers
 that do not already run inside OMP.
 
+### Human-facing presentation
+
+The human-readable surface intentionally does not mirror the internal rule/data model.
+Normal users should answer three questions:
+
+```text
+Needs review
+  What deserves my review?
+
+What happened
+  What did the agent actually do?
+
+Visibility
+  What can Assurance not establish?
+```
+
+Internal concepts such as individual rule IDs, rule versions and machine-oriented finding
+codes remain in JSON/debug output rather than becoming top-level human sections.
+
+Presentation semantics are deliberately restrained:
+
+- `✓` / success tone means a lifecycle or observation is resolved/known, not that the action was good or authorized;
+- `!` / warning tone means worth reviewing or assessment incomplete, not unsafe;
+- supporting evidence and bounded-visibility notes use muted/dim presentation;
+- error tone is reserved for Assurance execution failures or explicitly failed runtime facts;
+- zero Attention is shown as `✓ Nothing needs review` only when the assessment itself is complete. If an evidence surface/rule failed, the renderer says `Assessment incomplete` instead of producing a reassuring green zero.
+
+The TUI widget and persisted `.txt` report share the same presentation model so wording
+and semantic tone do not drift. OMP theme tokens provide color; Assurance does not embed
+its own ANSI palette.
+
 Both commands persist regenerable private output under the active OMP agent root:
 
 ```text
