@@ -75,7 +75,6 @@ export interface RuntimeToolAction {
 	readonly entryId: string;
 	readonly toolCallId: string;
 	readonly toolName: string;
-	readonly position: number;
 	readonly branch: RuntimeBranchState;
 	readonly terminal: "observed" | "missing";
 	readonly errorReported: boolean;
