@@ -29,6 +29,28 @@ export type AssuranceCommandRunner = (
 	ctx: ExtensionCommandContext,
 ) => Promise<void>;
 
+export type AssuranceFailureStage =
+	| "runtime-read"
+	| "stats-report"
+	| "render"
+	| "persist"
+	| "ui";
+
+export class AssuranceStageError extends Error {
+	constructor(readonly stage: AssuranceFailureStage) {
+		super(`Assurance failed at ${stage}`);
+		this.name = "AssuranceStageError";
+	}
+}
+
+async function atStage<T>(stage: AssuranceFailureStage, operation: () => T | Promise<T>): Promise<T> {
+	try {
+		return await operation();
+	} catch {
+		throw new AssuranceStageError(stage);
+	}
+}
+
 export function parseAssuranceCommandMode(args: string): AssuranceCommandMode | null {
 	const value = args.trim();
 	if (!value) return "scan";
@@ -118,35 +140,46 @@ export async function runCurrentSessionAssurance(
 		return;
 	}
 
-	const activeRead = readRuntimeEntries<SessionEntry>(ctx.sessionManager, "active-branch-entries");
-	const selectedRead = mode === "full"
-		? readRuntimeEntries<SessionEntry>(ctx.sessionManager, "all-retained-entries")
-		: activeRead;
-	const runtime = deriveRuntimeEvidence(
-		selectedRead,
-		mode === "full" ? activeRead : undefined,
-		mode === "full"
-			? { classifyTools: true, workspaceRoot: null, homeDir: homedir() }
-			: {},
-	);
-	const runtimeCoverage = mode === "full"
-		? [
-			runtimeSourceCoverage(activeRead, "runtime-active"),
-			runtimeSourceCoverage(selectedRead, "runtime-retained"),
-		]
-		: [runtimeSourceCoverage(activeRead, "runtime-active")];
+	const runtimeFacts = await atStage("runtime-read", async () => {
+		const activeRead = readRuntimeEntries<SessionEntry>(ctx.sessionManager, "active-branch-entries");
+		const selectedRead = mode === "full"
+			? readRuntimeEntries<SessionEntry>(ctx.sessionManager, "all-retained-entries")
+			: activeRead;
+		const runtime = deriveRuntimeEvidence(
+			selectedRead,
+			mode === "full" ? activeRead : undefined,
+			mode === "full"
+				? { classifyTools: true, workspaceRoot: null, homeDir: homedir() }
+				: {},
+		);
+		const coverage = mode === "full"
+			? [
+				runtimeSourceCoverage(activeRead, "runtime-active"),
+				runtimeSourceCoverage(selectedRead, "runtime-retained"),
+			]
+			: [runtimeSourceCoverage(activeRead, "runtime-active")];
+		return { runtime, coverage };
+	});
 
 	const signal = AbortSignal.timeout(mode === "full" ? 30_000 : 15_000);
-	const report = await withLocalOmpStats(reader => mode === "full"
-		? readAssuranceReport(reader, sessionFile, signal, undefined, { runtime, coverage: runtimeCoverage })
-		: readTraceOnlyAssuranceReport(reader, sessionFile, signal, { runtime, coverage: runtimeCoverage }),
-	{ startLogsToStderr: true });
+	const report = await atStage("stats-report", () => withLocalOmpStats(reader => mode === "full"
+		? readAssuranceReport(reader, sessionFile, signal, undefined, {
+			runtime: runtimeFacts.runtime,
+			coverage: runtimeFacts.coverage,
+		})
+		: readTraceOnlyAssuranceReport(reader, sessionFile, signal, {
+			runtime: runtimeFacts.runtime,
+			coverage: runtimeFacts.coverage,
+		}),
+	{ startLogsToStderr: true }));
 
-	const rendered = renderAssuranceReport(report, registryFor(report));
+	const rendered = await atStage("render", () => renderAssuranceReport(report, registryFor(report)));
 	const paths = assuranceOutputPaths(getAgentDir(), sessionId, mode);
-	await persistAssuranceOutput(paths, report, rendered);
-	ctx.ui.setWidget("omp-kit-assurance", summaryLines(mode, report, paths), { placement: "aboveEditor" });
-	ctx.ui.notify(`Assurance ${mode} saved.`, "info");
+	await atStage("persist", () => persistAssuranceOutput(paths, report, rendered));
+	await atStage("ui", async () => {
+		ctx.ui.setWidget("omp-kit-assurance", summaryLines(mode, report, paths), { placement: "aboveEditor" });
+		ctx.ui.notify(`Assurance ${mode} saved.`, "info");
+	});
 }
 
 export function registerAssuranceCommand(
@@ -167,7 +200,8 @@ export function registerAssuranceCommand(
 				pi.logger.warn("omp-kit assurance command failed", {
 					error: error instanceof Error ? error.message : String(error),
 				});
-				ctx.ui.notify("Could not produce the assurance report; saved output was not confirmed.", "error");
+				const stage = error instanceof AssuranceStageError ? error.stage : "unknown";
+				ctx.ui.notify(`Could not produce the assurance report (stage: ${stage}).`, "error");
 			}
 		},
 	});
