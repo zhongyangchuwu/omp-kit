@@ -147,7 +147,7 @@ test("successful empty trace is assessed while failed trace is not", async () =>
 	const emptyReport = buildAssuranceReport({ ...emptyNormalized, scope: emptyScope }, [scopeExpansionRule]);
 	assert.equal(emptyScope.traceCoverage, "available");
 	assert.equal(emptyReport.rules[0].status, "evaluated");
-	assert.match(renderAssuranceReport(emptyReport, [scopeExpansionRule]), /Observed boundaries: none classified/);
+	assert.match(renderAssuranceReport(emptyReport, [scopeExpansionRule]), /Scope[\s\S]*No classified boundaries/);
 
 	const failedSource = unavailableInput();
 	const failedNormalized = normalizeTraceReads([failedSource]);
@@ -155,7 +155,7 @@ test("successful empty trace is assessed while failed trace is not", async () =>
 	const failedReport = buildAssuranceReport({ ...failedNormalized, scope: failedScope }, [scopeExpansionRule]);
 	assert.equal(failedScope.traceCoverage, "unavailable");
 	assert.equal(failedReport.rules[0].status, "skipped");
-	assert.match(renderAssuranceReport(failedReport, [scopeExpansionRule]), /Scope\n  NOT ASSESSED/);
+	assert.match(renderAssuranceReport(failedReport, [scopeExpansionRule]), /Assessment incomplete[\s\S]*HTTP failure/);
 });
 
 test("child absolute paths are not compared with the root cwd", async () => {
@@ -203,9 +203,8 @@ test("partial scope classification makes expansion partial and renderer exposes 
 	const report = buildAssuranceReport({ ...normalized, scope }, [scopeExpansionRule]);
 	assert.equal(report.rules[0].status, "partial");
 	const rendered = renderAssuranceReport(report, [scopeExpansionRule]);
-	assert.match(rendered, /Trace coverage: available/);
-	assert.match(rendered, /Observed boundaries: workspace, external/);
-	assert.match(rendered, /Tool actions classified: 2/);
-	assert.match(rendered, /Tool actions unclassified: 1/);
-	assert.match(rendered, /Observed scope is not requested or authorized scope/);
+	assert.match(rendered, /Visibility/);
+	assert.match(rendered, /Scope[\s\S]*workspace, external/);
+	assert.match(rendered, /Trace tools: 2 classified · 1 unclassified/);
+		assert.match(rendered, /not a task-quality, authorization, or safety verdict/);
 });
