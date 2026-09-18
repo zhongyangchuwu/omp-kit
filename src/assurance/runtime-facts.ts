@@ -267,6 +267,7 @@ export function deriveRuntimeEvidence<Entry>(
 	]);
 	if (options.classifyTools) {
 		limitations.add("retained-tool-scope-declared-targets-only");
+		limitations.add("retained-workspace-root-unverified");
 		limitations.add("retained-generic-shell-unclassified");
 	}
 
