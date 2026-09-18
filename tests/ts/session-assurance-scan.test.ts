@@ -191,6 +191,6 @@ test("scan keys can be resolved for a later full single-session drill-down witho
 	const key = JSON.parse(scan.output).candidates.length > 0 ? JSON.parse(scan.output).candidates[0].key : sessionKey(file);
 	const deep = await runAssuranceCli(["--key", key, "--json"], reader);
 	assert.equal(deep.exitCode, 0);
-	assert.equal(JSON.parse(deep.output).schemaVersion, "omp-kit.session-assurance/v1");
+	assert.equal(JSON.parse(deep.output).schemaVersion, "omp-kit.session-assurance/v2");
 	assert.doesNotMatch(deep.output, /\/private\/history/);
 });
