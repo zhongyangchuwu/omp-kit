@@ -4,7 +4,7 @@ import type { SessionSummary, SessionTrace, TraceSpan } from "@oh-my-pi/omp-stat
 import { buildAssuranceReport } from "../../src/assurance/engine";
 import { DEFAULT_ASSURANCE_PROFILE, resolveAssuranceProfile } from "../../src/assurance/profiles";
 import { BUILTIN_ASSURANCE_RULES } from "../../src/assurance/registry";
-import { renderAssuranceReport } from "../../src/assurance/render";
+import { renderAssuranceReport, renderAssuranceWidgetLines, type AssuranceTone } from "../../src/assurance/render";
 import { resolutionGapRule } from "../../src/assurance/rules/resolution-gap";
 import { missingTerminalRule } from "../../src/assurance/rules/terminal-missing";
 import { toolErrorRule } from "../../src/assurance/rules/tool-error";
@@ -121,10 +121,33 @@ test("attention findings select a candidate while tool errors stay visible as co
 test("single-session rendering separates attention from supporting error evidence", () => {
 	const value = report("/private/render.jsonl", [span({ isError: true })]);
 	const rendered = renderAssuranceReport(value, BUILTIN_ASSURANCE_RULES);
-	assert.match(rendered, /Attention[\s\S]*Resolution gaps: 0/);
-	assert.match(rendered, /Evidence[\s\S]*Missing terminal observations: 0[\s\S]*Tool errors reported: 1/);
-	assert.match(rendered, /Supporting evidence is retained for review context/);
+	assert.match(rendered, /Needs review[\s\S]*✓ Nothing needs review/);
+	assert.match(rendered, /What happened[\s\S]*Supporting observations[\s\S]*Tool errors reported: 1/);
+	assert.doesNotMatch(rendered, /Rules\n|omp-kit\./);
 	assert.equal(value.rules.find(rule => rule.ruleId === toolErrorRule.meta.id)?.presentation.section, "evidence");
 	assert.equal(value.rules.find(rule => rule.ruleId === missingTerminalRule.meta.id)?.presentation.section, "evidence");
 	assert.equal(value.rules.find(rule => rule.ruleId === resolutionGapRule.meta.id)?.presentation.section, "attention");
+});
+
+
+test("widget styling uses semantic tones rather than embedding ANSI policy", () => {
+	const value = report("/private/widget.jsonl", [span({ isError: true })]);
+	const styled: Array<[AssuranceTone, string]> = [];
+	const lines = renderAssuranceWidgetLines(value, BUILTIN_ASSURANCE_RULES, "scan", (tone, text) => {
+		styled.push([tone, text]);
+		return `<${tone}>${text}</${tone}>`;
+	});
+	assert.ok(styled.some(([tone, text]) => tone === "success" && text.includes("Nothing needs review")));
+	assert.ok(styled.some(([tone, text]) => tone === "muted" && text.includes("supporting observation")));
+	assert.ok(lines.every(line => !line.includes("\u001b")));
+});
+
+test("widget uses warning tone for actual Attention findings", () => {
+	const value = report("/private/widget-attention.jsonl", [span({ unterminated: true })]);
+	const styled: Array<[AssuranceTone, string]> = [];
+	renderAssuranceWidgetLines(value, BUILTIN_ASSURANCE_RULES, "scan", (tone, text) => {
+		styled.push([tone, text]);
+		return text;
+	});
+	assert.ok(styled.some(([tone, text]) => tone === "warning" && text.includes("worth reviewing")));
 });

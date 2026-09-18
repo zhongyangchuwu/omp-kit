@@ -1,7 +1,7 @@
 import { test } from "bun:test";
 import assert from "node:assert/strict";
 import { buildAssuranceReport } from "../../src/assurance/engine";
-import type { ActionObservation, AssuranceInput, EvidenceRef, SourceCoverage } from "../../src/assurance/model";
+import type { ActionObservation, AssuranceInput, EvidenceRef, RuntimeEvidence, SourceCoverage } from "../../src/assurance/model";
 import { resolutionGapRule } from "../../src/assurance/rules/resolution-gap";
 import { missingTerminalRule } from "../../src/assurance/rules/terminal-missing";
 
@@ -32,8 +32,8 @@ function action(
 	return { id, kind, samples: [{ toolName, terminal, errorReported, evidence }] };
 }
 
-function report(actions: readonly ActionObservation[]) {
-	const input: AssuranceInput = { actions, coverage: [coverage] };
+function report(actions: readonly ActionObservation[], runtime?: RuntimeEvidence) {
+	const input: AssuranceInput = { actions, coverage: [coverage], ...(runtime ? { runtime } : {}) };
 	return buildAssuranceReport(input, [missingTerminalRule, resolutionGapRule]);
 }
 
@@ -80,6 +80,89 @@ test("missing non-task background closure remains unresolved without inventing c
 	const unrelatedYield = action("yield", "tool", "yield", "observed", ref("OtherAgent", "OtherAgent:yield:call"));
 	const finding = report([background, unrelatedYield]).findings.find(item => item.kind === "resolution-gap");
 	assert.equal(finding?.code, "background-resolution-unobserved");
+});
+
+test("an explicitly cancelled background task is terminal rather than unresolved", () => {
+	const background = action(
+		"background",
+		"background",
+		"task job",
+		"missing",
+		ref("main", "main:bg:CodeBoundaryScout", "spawn-result"),
+	);
+	const runtime: RuntimeEvidence = {
+		sessionKey: "session-key",
+		leafId: "cancel-result",
+		retainedTree: true,
+		entries: [],
+		toolActions: [],
+		jobResolutions: [{
+			id: "cancelled-code-boundary-scout",
+			jobId: "CodeBoundaryScout",
+			status: "cancelled",
+			branch: "active",
+			entryId: "cancel-result",
+		}],
+		limitations: ["main-session-only", "child-retained-history-unavailable", "not-an-atomic-snapshot"],
+	};
+	const value = report([background], runtime);
+	assert.equal(value.findings.some(item => item.kind === "resolution-gap"), false);
+	assert.deepEqual(
+		value.rules.find(rule => rule.ruleId === missingTerminalRule.meta.id)?.findings.map(item => item.code),
+		["background-terminal-missing"],
+	);
+});
+
+test("off-branch terminal evidence does not close an active Main resolution gap", () => {
+	const background = action(
+		"background",
+		"background",
+		"task job",
+		"missing",
+		ref("main", "main:bg:CodeBoundaryScout", "spawn-result"),
+	);
+	const runtime: RuntimeEvidence = {
+		sessionKey: "session-key",
+		leafId: "current",
+		retainedTree: true,
+		entries: [],
+		toolActions: [],
+		jobResolutions: [{
+			id: "old-cancel",
+			jobId: "CodeBoundaryScout",
+			status: "cancelled",
+			branch: "off-branch",
+			entryId: "old-cancel-result",
+		}],
+		limitations: ["main-session-only", "child-retained-history-unavailable", "not-an-atomic-snapshot"],
+	};
+	const value = report([background], runtime);
+	assert.equal(
+		value.findings.find(item => item.kind === "resolution-gap")?.code,
+		"background-resolution-unobserved",
+	);
+});
+
+test("runtime read failure makes resolution partial without degrading trace-only evidence rules", () => {
+	const background = action("background", "background", "task job", "missing", ref("main", "main:bg:Worker"));
+	const runtimeFailure: SourceCoverage = {
+		sourceId: "runtime-retained",
+		sessionKey: "session-key",
+		scope: { source: "omp-runtime", view: "all-retained-entries" },
+		availability: "unavailable",
+		consistency: "not-checked",
+		startedAt: 1,
+		finishedAt: 2,
+		assessed: false,
+		reason: "runtime-read-failed",
+		limitations: ["single-session-only", "retained-entries-only", "not-an-atomic-snapshot"],
+	};
+	const value = buildAssuranceReport(
+		{ actions: [background], coverage: [coverage, runtimeFailure] },
+		[missingTerminalRule, resolutionGapRule],
+	);
+	assert.equal(value.rules.find(rule => rule.ruleId === missingTerminalRule.meta.id)?.status, "evaluated");
+	assert.equal(value.rules.find(rule => rule.ruleId === resolutionGapRule.meta.id)?.status, "partial");
 });
 
 test("an observed terminal does not create either missing-terminal or resolution attention", () => {

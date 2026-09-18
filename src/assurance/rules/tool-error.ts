@@ -1,5 +1,5 @@
 import type { AssuranceRule } from "../model";
-import { actionRuleStatus } from "./shared";
+import { traceActionRuleStatus } from "./shared";
 
 export const toolErrorRule: AssuranceRule = {
 	meta: {
@@ -14,7 +14,7 @@ export const toolErrorRule: AssuranceRule = {
 	},
 	evaluate(input) {
 		return {
-			status: actionRuleStatus(input),
+			status: traceActionRuleStatus(input),
 			findings: input.actions
 				.filter(action => action.kind === "tool" && action.samples.some(sample => sample.errorReported))
 				.map(action => ({

@@ -2,7 +2,7 @@ import { test } from "bun:test";
 import assert from "node:assert/strict";
 import type { ReadonlySessionManager, SessionEntry } from "@oh-my-pi/pi-coding-agent";
 import type { SessionSummary, SessionTrace } from "@oh-my-pi/omp-stats/shared-types";
-import { createOmpStatsClient, withLocalOmpStats, type SessionEntryReader, type SessionTraceReader, type StatsFetch } from "../../src/session/omp-stats";
+import { createInProcessOmpStatsReader, createOmpStatsClient, withLocalOmpStats, type SessionEntryReader, type SessionTraceReader, type StatsFetch } from "../../src/session/omp-stats";
 import { EvidenceReadError, requireEvidence } from "../../src/session/read-result";
 import { readRuntimeEntries, type RuntimeEntrySource } from "../../src/session/runtime-entries";
 
@@ -67,6 +67,54 @@ test("narrow trace and entry readers compose without owning a server", async () 
 	assert.deepEqual(requireEvidence(await traceReader.getTrace(file)), trace());
 	assert.deepEqual(requireEvidence(await entryReader.getEntry(file, "result")), { entry: { id: "result" } });
 	assert.equal(urls.some(url => url.pathname.endsWith("sync")), false);
+});
+
+test("in-process trace reader uses the published trace module without starting transport", async () => {
+	let loads = 0;
+	let traces = 0;
+	let entries = 0;
+	const api = createInProcessOmpStatsReader({
+		now: () => 10,
+		load: async () => {
+			loads++;
+			return {
+				async buildSessionTrace(requested) {
+					traces++;
+					assert.equal(requested, file);
+					return trace();
+				},
+				async getTraceEntry(requested, id) {
+					entries++;
+					assert.equal(requested, file);
+					return { id };
+				},
+			};
+		},
+	});
+	assert.equal(loads, 0);
+	assert.deepEqual(requireEvidence(await api.getTrace(file)), trace());
+	assert.deepEqual(requireEvidence(await api.getEntry(file, "result")), { entry: { id: "result" } });
+	assert.equal(loads, 1);
+	assert.equal(traces, 1);
+	assert.equal(entries, 1);
+});
+
+test("in-process trace reader sanitizes module/runtime failures and honors cancellation", async () => {
+	const controller = new AbortController();
+	const api = createInProcessOmpStatsReader({
+		load: async () => ({
+			async buildSessionTrace() { throw new Error("SECRET private trace failure"); },
+			async getTraceEntry() { throw new Error("SECRET private entry failure"); },
+		}),
+	});
+	const failed = await api.getTrace(file);
+	assert.equal(failed.status, "unavailable");
+	if (failed.status === "unavailable") assert.equal(failed.reason, "runtime-read-failed");
+	assert.doesNotMatch(JSON.stringify(failed), /SECRET|private trace/);
+	controller.abort();
+	const aborted = await api.getEntry(file, "result", controller.signal);
+	assert.equal(aborted.status, "unavailable");
+	if (aborted.status === "unavailable") assert.equal(aborted.reason, "aborted");
 });
 
 test("entry identifiers are encoded; signals and redirect rejection are forwarded", async () => {

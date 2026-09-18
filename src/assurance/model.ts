@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { ReadConsistency, ReadFailureReason, ReadLimit, ReadScope } from "../session/read-result";
-import type { ScopeEvidence } from "./scope/model";
+import type { ScopeAccess, ScopeBoundary, ScopeEvidence, ScopeResource } from "./scope/model";
 
 export const ASSURANCE_SCHEMA = "omp-kit.session-assurance/v1" as const;
 
@@ -45,11 +45,69 @@ export interface SourceCoverage {
 	readonly limitations: readonly ReadLimit[];
 }
 
+export type RuntimeBranchState = "active" | "off-branch";
+export type RuntimeJobStatus = "completed" | "failed" | "cancelled";
+
+export interface RuntimeTreeEntry {
+	readonly id: string;
+	readonly parentId: string | null;
+	readonly type: string;
+	readonly timestamp: string | null;
+	readonly branch: RuntimeBranchState;
+}
+
+export interface RuntimeJobResolution {
+	readonly id: string;
+	readonly jobId: string;
+	readonly status: RuntimeJobStatus;
+	readonly branch: RuntimeBranchState;
+	readonly entryId: string;
+}
+
+export interface RuntimeToolScope {
+	readonly boundary: ScopeBoundary;
+	readonly access: ScopeAccess;
+	readonly resource: ScopeResource;
+}
+
+export interface RuntimeToolAction {
+	readonly id: string;
+	readonly entryId: string;
+	readonly toolCallId: string;
+	readonly toolName: string;
+	readonly branch: RuntimeBranchState;
+	readonly terminal: "observed" | "missing";
+	readonly errorReported: boolean;
+	readonly scopeStatus: "classified" | "unclassified" | "not-assessed";
+	readonly scopes: readonly RuntimeToolScope[];
+}
+
+export type RuntimeEvidenceLimitation =
+	| "main-session-only"
+	| "child-retained-history-unavailable"
+	| "not-an-atomic-snapshot"
+	| "invalid-retained-entry-shape"
+	| "retained-tool-scope-declared-targets-only"
+	| "retained-workspace-root-unverified"
+	| "retained-generic-shell-unclassified";
+
+export interface RuntimeEvidence {
+	readonly sessionKey: string;
+	readonly leafId: string | null;
+	readonly retainedTree: boolean;
+	readonly entries: readonly RuntimeTreeEntry[];
+	readonly toolActions: readonly RuntimeToolAction[];
+	readonly jobResolutions: readonly RuntimeJobResolution[];
+	readonly limitations: readonly RuntimeEvidenceLimitation[];
+}
+
 export interface AssuranceInput {
 	readonly actions: readonly ActionObservation[];
 	readonly coverage: readonly SourceCoverage[];
 	/** Optional additive fact surface; absence means scope was not assessed. */
 	readonly scope?: ScopeEvidence;
+	/** Optional public-runtime fact surface. Raw messages/tool payloads are not copied here. */
+	readonly runtime?: RuntimeEvidence;
 }
 
 export interface RulePresentation {

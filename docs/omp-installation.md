@@ -28,7 +28,7 @@ just uninstall
 
 `just check-install` reports the active OMP version and plugin registration. `omp plugin doctor` evaluates the active plugin root rather than omp-kit alone, so unrelated plugin problems can also appear there.
 
-The plugin exposes agents, maintained Skills, a Main workflow rule and the feedback extension. It does not install AutoDL credentials, external parser programs, MCP servers, model routes or normal OMP configuration.
+The plugin exposes agents, maintained Skills, a Main workflow rule, the bounded feedback extension, and the current-session Assurance command extension. `/assurance` performs active-branch triage; `/assurance full` performs richer retained-Main-tree investigation and stores derived output under the active OMP agent root. The plugin does not install AutoDL credentials, external parser programs, MCP servers, model routes or normal OMP configuration.
 
 ## Remote Git installation
 

@@ -16,6 +16,84 @@ export interface OmpStatsClient extends SessionTraceReader, SessionEntryReader {
 	listSessions(limit: number, signal?: AbortSignal): Promise<EvidenceRead<SessionSummary[]>>;
 }
 
+export interface InProcessTraceModule {
+	buildSessionTrace(file: string): Promise<SessionTrace>;
+	getTraceEntry(file: string, id: string): Promise<unknown | null>;
+}
+
+export interface InProcessTraceOptions {
+	load?: () => Promise<InProcessTraceModule>;
+	now?: () => number;
+}
+
+/**
+ * Current-session extensions already run inside OMP. Read the published stats
+ * trace surface in-process instead of starting a dashboard HTTP server and
+ * looping back through it.
+ */
+export function createInProcessOmpStatsReader(
+	options: InProcessTraceOptions = {},
+): SessionTraceReader & SessionEntryReader {
+	const load = options.load ?? (async () => {
+		const trace = await import("@oh-my-pi/omp-stats/trace");
+		return {
+			buildSessionTrace: trace.buildSessionTrace,
+			getTraceEntry: trace.getTraceEntry,
+		};
+	});
+	const now = options.now ?? Date.now;
+	let modulePromise: Promise<InProcessTraceModule> | undefined;
+	const module = () => modulePromise ??= load();
+
+	async function read<T>(
+		scope: ReadScope,
+		limitations: readonly ReadLimit[],
+		signal: AbortSignal | undefined,
+		operation: (trace: InProcessTraceModule) => Promise<T>,
+		accept: (value: T) => boolean,
+	): Promise<EvidenceRead<T>> {
+		const startedAt = now();
+		const metadata = () => ({
+			scope,
+			startedAt,
+			finishedAt: now(),
+			limitations,
+			consistency: "not-checked" as const,
+		});
+		if (signal?.aborted) return { ...metadata(), status: "unavailable", reason: "aborted" };
+		let value: T;
+		try {
+			value = await operation(await module());
+		} catch {
+			return { ...metadata(), status: "unavailable", reason: signal?.aborted ? "aborted" : "runtime-read-failed" };
+		}
+		if (signal?.aborted) return { ...metadata(), status: "unavailable", reason: "aborted" };
+		if (!accept(value)) return { ...metadata(), status: "unavailable", reason: "invalid-envelope" };
+		return { ...metadata(), status: "available", data: value };
+	}
+
+	return {
+		getTrace(file, signal) {
+			return read(
+				{ source: "omp-stats", view: "active-branch-trace" },
+				["active-branches-only", "child-completeness-unknown", "details-are-previews", "not-an-atomic-snapshot"],
+				signal,
+				trace => trace.buildSessionTrace(file),
+				value => isSessionTrace(value) && value.file === file,
+			);
+		},
+		getEntry(file, id, signal) {
+			return read(
+				{ source: "omp-stats", view: "selected-entry" },
+				[],
+				signal,
+				async trace => ({ entry: await trace.getTraceEntry(file, id) }),
+				value => isObject(value) && isObject(value.entry) && value.entry.id === id,
+			);
+		},
+	};
+}
+
 /** Inert, caller-selected LOCAL access. Raw successful payloads remain private. */
 export function createOmpStatsClient(
 	origin: string,
