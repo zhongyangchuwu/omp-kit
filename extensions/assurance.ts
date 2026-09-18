@@ -8,7 +8,7 @@ import {
 	type ExtensionCommandContext,
 	type SessionEntry,
 } from "@oh-my-pi/pi-coding-agent";
-import { withLocalOmpStats } from "../src/session/omp-stats";
+import { createInProcessOmpStatsReader } from "../src/session/omp-stats";
 import { readRuntimeEntries } from "../src/session/runtime-entries";
 import { deriveRuntimeEvidence, runtimeSourceCoverage } from "../src/assurance/runtime-facts";
 import { BUILTIN_ASSURANCE_RULES } from "../src/assurance/registry";
@@ -162,7 +162,8 @@ export async function runCurrentSessionAssurance(
 	});
 
 	const signal = AbortSignal.timeout(mode === "full" ? 30_000 : 15_000);
-	const report = await atStage("stats-report", () => withLocalOmpStats(reader => mode === "full"
+	const reader = createInProcessOmpStatsReader();
+	const report = await atStage("stats-report", () => mode === "full"
 		? readAssuranceReport(reader, sessionFile, signal, undefined, {
 			runtime: runtimeFacts.runtime,
 			coverage: runtimeFacts.coverage,
@@ -170,8 +171,7 @@ export async function runCurrentSessionAssurance(
 		: readTraceOnlyAssuranceReport(reader, sessionFile, signal, {
 			runtime: runtimeFacts.runtime,
 			coverage: runtimeFacts.coverage,
-		}),
-	{ startLogsToStderr: true }));
+		}));
 
 	const rendered = await atStage("render", () => renderAssuranceReport(report, registryFor(report)));
 	const paths = assuranceOutputPaths(getAgentDir(), sessionId, mode);
