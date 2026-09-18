@@ -9,12 +9,11 @@ import {
 	type RuntimeJobResolution,
 	type RuntimeJobStatus,
 	type RuntimeToolAction,
-	type RuntimeToolScope,
 	type RuntimeTreeEntry,
 	type SourceCoverage,
 } from "./model";
-import type { ScopeToolCall } from "./scope/model";
-import { BUILTIN_SCOPE_CLASSIFIERS } from "./scope/registry";
+import type { ActionToolCall, OperationType, ResourceKind, ScopeBoundary } from "./scope/model";
+import { BUILTIN_ACTION_CLASSIFIERS } from "./scope/registry";
 
 function isObject(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -109,14 +108,8 @@ function toolResultSummaries(entries: readonly unknown[]): Map<string, RuntimeTo
 	return byCall;
 }
 
-function dedupeScopes(scopes: readonly RuntimeToolScope[]): RuntimeToolScope[] {
-	const byKey = new Map<string, RuntimeToolScope>();
-	for (const scope of scopes) byKey.set(`${scope.boundary}\u0000${scope.access}\u0000${scope.resource}`, scope);
-	return [...byKey.values()].sort((a, b) => {
-		const left = `${a.boundary}\u0000${a.access}\u0000${a.resource}`;
-		const right = `${b.boundary}\u0000${b.access}\u0000${b.resource}`;
-		return left.localeCompare(right);
-	});
+function dedupeValues<T extends string>(values: readonly T[]): T[] {
+	return [...new Set(values)].sort();
 }
 
 function classifyRuntimeTool(
@@ -125,10 +118,15 @@ function classifyRuntimeTool(
 	toolName: string,
 	argumentsValue: unknown,
 	options: { workspaceRoot?: string | null; homeDir?: string | null; classifyTools?: boolean },
-): { status: RuntimeToolAction["scopeStatus"]; scopes: RuntimeToolScope[] } {
-	if (!options.classifyTools) return { status: "not-assessed", scopes: [] };
-	if (!isObject(argumentsValue)) return { status: "unclassified", scopes: [] };
-	const call: ScopeToolCall = {
+): {
+	status: RuntimeToolAction["factStatus"];
+	boundaries: ScopeBoundary[];
+	operations: OperationType[];
+	resources: ResourceKind[];
+} {
+	if (!options.classifyTools) return { status: "not-assessed", boundaries: [], operations: [], resources: [] };
+	if (!isObject(argumentsValue)) return { status: "unclassified", boundaries: [], operations: [], resources: [] };
+	const call: ActionToolCall = {
 		actionId,
 		trackKey: assuranceId("runtime-main-track", actionId),
 		position,
@@ -136,25 +134,34 @@ function classifyRuntimeTool(
 		arguments: argumentsValue,
 		evidence: [],
 	};
-	const scopes: RuntimeToolScope[] = [];
+	const boundaries: ScopeBoundary[] = [];
+	const operations: OperationType[] = [];
+	const resources: ResourceKind[] = [];
 	try {
-		for (const classifier of BUILTIN_SCOPE_CLASSIFIERS) {
+		for (const classifier of BUILTIN_ACTION_CLASSIFIERS) {
 			const result = classifier.classify(call, {
 				workspaceRoot: options.workspaceRoot ?? null,
 				homeDir: options.homeDir ?? null,
 			});
 			if (result === "not-applicable") continue;
-			scopes.push(...result.map(item => ({
-				boundary: item.boundary,
-				access: item.access,
-				resource: item.resource,
-			})));
+			for (const descriptor of result) {
+				boundaries.push(descriptor.boundary);
+				operations.push(descriptor.operation);
+				resources.push(descriptor.resource);
+			}
 		}
 	} catch {
-		return { status: "unclassified", scopes: [] };
+		return { status: "unclassified", boundaries: [], operations: [], resources: [] };
 	}
-	const deduped = dedupeScopes(scopes);
-	return { status: deduped.length ? "classified" : "unclassified", scopes: deduped };
+	const facts = {
+		boundaries: dedupeValues(boundaries),
+		operations: dedupeValues(operations),
+		resources: dedupeValues(resources),
+	};
+	return {
+		status: facts.boundaries.length || facts.operations.length || facts.resources.length ? "classified" : "unclassified",
+		...facts,
+	};
 }
 
 function toolActionsFromEntries(
@@ -186,8 +193,10 @@ function toolActionsFromEntries(
 				branch: activeIds.has(identity.id) ? "active" : "off-branch",
 				terminal: result?.terminal ? "observed" : "missing",
 				errorReported: result?.errorReported === true,
-				scopeStatus: classification.status,
-				scopes: classification.scopes,
+				factStatus: classification.status,
+				boundaries: classification.boundaries,
+				operations: classification.operations,
+				resources: classification.resources,
 			});
 		}
 	}
