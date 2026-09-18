@@ -40,7 +40,10 @@ For retained Main-session tool calls, full investigation also derives bounded fa
 the structured public entries: tool identity, terminal/error observation, active versus
 off-branch location, and descriptors from the existing Scope V1 classifiers when their
 tool contracts apply. Raw tool arguments and results are used only in memory and are not
-copied into the report. Unsupported tools such as generic shell remain unclassified.
+copied into the report. Unsupported tools such as generic shell remain unclassified. Retained entries do
+not expose a historical workspace root per entry, so the retained-tree classifier does
+not reuse the current cwd to reinterpret old absolute paths; that uncertainty is
+reported explicitly. Relative file targets can still be described as workspace-relative.
 These descriptors are observed declared targets, not authorization or proof of every
 transitive effect.
 
