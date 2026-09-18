@@ -7,6 +7,7 @@ export const DEFAULT_ASSURANCE_PROFILE: readonly string[] = Object.freeze([
 	"omp-kit.resolution-gap",
 	"omp-kit.coverage-gap",
 	"omp-kit.scope-expansion",
+	"omp-kit.cross-boundary-write",
 ]);
 
 export function resolveAssuranceProfile(

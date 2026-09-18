@@ -177,10 +177,10 @@ test("full scan prefilters unsupported tool names before selected-entry reads", 
 		full: true,
 	});
 	assert.equal(entryCalls, 0);
-	assert.equal(result.report.performance?.scope.candidates, 1);
-	assert.equal(result.report.performance?.scope.prefilteredUnsupported, 1);
-	assert.equal(result.report.performance?.scope.recoveryAttempts, 0);
-	assert.equal(result.report.performance?.scope.entryReadRequests, 0);
+	assert.equal(result.report.performance?.actionFacts.candidates, 1);
+	assert.equal(result.report.performance?.actionFacts.prefilteredUnsupported, 1);
+	assert.equal(result.report.performance?.actionFacts.recoveryAttempts, 0);
+	assert.equal(result.report.performance?.actionFacts.entryReadRequests, 0);
 });
 
 test("scan keys can be resolved for a later full single-session drill-down without exposing paths", async () => {
@@ -191,6 +191,6 @@ test("scan keys can be resolved for a later full single-session drill-down witho
 	const key = JSON.parse(scan.output).candidates.length > 0 ? JSON.parse(scan.output).candidates[0].key : sessionKey(file);
 	const deep = await runAssuranceCli(["--key", key, "--json"], reader);
 	assert.equal(deep.exitCode, 0);
-	assert.equal(JSON.parse(deep.output).schemaVersion, "omp-kit.session-assurance/v1");
+	assert.equal(JSON.parse(deep.output).schemaVersion, "omp-kit.session-assurance/v2");
 	assert.doesNotMatch(deep.output, /\/private\/history/);
 });

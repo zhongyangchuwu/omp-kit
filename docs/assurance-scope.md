@@ -1,184 +1,150 @@
-# Assurance observed scope v1
+# Assurance observed action facts v2
 
-Scope V1 is a deterministic fact layer for session assurance. It records which
-resource boundaries and access classes are supported by the evidence currently
-available to omp-kit. It does **not** decide whether those actions were requested,
-authorized, safe, appropriate, or correct.
+Assurance derives deterministic facts from structured tool contracts. The fact layer
+records **where** an action was directed, **what kind of operation** the tool contract
+exposes, and **what kind of resource** it addresses. These are independent observations.
 
-The three concepts remain separate:
+They are not authorization, task intent, safety, risk, or correctness judgments.
 
 ```text
-observed scope   what the available runtime evidence shows
-requested scope  what the user asked for                (not inferred in V1)
-authorized scope what the user/runtime permitted        (not inferred in V1)
+observed boundary   where available evidence says the action was directed
+observed operation  read | write | execute | unknown
+observed resource   filesystem | service | version-control | ...
+
+requested scope     what the user asked for          (not inferred here)
+authorized scope    what the user/runtime permitted  (not inferred here)
 ```
 
-A scope expansion therefore means only that a previously unseen boundary first
-appeared later on one ordered trace track. It is not a violation, escalation, or
-risk score.
+## Independent fact dimensions
 
-## Fact model
+A classified action can produce three independent observation sets:
 
-A classified action may emit one or more `ScopeObservation` facts with three
-orthogonal dimensions:
-
-| Dimension | V1 values |
+| Fact | Values |
 | --- | --- |
 | boundary | `workspace`, `host-user`, `host-system`, `external`, `unknown` |
-| access | `read`, `write`, `execute`, `unknown` |
+| operation | `read`, `write`, `execute`, `unknown` |
 | resource | `filesystem`, `process`, `configuration`, `package`, `version-control`, `service`, `network`, `unknown` |
 
-These values are descriptive categories, not an ordering. For example,
-`external.read` is not declared safer or more dangerous than `host-system.read`.
+The persisted fact model does not keep one tuple containing all three dimensions.
+It records `BoundaryObservation`, `OperationObservation`, and `ResourceObservation`.
+Each observation has action identity, track position, classifier provenance and evidence.
 
-Every scope observation retains an assurance evidence reference and the classifier
-identity/version that produced it. Raw command arguments, file contents, URLs,
-queries, repository names and paths are not copied into the scope report.
+A classifier may still return one compact internal descriptor because the tool contract
+is parsed once. The derivation layer immediately projects that descriptor into the
+three independent observations before rules consume it.
 
-## Acquisition boundary
+## Correlation without semantic coupling
 
-OMP remains the raw evidence owner. Scope enrichment uses the public stats/session
-surfaces already shared by assurance:
-
-```text
-OMP active-branch trace
-  -> tool span identity
-  -> selected /api/session/entry reads
-  -> bounded parent walk to the matching assistant toolCall
-  -> structured tool name + arguments (in memory only)
-  -> pure scope classifiers
-  -> bounded ScopeObservation facts
-```
-
-OMP 18.2.0 records a terminal tool result separately from the assistant entry that
-contains the original structured tool call. The adapter therefore follows at most
-eight parent links from a span's selected entry and matches the native `toolCallId`.
-It does not parse session JSONL directly and does not use the trace `detail` preview
-as authoritative command semantics.
-
-A failed selected-entry read remains an unclassified action. It is never converted
-into an empty or workspace-only action.
-
-## Classification coverage
-
-Scope has coverage independent from the normal trace coverage:
-
-- `traceCoverage = available`: every requested trace source used for this scope
-  derivation was assessable. A valid empty trace can therefore have zero scope
-  observations while still being assessed.
-- `traceCoverage = partial`: only some supplied trace sources were assessable.
-- `traceCoverage = unavailable`: no supplied trace source could be assessed.
-
-Each observed tool action is also recorded as `classified` or `unclassified`.
-Unclassified reasons distinguish missing entry access, missing/malformed tool input,
-and tools for which V1 has no classifier. The text report shows classified and
-unclassified counts rather than turning unclassified actions into reassuring zeros.
-
-## Built-in classifiers
-
-The initial classifier set is intentionally small and contract-based.
-
-### File/search tools
-
-Known structured contracts classify:
-
-- `read(path)` as filesystem read;
-- `write(path)` as filesystem write;
-- `grep(path)` / `glob(path)` as filesystem read, with their normal `.` default;
-- hashline `edit` / `apply_patch` sections as filesystem write targets.
-
-Relative paths are classified as the current track's `workspace`. For the root
-track, absolute paths can be compared with the public trace cwd and the local home
-directory to distinguish `workspace`, `host-user`, known system roots, and `unknown`.
-The root trace does not expose each child track's cwd, so absolute child paths are
-not compared with the root cwd. Symlink targets are not resolved by this layer.
-
-Complex delimiter recovery and arbitrary patch syntaxes are not reimplemented;
-unsupported shapes remain unclassified.
-
-### GitHub tool
-
-The OMP GitHub tool has a closed operation schema in the pinned OMP 18.2.0 release.
-V1 maps its read operations to `external/read/service`, `pr_create` to
-`external/write/service`, and `pr_push` to `external/write/version-control`.
-`pr_checkout` records both its external read and its dedicated host-user worktree
-write. This follows the documented 18.2.0 tool contract rather than command text.
-
-### Web search
-
-`web_search` is classified as `external/read/service`.
-
-### Generic shell and other tools
-
-Generic `bash`/`eval` command semantics are deliberately **not** parsed in V1, even
-when the command text looks obvious (for example `git push`). Unknown tool contracts
-also remain unclassified. This is a coverage limitation, not evidence that the
-operation stayed inside the workspace.
-
-Additional high-confidence classifiers can be added independently later. They are
-fact derivation modules, not assurance policy rules.
-
-## Ordering and footprint
-
-Scope facts retain tool position inside one trace track. The first appearance of a
-boundary can therefore be derived deterministically on that track. No causal order
-is inferred between parent and child tracks or between concurrent subagents.
-
-A human-facing footprint is the union of the observed boundaries/descriptors. The
-report currently shows the boundary union plus action-classification counts; JSON
-retains the individual observations and evidence references.
-
-## `omp-kit.scope-expansion`
-
-The default assurance profile enables one rule over these facts:
+Some tools expose more than one effect. GitHub `pr_checkout`, for example, can describe:
 
 ```text
-omp-kit.scope-expansion@1
+external  + read  + service
+host-user + write + filesystem
 ```
 
-For each trace track independently, its first classified action establishes the
-initial observed boundary set. A finding is emitted when a later classified action
-first introduces another non-`unknown` boundary on that same track.
+Joining facts only by `actionId` would create a false Cartesian product. Therefore
+facts projected from one classifier descriptor share an opaque `groupId`.
 
-Example:
+`groupId` means only that those independent facts came from the same structured
+classifier descriptor. It is provenance/correlation, not a policy category.
+
+## Acquisition and coverage
+
+Full enrichment uses the existing public OMP trace/session surfaces:
 
 ```text
-track: main
-  1 workspace.read
-  2 workspace.write
-  3 external.read   <- new-boundary-external
+trace tool identity
+  -> selected session entries
+  -> matching structured toolCall
+  -> pure action classifier
+  -> boundary / operation / resource observations
 ```
 
-The finding means only:
+Raw arguments, contents, paths, URLs, queries and repository names are not copied
+into the action-fact report. Failed or unsupported classification remains unclassified.
 
-> activity on this track later reached the external boundary for the first time.
+The three dimensions share one classification-coverage record because they come from
+the same bounded structured-tool pass. Coverage is not copied three times merely
+because the semantic dimensions are separate.
 
-It does not mean the action was unauthorized, risky, caused an external write, or
-represented semantic "scope drift". If some actions are unclassified or trace
-coverage is partial, the rule result is `partial`. If trace evidence is unavailable,
-the rule is `skipped` rather than returning zero findings.
+## Built-in contracts
 
-## Explicit V1 limitations
+File/search tools derive target boundary, operation (`read` or `write`) and filesystem
+resource facts. GitHub operations derive external/service or version-control facts;
+`pr_checkout` emits a separate external-read group and host-user-write group.
+`web_search` derives `external`, `read`, and `service` facts.
 
-Scope V1 records these limitations in the report:
+Generic shell/eval semantics remain deliberately unclassified. `execute` is not
+automatically promoted to `write`, and unknown transitive side effects remain a
+Visibility limitation rather than a guessed operation.
 
-- `declared-targets-only`: a tool contract can describe its declared target without
-  proving every transitive effect of the underlying implementation;
-- `generic-shell-unclassified`: arbitrary shell/eval semantics are not interpreted;
-- `path-symlink-target-unverified`: lexical path classification does not prove the
-  final filesystem target after symlink resolution;
-- `child-workspace-root-unverified`: the root trace does not provide each child
-  track's cwd for absolute-path comparison;
-- `cross-track-order-unavailable`: timestamps are not used to invent causal order
-  across concurrent tracks.
+## Human-facing presentation
 
-V1 intentionally does not perform requested-scope inference, authorization checking,
-policy-violation detection, severity/risk scoring, LLM command classification, or
-cross-subagent causal reconstruction.
+The full report presents the dimensions independently:
 
-## Future composition
+```text
+Boundaries
+  workspace, external
 
-Scope is a fact layer rather than a monolithic rule so future assurance rules can
-reuse it independently. Candidate consumers include post-failure scope expansion,
-external-effect verification, authorization comparison, and a possible future
-claim/witness verifier. None of those semantics are implied by Scope V1 itself.
+Operations
+  read, write
+
+Resources
+  filesystem, service
+```
+
+This does not imply `external => risky`, `write => unsafe`, or `read => harmless`.
+
+## `omp-kit.scope-expansion@2`
+
+`scope-expansion` consumes **boundary observations only**. A later first appearance
+of another non-unknown boundary on the same track becomes supporting Evidence.
+It does not inspect operation type.
+
+## `omp-kit.cross-boundary-write@1`
+
+`cross-boundary-write` is a separate policy-composition rule. It creates Attention only
+when a newly observed `host-user`, `host-system`, or `external` boundary has a
+`write` operation in the same `groupId`.
+
+It deliberately does not promote read-only boundary expansion, `execute`, `unknown`
+operation type, or workspace-local writes.
+
+This still does not claim that the write was unauthorized, unsafe, malicious, or
+outside user intent. It is a conservative human-attention policy over observed facts.
+
+## Retained runtime facts
+
+`/assurance full` derives the same independent dimensions from retained Main-session
+structured tool calls where supported. Rewind preserves off-branch facts because
+conversation rewind does not roll back already executed effects.
+
+## Explicit limitations
+
+Current limitations include declared-target-only classification, unclassified generic
+shell/eval semantics, unverified symlink targets, unavailable child workspace roots,
+and unavailable causal ordering across concurrent tracks.
+
+The layer intentionally does not perform requested-scope inference, authorization
+checking, severity/risk scoring, arbitrary shell side-effect analysis, or model-based
+classification.
+
+## Design boundary
+
+```text
+Raw OMP evidence
+      ↓
+structured tool classification
+      ↓
+independent base facts
+  boundary
+  operation
+  resource
+      ↓
+conservative rule composition
+      ↓
+Evidence / Attention / Visibility
+```
+
+Fact derivation may happen together for efficiency. Semantic ownership and rule
+consumption remain separate.

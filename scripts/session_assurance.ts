@@ -18,8 +18,8 @@ import { resolutionGapRule } from "../src/assurance/rules/resolution-gap";
 import { missingTerminalRule } from "../src/assurance/rules/terminal-missing";
 import { toolErrorRule } from "../src/assurance/rules/tool-error";
 import { buildAssuranceScanReport, type AssuranceScanReport, type AssuranceScanRow } from "../src/assurance/scan";
-import { createScopeDerivationDiagnostics, deriveTraceScopeEvidence, type ScopeDerivationDiagnostics } from "../src/assurance/scope/derive";
-import { BUILTIN_SCOPE_CLASSIFIERS, BUILTIN_SCOPE_TOOL_NAMES } from "../src/assurance/scope/registry";
+import { createActionFactDerivationDiagnostics, deriveTraceActionFacts, type ActionFactDerivationDiagnostics } from "../src/assurance/scope/derive";
+import { BUILTIN_ACTION_CLASSIFIERS, BUILTIN_ACTION_TOOL_NAMES } from "../src/assurance/scope/registry";
 import { normalizeTraceReads, type TraceInput } from "../src/assurance/trace-observations";
 
 const DEFAULT_PROFILE_RULES = resolveAssuranceProfile(BUILTIN_ASSURANCE_RULES, DEFAULT_ASSURANCE_PROFILE);
@@ -31,15 +31,15 @@ const HELP = `Usage: omp-kit-assurance --session PATH [--origin http://127.0.0.1
        omp-kit-assurance --key SESSION_KEY [--limit N] [--origin http://127.0.0.1:PORT] [--json]
        omp-kit-assurance scan [--limit N] [--folder TEXT] [--since ISO] [--full] [--origin http://127.0.0.1:PORT] [--json]
 
-Single-session reports include observed Scope V1 and may read selected public OMP
+Single-session reports include observed structured action facts and may read selected public OMP
 session entries in memory. --key resolves an opaque key emitted by scan without
 printing the underlying session path.
 
 scan synchronizes and lists the bounded OMP session catalog, then reads matching
 active-branch traces. The default first pass is trace-only: it evaluates tool errors,
 missing-terminal evidence, resolution gaps and coverage/conflicts without selected-entry
-scope enrichment.
-Use --full explicitly to run the complete Scope V1 report for every matched session;
+action-fact enrichment.
+Use --full explicitly to run the complete structured action facts report for every matched session;
 this can issue many selected-entry reads on large histories.
 
 No model call, test execution or publication is performed. Output remains private.
@@ -146,8 +146,8 @@ async function reportFromTraceRead(
 	read: TraceRead,
 	signal: AbortSignal | undefined,
 	rules: readonly AssuranceRule[],
-	includeScope: boolean,
-	diagnostics?: ScopeDerivationDiagnostics,
+	includeActionFacts: boolean,
+	diagnostics?: ActionFactDerivationDiagnostics,
 	additionalFacts: AssuranceAdditionalFacts = {},
 ): Promise<AssuranceReport> {
 	const traceInput: TraceInput = { sourceId: "session", sessionFile, read };
@@ -157,23 +157,23 @@ async function reportFromTraceRead(
 		coverage: [...normalized.coverage, ...(additionalFacts.coverage ?? [])],
 		...(additionalFacts.runtime ? { runtime: additionalFacts.runtime } : {}),
 	};
-	if (!includeScope) return buildAssuranceReport(enriched, rules);
+	if (!includeActionFacts) return buildAssuranceReport(enriched, rules);
 	const entryReader: SessionEntryReader | undefined = reader.getEntry
 		? { getEntry: (file, id, entrySignal) => reader.getEntry!(file, id, entrySignal) }
 		: undefined;
-	const scope = await deriveTraceScopeEvidence(
+	const actionFacts = await deriveTraceActionFacts(
 		[traceInput],
 		enriched,
 		entryReader,
-		BUILTIN_SCOPE_CLASSIFIERS,
+		BUILTIN_ACTION_CLASSIFIERS,
 		{
 			homeDir: homedir(),
 			signal,
-			toolNamePrefilter: toolName => BUILTIN_SCOPE_TOOL_NAMES.has(toolName),
+			toolNamePrefilter: toolName => BUILTIN_ACTION_TOOL_NAMES.has(toolName),
 			...(diagnostics ? { diagnostics } : {}),
 		},
 	);
-	return buildAssuranceReport({ ...enriched, scope }, rules);
+	return buildAssuranceReport({ ...enriched, actionFacts }, rules);
 }
 
 export async function readAssuranceReport(
@@ -240,7 +240,7 @@ export async function scanAssuranceReports(reader: SessionAssuranceCatalogReader
 			if (options.folder && !folderFilterMatches(options.folder, summary.folder, null)) continue;
 			const signal = AbortSignal.timeout(15_000);
 			const read = await reader.getTrace(summary.file, signal);
-			const scopeDiagnostics = options.full ? createScopeDerivationDiagnostics() : undefined;
+			const actionFactDiagnostics = options.full ? createActionFactDerivationDiagnostics() : undefined;
 			const report = await reportFromTraceRead(
 				reader,
 				summary.file,
@@ -248,9 +248,9 @@ export async function scanAssuranceReports(reader: SessionAssuranceCatalogReader
 				signal,
 				options.full ? DEFAULT_PROFILE_RULES : TRACE_SCAN_RULES,
 				options.full,
-				scopeDiagnostics,
+				actionFactDiagnostics,
 			);
-			rows.push({ summary, report, ...(scopeDiagnostics ? { scopeDiagnostics } : {}) });
+			rows.push({ summary, report, ...(actionFactDiagnostics ? { actionFactDiagnostics } : {}) });
 		}
 	}
 	const discoveryReason = listed.status !== "available"
@@ -282,10 +282,10 @@ function printScanReport(report: AssuranceScanReport): string {
 	];
 	if (!report.discovery.syncAvailable || !report.discovery.listAvailable)
 		lines.push(`Discovery incomplete: ${report.discovery.reason ?? "unknown"}`);
-	if (report.performance?.scope) {
-		const scope = report.performance.scope;
-		lines.push(`Scope recovery: ${scope.candidates} candidates | ${scope.prefilteredUnsupported} prefiltered unsupported | ${scope.recoveryAttempts} recovered | ${scope.entryReadRequests} entry reads | ${scope.entryCacheHits} cache hits`);
-		lines.push(`Scope timing: ${(scope.totalMs / 1000).toFixed(1)}s total | ${(scope.recoveryMs / 1000).toFixed(1)}s entry recovery | ${(scope.classificationMs / 1000).toFixed(3)}s classification | ${scope.parentHops} parent hops`);
+	if (report.performance?.actionFacts) {
+		const facts = report.performance.actionFacts;
+		lines.push(`Action fact recovery: ${facts.candidates} candidates | ${facts.prefilteredUnsupported} prefiltered unsupported | ${facts.recoveryAttempts} recovered | ${facts.entryReadRequests} entry reads | ${facts.entryCacheHits} cache hits`);
+		lines.push(`Action fact timing: ${(facts.totalMs / 1000).toFixed(1)}s total | ${(facts.recoveryMs / 1000).toFixed(1)}s entry recovery | ${(facts.classificationMs / 1000).toFixed(3)}s classification | ${facts.parentHops} parent hops`);
 	}
 	if (report.candidates.length > 0) {
 		lines.push("Candidates:");
@@ -295,7 +295,7 @@ function printScanReport(report: AssuranceScanReport): string {
 		if (report.candidates.length > 20) lines.push(`  ... ${report.candidates.length - 20} more candidates in --json output`);
 		lines.push("Deep dive: omp-kit-assurance --key SESSION_KEY");
 	}
-	if (report.mode === "trace-only") lines.push("Scope V1 was not expanded during this first pass; use --full only when bulk scope enrichment is worth the selected-entry cost.");
+	if (report.mode === "trace-only") lines.push("Structured action facts were not expanded during this first pass; use --full only when bulk action-fact enrichment is worth the selected-entry cost.");
 	return lines.join("\n");
 }
 

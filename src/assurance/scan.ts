@@ -1,9 +1,9 @@
 import type { SessionSummary } from "@oh-my-pi/omp-stats/shared-types";
 import { sessionKey } from "../evidence/session-evidence";
 import type { AssuranceReport, RulePresentation } from "./model";
-import type { ScopeDerivationDiagnostics } from "./scope/derive";
+import type { ActionFactDerivationDiagnostics } from "./scope/derive";
 
-export const ASSURANCE_SCAN_SCHEMA = "omp-kit.session-assurance-scan/v1" as const;
+export const ASSURANCE_SCAN_SCHEMA = "omp-kit.session-assurance-scan/v2" as const;
 
 const BASELINE_COVERAGE_CODES = new Set([
 	"active-branches-only",
@@ -17,7 +17,7 @@ const BASELINE_COVERAGE_CODES = new Set([
 export interface AssuranceScanRow {
 	readonly summary: SessionSummary;
 	readonly report: AssuranceReport;
-	readonly scopeDiagnostics?: Readonly<ScopeDerivationDiagnostics>;
+	readonly actionFactDiagnostics?: Readonly<ActionFactDerivationDiagnostics>;
 }
 
 export interface AssuranceScanCandidate {
@@ -59,7 +59,7 @@ export interface AssuranceScanReport {
 		readonly dynamicCoverageGaps: number;
 	};
 	readonly performance?: {
-		readonly scope: Readonly<ScopeDerivationDiagnostics>;
+		readonly actionFacts: Readonly<ActionFactDerivationDiagnostics>;
 	};
 	readonly findingCounts: Readonly<Record<string, number>>;
 	readonly candidates: readonly AssuranceScanCandidate[];
@@ -101,10 +101,10 @@ function candidateFor(row: AssuranceScanRow): AssuranceScanCandidate | null {
 	};
 }
 
-function aggregateScopeDiagnostics(rows: readonly AssuranceScanRow[]): ScopeDerivationDiagnostics | null {
-	const diagnostics = rows.flatMap(row => row.scopeDiagnostics ? [row.scopeDiagnostics] : []);
+function aggregateActionFactDiagnostics(rows: readonly AssuranceScanRow[]): ActionFactDerivationDiagnostics | null {
+	const diagnostics = rows.flatMap(row => row.actionFactDiagnostics ? [row.actionFactDiagnostics] : []);
 	if (diagnostics.length === 0) return null;
-	const total: ScopeDerivationDiagnostics = {
+	const total: ActionFactDerivationDiagnostics = {
 		candidates: 0,
 		prefilteredUnsupported: 0,
 		recoveryAttempts: 0,
@@ -171,7 +171,7 @@ export function buildAssuranceScanReport(
 		b.endedAt - a.endedAt ||
 		a.key.localeCompare(b.key),
 	);
-	const scopeDiagnostics = aggregateScopeDiagnostics(rows);
+	const actionFactDiagnostics = aggregateActionFactDiagnostics(rows);
 	return {
 		schemaVersion: ASSURANCE_SCAN_SCHEMA,
 		generatedAt: new Date().toISOString(),
@@ -186,7 +186,7 @@ export function buildAssuranceScanReport(
 		},
 		sessions: { scanned: rows.length, assessed, candidates: candidates.length },
 		totals: { actions, subagents, attentionFindings, dynamicCoverageGaps },
-		...(scopeDiagnostics ? { performance: { scope: scopeDiagnostics } } : {}),
+		...(actionFactDiagnostics ? { performance: { actionFacts: actionFactDiagnostics } } : {}),
 		findingCounts: Object.fromEntries(Object.entries(findingCounts).sort(([a], [b]) => a.localeCompare(b))),
 		candidates,
 	};

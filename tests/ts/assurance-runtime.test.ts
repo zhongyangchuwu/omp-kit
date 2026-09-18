@@ -106,24 +106,28 @@ test("full retained-tree facts classify structured off-branch tools without pers
 		branch: action.branch,
 		terminal: action.terminal,
 		errorReported: action.errorReported,
-		scopeStatus: action.scopeStatus,
-		scopes: action.scopes,
+		factStatus: action.factStatus,
+		boundaries: action.boundaries,
+		operations: action.operations,
+		resources: action.resources,
 	})), [{
 		toolName: "web_search",
 		branch: "off-branch",
 		terminal: "observed",
 		errorReported: false,
-		scopeStatus: "classified",
-		scopes: [{ boundary: "external", access: "read", resource: "service" }],
+		factStatus: "classified",
+		boundaries: ["external"],
+		operations: ["read"],
+		resources: ["service"],
 	}]);
 	const serialized = JSON.stringify(runtime);
 	assert.doesNotMatch(serialized, /PRIVATE_RETAINED_QUERY|PRIVATE_RETAINED_RESULT/);
-	assert.ok(runtime.limitations.includes("retained-tool-scope-declared-targets-only"));
+	assert.ok(runtime.limitations.includes("retained-action-facts-declared-targets-only"));
 	assert.ok(runtime.limitations.includes("retained-workspace-root-unverified"));
 	assert.ok(runtime.limitations.includes("retained-generic-shell-unclassified"));
 });
 
-test("simple runtime projection does not pretend retained tool scope was assessed", () => {
+test("simple runtime projection does not pretend retained action facts were assessed", () => {
 	const active = readRuntimeEntries(source(), "active-branch-entries", () => 10);
 	const runtime = deriveRuntimeEvidence(active);
 	assert.ok(runtime);
@@ -161,7 +165,7 @@ test("invalid retained entry shapes become an explicit limitation instead of a c
 	assert.ok(runtime.limitations.includes("invalid-retained-entry-shape"));
 });
 
-test("renderer exposes retained-tree/tool evidence without turning cancellation or off-branch scope into a verdict", () => {
+test("renderer exposes retained-tree/tool evidence without turning cancellation or off-branch facts into a verdict", () => {
 	const active = readRuntimeEntries(source(), "active-branch-entries", () => 10);
 	const retained = readRuntimeEntries(source(), "all-retained-entries", () => 10);
 	const runtime = deriveRuntimeEvidence(retained, active, { classifyTools: true });
@@ -173,7 +177,7 @@ test("renderer exposes retained-tree/tool evidence without turning cancellation 
 	}, []);
 	const rendered = renderAssuranceReport(report, BUILTIN_ASSURANCE_RULES);
 	assert.match(rendered, /Needs review[\s\S]*✓ Nothing needs review/);
-	assert.match(rendered, /Main session[\s\S]*3 active · 2 off-branch/);
+	assert.match(rendered, /Main session[\s\S]*Current path: 3 retained entries[\s\S]*Other branches: 2 retained entries/);
 	assert.match(rendered, /1 Main tool action · 1 terminal result/);
 	assert.match(rendered, /Background jobs[\s\S]*✓ CodeBoundaryScout · cancelled/);
 	assert.match(rendered, /Classification[\s\S]*Retained Main tools: 1 classified · 0 unclassified/);

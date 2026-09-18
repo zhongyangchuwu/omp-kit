@@ -1,5 +1,5 @@
 import type { AssuranceReport, AssuranceRule, AssuranceRuleMeta, Finding, RuleResult } from "./model";
-import type { ScopeBoundary } from "./scope/model";
+import type { OperationType, ResourceKind, ScopeBoundary } from "./scope/model";
 
 export type AssurancePresentationMode = "scan" | "full";
 export type AssuranceTone = "accent" | "success" | "warning" | "error" | "muted" | "dim" | "text";
@@ -31,13 +31,15 @@ interface RuntimeView {
 		readonly status: "completed" | "failed" | "cancelled";
 		readonly branch: "active" | "off-branch";
 	}[];
-	readonly retainedScopeClassified: number;
-	readonly retainedScopeUnclassified: number;
-	readonly retainedScopeUnassessed: number;
+	readonly retainedFactClassified: number;
+	readonly retainedFactUnclassified: number;
+	readonly retainedFactUnassessed: number;
 }
 
-interface ScopeView {
+interface ActionFactsView {
 	readonly boundaries: readonly ScopeBoundary[];
+	readonly operations: readonly OperationType[];
+	readonly resources: readonly ResourceKind[];
 	readonly classified: number;
 	readonly unclassified: number;
 	readonly available: boolean;
@@ -49,7 +51,7 @@ interface AssurancePresentation {
 	readonly attention: readonly FindingView[];
 	readonly supporting: readonly SupportingView[];
 	readonly runtime: RuntimeView | null;
-	readonly scope: ScopeView | null;
+	readonly actionFacts: ActionFactsView | null;
 	readonly inspected: readonly string[];
 	readonly visibility: readonly string[];
 }
@@ -87,6 +89,8 @@ function findingContext(finding: Finding): string | null {
 }
 
 const BOUNDARY_ORDER: readonly ScopeBoundary[] = ["workspace", "host-user", "host-system", "external", "unknown"];
+const OPERATION_ORDER: readonly OperationType[] = ["read", "write", "execute", "unknown"];
+const RESOURCE_ORDER: readonly ResourceKind[] = ["filesystem", "version-control", "service", "network", "process", "configuration", "package", "unknown"];
 
 const VISIBILITY_LABELS: Readonly<Record<string, string>> = {
 	"http": "The evidence source returned an HTTP failure.",
@@ -112,7 +116,7 @@ const VISIBILITY_LABELS: Readonly<Record<string, string>> = {
 	"no-trace-input": "No trace input was available.",
 	"process-network-unobserved": "Process and network effects are not exhaustively observed.",
 	"tool-and-background-only": "Current rules cover tool/background evidence, not task quality.",
-	"declared-targets-only": "Scope describes declared targets only.",
+	"declared-targets-only": "Structured action facts describe declared targets only.",
 	"generic-shell-unclassified": "Generic shell effects are not classified.",
 	"path-symlink-target-unverified": "Filesystem symlink targets are not verified.",
 	"child-workspace-root-unverified": "Child workspace roots are not verified.",
@@ -120,7 +124,7 @@ const VISIBILITY_LABELS: Readonly<Record<string, string>> = {
 	"main-session-only": "Retained-tree traversal covers the Main session only.",
 	"child-retained-history-unavailable": "Retained child/subagent branches are not fully available.",
 	"invalid-retained-entry-shape": "Some retained entries could not be interpreted.",
-	"retained-tool-scope-declared-targets-only": "Retained tool scope describes declared targets only.",
+	"retained-action-facts-declared-targets-only": "Retained action facts describe declared targets only.",
 	"retained-workspace-root-unverified": "Historical workspace roots are not verified.",
 	"retained-generic-shell-unclassified": "Generic shell effects in retained history are not classified.",
 };
@@ -193,9 +197,9 @@ export function buildAssurancePresentation(
 		const offBranchEntries = report.runtime.entries.length - activeEntries;
 		const observedToolTerminals = report.runtime.toolActions.filter(item => item.terminal === "observed").length;
 		const missingToolTerminals = report.runtime.toolActions.length - observedToolTerminals;
-		const retainedScopeClassified = report.runtime.toolActions.filter(item => item.scopeStatus === "classified").length;
-		const retainedScopeUnclassified = report.runtime.toolActions.filter(item => item.scopeStatus === "unclassified").length;
-		const retainedScopeUnassessed = report.runtime.toolActions.filter(item => item.scopeStatus === "not-assessed").length;
+		const retainedFactClassified = report.runtime.toolActions.filter(item => item.factStatus === "classified").length;
+		const retainedFactUnclassified = report.runtime.toolActions.filter(item => item.factStatus === "unclassified").length;
+		const retainedFactUnassessed = report.runtime.toolActions.filter(item => item.factStatus === "not-assessed").length;
 		return {
 			activeEntries,
 			offBranchEntries,
@@ -208,21 +212,24 @@ export function buildAssurancePresentation(
 				status: item.status,
 				branch: item.branch,
 			})),
-			retainedScopeClassified,
-			retainedScopeUnclassified,
-			retainedScopeUnassessed,
+			retainedFactClassified,
+			retainedFactUnclassified,
+			retainedFactUnassessed,
 		};
 	})() : null;
 
-	const scope: ScopeView | null = report.scope ? (() => {
-		const observed = new Set(report.scope.observations.map(item => item.boundary));
-		const boundaries = BOUNDARY_ORDER.filter(boundary => observed.has(boundary));
-		const classified = report.scope.actionCoverage.filter(item => item.status === "classified").length;
+	const actionFacts: ActionFactsView | null = report.actionFacts ? (() => {
+		const observedBoundaries = new Set(report.actionFacts.boundaries.map(item => item.boundary));
+		const observedOperations = new Set(report.actionFacts.operations.map(item => item.operation));
+		const observedResources = new Set(report.actionFacts.resources.map(item => item.resource));
+		const classified = report.actionFacts.actionCoverage.filter(item => item.status === "classified").length;
 		return {
-			boundaries,
+			boundaries: BOUNDARY_ORDER.filter(value => observedBoundaries.has(value)),
+			operations: OPERATION_ORDER.filter(value => observedOperations.has(value)),
+			resources: RESOURCE_ORDER.filter(value => observedResources.has(value)),
 			classified,
-			unclassified: report.scope.actionCoverage.length - classified,
-			available: report.scope.traceCoverage !== "unavailable",
+			unclassified: report.actionFacts.actionCoverage.length - classified,
+			available: report.actionFacts.traceCoverage !== "unavailable",
 		};
 	})() : null;
 
@@ -230,11 +237,11 @@ export function buildAssurancePresentation(
 	for (const source of report.coverage) {
 		if (source.assessed) inspected.add(sourceViewLabel(source.scope.view));
 	}
-	if (scope?.available) inspected.add("Structured tool scope where supported");
+	if (actionFacts?.available) inspected.add("Structured action facts where supported");
 
 	const visibilityCodes = new Set<string>();
 	for (const limitation of report.runtime?.limitations ?? []) visibilityCodes.add(limitation);
-	for (const limitation of report.scope?.limitations ?? []) visibilityCodes.add(limitation);
+	for (const limitation of report.actionFacts?.limitations ?? []) visibilityCodes.add(limitation);
 	for (const source of report.coverage) {
 		for (const limitation of source.limitations) visibilityCodes.add(limitation);
 		if (!source.assessed && source.reason) visibilityCodes.add(source.reason);
@@ -260,7 +267,7 @@ export function buildAssurancePresentation(
 		attention,
 		supporting,
 		runtime,
-		scope,
+		actionFacts,
 		inspected: [...inspected],
 		visibility,
 	};
@@ -268,9 +275,12 @@ export function buildAssurancePresentation(
 
 function pushRuntimeText(lines: string[], view: RuntimeView): void {
 	lines.push("  Main session");
-	lines.push(view.retainedTree
-		? `    ${view.activeEntries} active · ${view.offBranchEntries} off-branch`
-		: `    ${view.activeEntries} active entries`);
+	if (view.retainedTree) {
+		lines.push(`    Current path: ${view.activeEntries} retained entries`);
+		lines.push(`    Other branches: ${view.offBranchEntries} retained entries`);
+	} else {
+		lines.push(`    ${view.activeEntries} active entries`);
+	}
 	if (view.toolActions > 0) {
 		const terminalParts = [
 			`${view.toolActions} Main tool ${plural(view.toolActions, "action")}`,
@@ -291,11 +301,15 @@ function pushRuntimeText(lines: string[], view: RuntimeView): void {
 	}
 }
 
-function pushScopeText(lines: string[], presentation: AssurancePresentation): void {
-	const scope = presentation.scope;
-	if (!scope?.available) return;
-	lines.push("  Scope");
-	lines.push(`    ${scope.boundaries.length ? scope.boundaries.join(", ") : "No classified boundaries"}`);
+function pushActionFactsText(lines: string[], presentation: AssurancePresentation): void {
+	const facts = presentation.actionFacts;
+	if (!facts?.available) return;
+	lines.push("  Boundaries");
+	lines.push(`    ${facts.boundaries.length ? facts.boundaries.join(", ") : "none classified"}`);
+	lines.push("  Operations");
+	lines.push(`    ${facts.operations.length ? facts.operations.join(", ") : "none classified"}`);
+	lines.push("  Resources");
+	lines.push(`    ${facts.resources.length ? facts.resources.join(", ") : "none classified"}`);
 }
 
 function pushSupportingText(lines: string[], supporting: readonly SupportingView[]): void {
@@ -306,22 +320,22 @@ function pushSupportingText(lines: string[], supporting: readonly SupportingView
 
 function pushClassificationText(lines: string[], presentation: AssurancePresentation): void {
 	const runtime = presentation.runtime;
-	const scope = presentation.scope;
+	const actionFacts = presentation.actionFacts;
 	const hasRuntimeClassification = runtime &&
-		(runtime.retainedScopeClassified > 0 || runtime.retainedScopeUnclassified > 0 || runtime.retainedScopeUnassessed > 0);
-	const hasTraceClassification = scope?.available && (scope.classified > 0 || scope.unclassified > 0);
+		(runtime.retainedFactClassified > 0 || runtime.retainedFactUnclassified > 0 || runtime.retainedFactUnassessed > 0);
+	const hasTraceClassification = actionFacts?.available && (actionFacts.classified > 0 || actionFacts.unclassified > 0);
 	if (!hasRuntimeClassification && !hasTraceClassification) return;
 	lines.push("  Classification");
 	if (hasRuntimeClassification && runtime) {
 		const parts = [
-			`${runtime.retainedScopeClassified} classified`,
-			`${runtime.retainedScopeUnclassified} unclassified`,
+			`${runtime.retainedFactClassified} classified`,
+			`${runtime.retainedFactUnclassified} unclassified`,
 		];
-		if (runtime.retainedScopeUnassessed > 0) parts.push(`${runtime.retainedScopeUnassessed} not assessed`);
+		if (runtime.retainedFactUnassessed > 0) parts.push(`${runtime.retainedFactUnassessed} not assessed`);
 		lines.push(`    Retained Main tools: ${parts.join(" · ")}`);
 	}
-	if (hasTraceClassification && scope) {
-		lines.push(`    Trace tools: ${scope.classified} classified · ${scope.unclassified} unclassified`);
+	if (hasTraceClassification && actionFacts) {
+		lines.push(`    Trace tools: ${actionFacts.classified} classified · ${actionFacts.unclassified} unclassified`);
 	}
 }
 
@@ -349,9 +363,9 @@ export function renderAssuranceReport(
 
 	lines.push("", "What happened");
 	if (presentation.runtime) pushRuntimeText(lines, presentation.runtime);
-	pushScopeText(lines, presentation);
+	pushActionFactsText(lines, presentation);
 	pushSupportingText(lines, presentation.supporting);
-	if (!presentation.runtime && !presentation.scope?.available && presentation.supporting.length === 0) {
+	if (!presentation.runtime && !presentation.actionFacts?.available && presentation.supporting.length === 0) {
 		lines.push("  No runtime summary was available.");
 	}
 
@@ -401,9 +415,13 @@ export function renderAssuranceWidgetLines(
 
 	const runtime = presentation.runtime;
 	if (runtime) {
-		lines.push(style("text", runtime.retainedTree
-			? `Main · ${runtime.activeEntries} active · ${runtime.offBranchEntries} off-branch`
-			: `Main · ${runtime.activeEntries} active entries`));
+		if (runtime.retainedTree) {
+			lines.push(style("text", "Main session"));
+			lines.push(style("text", `  Current path: ${runtime.activeEntries} retained entries`));
+			lines.push(style("text", `  Other branches: ${runtime.offBranchEntries} retained entries`));
+		} else {
+			lines.push(style("text", `Main · ${runtime.activeEntries} active entries`));
+		}
 		for (const job of runtime.jobs.slice(0, 2)) {
 			const marker = job.status === "failed" ? "✗" : "✓";
 			const tone: AssuranceTone = job.status === "failed" ? "error" : "success";
@@ -418,9 +436,9 @@ export function renderAssuranceWidgetLines(
 	}
 
 	if (mode === "full" && runtime &&
-		(runtime.retainedScopeClassified > 0 || runtime.retainedScopeUnclassified > 0)) {
+		(runtime.retainedFactClassified > 0 || runtime.retainedFactUnclassified > 0)) {
 		lines.push(style("dim",
-			`Visibility · ${runtime.retainedScopeClassified} classified · ${runtime.retainedScopeUnclassified} unclassified`));
+			`Visibility · ${runtime.retainedFactClassified} classified · ${runtime.retainedFactUnclassified} unclassified`));
 	}
 	return lines.slice(0, 10);
 }

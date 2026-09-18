@@ -1,10 +1,10 @@
-import type { ScopeClassifier } from "./model";
-import { fileToolScopeClassifier } from "./classifiers/file-tools";
-import { githubToolScopeClassifier } from "./classifiers/github-tool";
-import { webSearchScopeClassifier } from "./classifiers/web-search";
+import type { ActionClassifier } from "./model";
+import { fileToolActionClassifier } from "./classifiers/file-tools";
+import { githubToolActionClassifier } from "./classifiers/github-tool";
+import { webSearchActionClassifier } from "./classifiers/web-search";
 
-/** Tool names for which the built-in Scope V1 classifiers may require structured arguments. */
-export const BUILTIN_SCOPE_TOOL_NAMES: ReadonlySet<string> = new Set([
+/** Tool names for which built-in action-fact classifiers may require structured arguments. */
+export const BUILTIN_ACTION_TOOL_NAMES: ReadonlySet<string> = new Set([
 	"read",
 	"write",
 	"grep",
@@ -16,8 +16,8 @@ export const BUILTIN_SCOPE_TOOL_NAMES: ReadonlySet<string> = new Set([
 ]);
 
 /** Classifier availability is separate from assurance rule enablement. */
-export const BUILTIN_SCOPE_CLASSIFIERS: readonly ScopeClassifier[] = Object.freeze([
-	fileToolScopeClassifier,
-	githubToolScopeClassifier,
-	webSearchScopeClassifier,
+export const BUILTIN_ACTION_CLASSIFIERS: readonly ActionClassifier[] = Object.freeze([
+	fileToolActionClassifier,
+	githubToolActionClassifier,
+	webSearchActionClassifier,
 ].sort((a, b) => a.meta.id < b.meta.id ? -1 : a.meta.id > b.meta.id ? 1 : 0));

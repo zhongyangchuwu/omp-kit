@@ -3,21 +3,23 @@ import type { SessionEntryReader } from "../../session/omp-stats";
 import { assuranceId, compareIds, type AssuranceInput, type EvidenceRef } from "../model";
 import { traceActionId, traceEvidenceRef, traceInputIsAssessed, type TraceInput } from "../trace-observations";
 import type {
-	ScopeActionCoverage,
-	ScopeClassifier,
-	ScopeDescriptor,
-	ScopeEvidence,
-	ScopeObservation,
-	ScopeToolCall,
+	ActionClassifier,
+	ActionDescriptor,
+	ActionFactCoverage,
+	ActionFacts,
+	ActionToolCall,
+	BoundaryObservation,
+	OperationObservation,
+	ResourceObservation,
 } from "./model";
 
 const CLASSIFIER_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$/;
 const BOUNDARIES = new Set(["workspace", "host-user", "host-system", "external", "unknown"]);
-const ACCESS = new Set(["read", "write", "execute", "unknown"]);
+const OPERATIONS = new Set(["read", "write", "execute", "unknown"]);
 const RESOURCES = new Set(["filesystem", "process", "configuration", "package", "version-control", "service", "network", "unknown"]);
 const MAX_ENTRY_HOPS = 8;
 
-export interface ScopeDerivationDiagnostics {
+export interface ActionFactDerivationDiagnostics {
 	candidates: number;
 	prefilteredUnsupported: number;
 	recoveryAttempts: number;
@@ -29,7 +31,7 @@ export interface ScopeDerivationDiagnostics {
 	totalMs: number;
 }
 
-export function createScopeDerivationDiagnostics(): ScopeDerivationDiagnostics {
+export function createActionFactDerivationDiagnostics(): ActionFactDerivationDiagnostics {
 	return {
 		candidates: 0,
 		prefilteredUnsupported: 0,
@@ -64,22 +66,22 @@ function isObject(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function validateClassifiers(classifiers: readonly ScopeClassifier[]): void {
+function validateClassifiers(classifiers: readonly ActionClassifier[]): void {
 	const ids = new Set<string>();
 	for (const classifier of classifiers) {
 		if (!CLASSIFIER_ID.test(classifier.meta.id) || ids.has(classifier.meta.id) ||
 			!Number.isSafeInteger(classifier.meta.version) || classifier.meta.version < 1 || typeof classifier.classify !== "function") {
-			throw new Error("Invalid or duplicate scope classifier definition");
+			throw new Error("Invalid or duplicate action classifier definition");
 		}
 		ids.add(classifier.meta.id);
 	}
 }
 
-function validDescriptor(value: unknown): value is ScopeDescriptor {
+function validDescriptor(value: unknown): value is ActionDescriptor {
 	return isObject(value) && typeof value.boundary === "string" && BOUNDARIES.has(value.boundary) &&
-		typeof value.access === "string" && ACCESS.has(value.access) &&
+		typeof value.operation === "string" && OPERATIONS.has(value.operation) &&
 		typeof value.resource === "string" && RESOURCES.has(value.resource) &&
-		Object.keys(value).every(key => key === "boundary" || key === "access" || key === "resource");
+		Object.keys(value).every(key => key === "boundary" || key === "operation" || key === "resource");
 }
 
 function toolCallFromEntry(entry: unknown, toolCallId: string): RecoveredToolCall | "invalid" | null {
@@ -105,7 +107,7 @@ async function recoverToolCall(
 	toolCallId: string,
 	signal: AbortSignal | undefined,
 	cache: Map<string, ReturnType<SessionEntryReader["getEntry"]>>,
-	diagnostics?: ScopeDerivationDiagnostics,
+	diagnostics?: ActionFactDerivationDiagnostics,
 ): Promise<RecoveredToolCall | "unavailable" | "not-found" | "invalid"> {
 	let current: string | null = entryId;
 	const seen = new Set<string>();
@@ -139,7 +141,7 @@ function candidateForSpan(input: TraceInput, track: TraceTrack, span: TraceSpan,
 	const sessionKey = assuranceId("session-file", input.sessionFile);
 	return {
 		actionId: traceActionId(input.sourceId, track, span),
-		trackKey: assuranceId("scope-track-file", track.file),
+		trackKey: assuranceId("action-track-file", track.file),
 		position,
 		trackFile: track.file,
 		toolNameHint: span.label || null,
@@ -181,7 +183,7 @@ function collectCandidates(inputs: readonly TraceInput[], normalized: AssuranceI
 	return [...byAction.values()].sort((a, b) => a.trackKey < b.trackKey ? -1 : a.trackKey > b.trackKey ? 1 : a.position - b.position || a.actionId.localeCompare(b.actionId));
 }
 
-function coverage(candidate: ToolCandidate, status: ScopeActionCoverage["status"], reason?: ScopeActionCoverage["reason"]): ScopeActionCoverage {
+function coverage(candidate: ToolCandidate, status: ActionFactCoverage["status"], reason?: ActionFactCoverage["reason"]): ActionFactCoverage {
 	return {
 		actionId: candidate.actionId,
 		trackKey: candidate.trackKey,
@@ -192,37 +194,66 @@ function coverage(candidate: ToolCandidate, status: ScopeActionCoverage["status"
 	};
 }
 
-function traceCoverage(inputs: readonly TraceInput[]): ScopeEvidence["traceCoverage"] {
+function traceCoverage(inputs: readonly TraceInput[]): ActionFacts["traceCoverage"] {
 	if (inputs.length === 0) return "unavailable";
 	const available = inputs.filter(traceInputIsAssessed).length;
 	if (available === 0) return "unavailable";
 	return available === inputs.length ? "available" : "partial";
 }
 
+function commonFact(
+	candidate: ToolCandidate,
+	classifier: ActionClassifier,
+	descriptor: ActionDescriptor,
+) {
+	return {
+		actionId: candidate.actionId,
+		groupId: assuranceId(
+			"action-fact-group",
+			candidate.actionId,
+			classifier.meta.id,
+			String(classifier.meta.version),
+			descriptor.boundary,
+			descriptor.operation,
+			descriptor.resource,
+		),
+		trackKey: candidate.trackKey,
+		position: candidate.position,
+		classifier: { ...classifier.meta },
+		evidence: structuredClone(candidate.evidence),
+	};
+}
+
 /**
- * Enrich normalized trace observations with bounded scope facts. Raw tool arguments are read and classified in memory only.
- * Classifiers receive no IO capability and may only return bounded descriptors.
+ * Derive bounded action facts from structured tool contracts.
+ *
+ * Classifiers may emit a compact descriptor internally, but the persisted fact model
+ * immediately separates boundary, operation and resource observations. Rules compose
+ * dimensions only when their own policy requires it.
  */
-export async function deriveTraceScopeEvidence(
+export async function deriveTraceActionFacts(
 	inputs: readonly TraceInput[],
 	normalized: AssuranceInput,
 	reader: SessionEntryReader | undefined,
-	classifiers: readonly ScopeClassifier[],
+	classifiers: readonly ActionClassifier[],
 	options: {
 		readonly homeDir?: string | null;
 		readonly signal?: AbortSignal;
 		readonly toolNamePrefilter?: (toolName: string) => boolean;
-		readonly diagnostics?: ScopeDerivationDiagnostics;
+		readonly diagnostics?: ActionFactDerivationDiagnostics;
 	} = {},
-): Promise<ScopeEvidence> {
+): Promise<ActionFacts> {
 	const totalStarted = performance.now();
 	validateClassifiers(classifiers);
 	const candidates = collectCandidates(inputs, normalized);
 	const diagnostics = options.diagnostics;
 	if (diagnostics) diagnostics.candidates += candidates.length;
-	const observations: ScopeObservation[] = [];
-	const actionCoverage: ScopeActionCoverage[] = [];
+	const boundaries: BoundaryObservation[] = [];
+	const operations: OperationObservation[] = [];
+	const resources: ResourceObservation[] = [];
+	const actionCoverage: ActionFactCoverage[] = [];
 	const entryCache = new Map<string, ReturnType<SessionEntryReader["getEntry"]>>();
+
 	for (const candidate of candidates) {
 		if (candidate.toolNameHint && options.toolNamePrefilter && !options.toolNamePrefilter(candidate.toolNameHint)) {
 			if (diagnostics) diagnostics.prefilteredUnsupported += 1;
@@ -253,7 +284,8 @@ export async function deriveTraceScopeEvidence(
 			actionCoverage.push(coverage(candidate, "unclassified", "invalid-tool-input"));
 			continue;
 		}
-		const call: ScopeToolCall = {
+
+		const call: ActionToolCall = {
 			actionId: candidate.actionId,
 			trackKey: candidate.trackKey,
 			position: candidate.position,
@@ -267,29 +299,40 @@ export async function deriveTraceScopeEvidence(
 			const result = classifier.classify(call, { workspaceRoot: candidate.workspaceRoot, homeDir: options.homeDir ?? null });
 			if (result === "not-applicable") continue;
 			if (!Array.isArray(result) || result.length === 0 || result.some(value => !validDescriptor(value))) {
-				throw new Error("Invalid scope classifier output");
+				throw new Error("Invalid action classifier output");
 			}
 			matched = true;
 			for (const descriptor of result) {
-				observations.push({
-					id: assuranceId("scope", candidate.actionId, classifier.meta.id, String(classifier.meta.version), descriptor.boundary, descriptor.access, descriptor.resource),
-					actionId: candidate.actionId,
-					trackKey: candidate.trackKey,
-					position: candidate.position,
-					...descriptor,
-					classifier: { ...classifier.meta },
-					evidence: structuredClone(candidate.evidence),
+				const common = commonFact(candidate, classifier, descriptor);
+				boundaries.push({
+					id: assuranceId("boundary", candidate.actionId, classifier.meta.id, String(classifier.meta.version), descriptor.boundary),
+					...common,
+					boundary: descriptor.boundary,
+				});
+				operations.push({
+					id: assuranceId("operation", candidate.actionId, classifier.meta.id, String(classifier.meta.version), descriptor.operation),
+					...common,
+					operation: descriptor.operation,
+				});
+				resources.push({
+					id: assuranceId("resource", candidate.actionId, classifier.meta.id, String(classifier.meta.version), descriptor.resource),
+					...common,
+					resource: descriptor.resource,
 				});
 			}
 		}
 		if (diagnostics) diagnostics.classificationMs += performance.now() - classificationStarted;
 		actionCoverage.push(coverage(candidate, matched ? "classified" : "unclassified", matched ? undefined : "unsupported-tool"));
 	}
-	const deduped = [...new Map(observations.map(value => [value.id, value])).values()].sort(compareIds);
+
+	const dedupe = <T extends { id: string }>(values: T[]): T[] =>
+		[...new Map(values.map(value => [value.id, value])).values()].sort(compareIds);
 	if (diagnostics) diagnostics.totalMs += performance.now() - totalStarted;
 	return {
 		traceCoverage: traceCoverage(inputs),
-		observations: deduped,
+		boundaries: dedupe(boundaries),
+		operations: dedupe(operations),
+		resources: dedupe(resources),
 		actionCoverage: actionCoverage.sort((a, b) => a.trackKey < b.trackKey ? -1 : a.trackKey > b.trackKey ? 1 : a.position - b.position || a.actionId.localeCompare(b.actionId)),
 		limitations: ["declared-targets-only", "generic-shell-unclassified", "path-symlink-target-unverified", "child-workspace-root-unverified", "cross-track-order-unavailable"],
 	};

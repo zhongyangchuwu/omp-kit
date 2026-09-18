@@ -1,8 +1,8 @@
 import type { EvidenceRef } from "../model";
 
 export type ScopeBoundary = "workspace" | "host-user" | "host-system" | "external" | "unknown";
-export type ScopeAccess = "read" | "write" | "execute" | "unknown";
-export type ScopeResource =
+export type OperationType = "read" | "write" | "execute" | "unknown";
+export type ResourceKind =
 	| "filesystem"
 	| "process"
 	| "configuration"
@@ -12,59 +12,77 @@ export type ScopeResource =
 	| "network"
 	| "unknown";
 
-export interface ScopeClassifierRef {
+export interface ActionClassifierRef {
 	readonly id: string;
 	readonly version: number;
 }
 
-/** Deterministic scope fact derived from one observed tool action. */
-export interface ScopeObservation {
+interface ActionFactObservation {
 	readonly id: string;
 	readonly actionId: string;
+	/** Opaque correlation for facts projected from the same classifier descriptor. */
+	readonly groupId: string;
 	/** Stable private correlation key for one transcript; native track ids remain in evidence refs. */
 	readonly trackKey: string;
 	/** Tool-order position within one transcript. No cross-track causal order is implied. */
 	readonly position: number;
-	readonly boundary: ScopeBoundary;
-	readonly access: ScopeAccess;
-	readonly resource: ScopeResource;
-	readonly classifier: ScopeClassifierRef;
+	readonly classifier: ActionClassifierRef;
 	readonly evidence: readonly EvidenceRef[];
 }
 
-export type ScopeCoverageReason =
+/** Where an observed action was directed. Carries no operation or resource judgment. */
+export interface BoundaryObservation extends ActionFactObservation {
+	readonly boundary: ScopeBoundary;
+}
+
+/** What kind of operation the tool contract exposes. Carries no boundary judgment. */
+export interface OperationObservation extends ActionFactObservation {
+	readonly operation: OperationType;
+}
+
+/** What kind of resource the tool contract addresses. Carries no boundary or operation judgment. */
+export interface ResourceObservation extends ActionFactObservation {
+	readonly resource: ResourceKind;
+}
+
+export type ActionFactCoverageReason =
 	| "entry-reader-unavailable"
 	| "tool-input-unavailable"
 	| "tool-input-not-found"
 	| "invalid-tool-input"
 	| "unsupported-tool";
 
-/** Classification status for one tool action, separate from raw trace-read coverage. */
-export interface ScopeActionCoverage {
+/** Classification status for one tool action, shared by the independent fact dimensions. */
+export interface ActionFactCoverage {
 	readonly actionId: string;
 	readonly trackKey: string;
 	readonly position: number;
 	readonly status: "classified" | "unclassified";
-	readonly reason?: ScopeCoverageReason;
+	readonly reason?: ActionFactCoverageReason;
 	readonly evidence: readonly EvidenceRef[];
 }
 
-export type ScopeLimitation =
+export type ActionFactLimitation =
 	| "declared-targets-only"
 	| "generic-shell-unclassified"
 	| "path-symlink-target-unverified"
 	| "child-workspace-root-unverified"
 	| "cross-track-order-unavailable";
 
-export interface ScopeEvidence {
-	/** Whether the supplied trace sources needed for scope derivation were readable. */
+/**
+ * Independent observed action facts derived by one bounded structured-tool pass.
+ * Coverage is shared because boundary/operation/resource come from the same tool-contract classification.
+ */
+export interface ActionFacts {
 	readonly traceCoverage: "available" | "partial" | "unavailable";
-	readonly observations: readonly ScopeObservation[];
-	readonly actionCoverage: readonly ScopeActionCoverage[];
-	readonly limitations: readonly ScopeLimitation[];
+	readonly boundaries: readonly BoundaryObservation[];
+	readonly operations: readonly OperationObservation[];
+	readonly resources: readonly ResourceObservation[];
+	readonly actionCoverage: readonly ActionFactCoverage[];
+	readonly limitations: readonly ActionFactLimitation[];
 }
 
-export interface ScopeToolCall {
+export interface ActionToolCall {
 	readonly actionId: string;
 	readonly trackKey: string;
 	readonly position: number;
@@ -73,19 +91,23 @@ export interface ScopeToolCall {
 	readonly evidence: readonly EvidenceRef[];
 }
 
-export interface ScopeClassifierContext {
+export interface ActionClassifierContext {
 	/** Known workspace root for this transcript, or null when the public trace does not expose it. */
 	readonly workspaceRoot: string | null;
 	readonly homeDir: string | null;
 }
 
-export interface ScopeDescriptor {
+/**
+ * Internal classifier product. It is immediately projected into independent
+ * boundary / operation / resource facts; rules do not consume this tuple directly.
+ */
+export interface ActionDescriptor {
 	readonly boundary: ScopeBoundary;
-	readonly access: ScopeAccess;
-	readonly resource: ScopeResource;
+	readonly operation: OperationType;
+	readonly resource: ResourceKind;
 }
 
-export interface ScopeClassifier {
-	readonly meta: ScopeClassifierRef;
-	classify(call: ScopeToolCall, context: ScopeClassifierContext): readonly ScopeDescriptor[] | "not-applicable";
+export interface ActionClassifier {
+	readonly meta: ActionClassifierRef;
+	classify(call: ActionToolCall, context: ActionClassifierContext): readonly ActionDescriptor[] | "not-applicable";
 }
