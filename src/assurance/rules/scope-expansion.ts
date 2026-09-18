@@ -1,5 +1,5 @@
 import { assuranceId, type AssuranceRule, type EvidenceRef, type RuleFinding } from "../model";
-import type { ScopeBoundary, ScopeObservation } from "../scope/model";
+import type { ScopeBoundary, ScopeEvidence, ScopeObservation } from "../scope/model";
 
 type ConcreteBoundary = Exclude<ScopeBoundary, "unknown">;
 
@@ -65,12 +65,14 @@ function scopeExpansions(observations: readonly ScopeObservation[]): ScopeExpans
 	return expansions;
 }
 
-function reviewableCrossBoundaryWrite(expansion: ScopeExpansion): boolean {
+function reviewableCrossBoundaryWrite(
+	expansion: ScopeExpansion,
+): expansion is ScopeExpansion & { readonly boundary: Exclude<ConcreteBoundary, "workspace"> } {
 	return expansion.boundary !== "workspace" &&
 		expansion.observations.some(observation => observation.access === "write");
 }
 
-function statusForScope(scope: NonNullable<Parameters<AssuranceRule["evaluate"]>[0]["scope"]>) {
+function statusForScope(scope: ScopeEvidence) {
 	const partial = scope.traceCoverage === "partial" ||
 		scope.actionCoverage.some(item => item.status === "unclassified");
 	return partial ? "partial" as const : "evaluated" as const;
@@ -153,7 +155,7 @@ export const scopeWriteExpansionRule: AssuranceRule = {
 					String(expansion.position),
 					expansion.boundary,
 				),
-				code: WRITE_CODE[expansion.boundary as keyof typeof WRITE_CODE],
+				code: WRITE_CODE[expansion.boundary],
 				evidence: expansion.evidence,
 			}));
 		return { status: statusForScope(scope), findings };
