@@ -113,6 +113,36 @@ test("an explicitly cancelled background task is terminal rather than unresolved
 	);
 });
 
+test("off-branch terminal evidence does not close an active Main resolution gap", () => {
+	const background = action(
+		"background",
+		"background",
+		"task job",
+		"missing",
+		ref("main", "main:bg:CodeBoundaryScout", "spawn-result"),
+	);
+	const runtime: RuntimeEvidence = {
+		sessionKey: "session-key",
+		leafId: "current",
+		retainedTree: true,
+		entries: [],
+		toolActions: [],
+		jobResolutions: [{
+			id: "old-cancel",
+			jobId: "CodeBoundaryScout",
+			status: "cancelled",
+			branch: "off-branch",
+			entryId: "old-cancel-result",
+		}],
+		limitations: ["main-session-only", "child-retained-history-unavailable", "not-an-atomic-snapshot"],
+	};
+	const value = report([background], runtime);
+	assert.equal(
+		value.findings.find(item => item.kind === "resolution-gap")?.code,
+		"background-resolution-unobserved",
+	);
+});
+
 test("runtime read failure makes resolution partial without degrading trace-only evidence rules", () => {
 	const background = action("background", "background", "task job", "missing", ref("main", "main:bg:Worker"));
 	const runtimeFailure: SourceCoverage = {
