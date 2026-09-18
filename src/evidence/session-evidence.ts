@@ -111,13 +111,12 @@ export function sessionRevision(summary: SessionSummary): string {
 }
 
 /**
- * Match a user-facing project filter against public OMP metadata.
+ * Match a user-facing project filter against current or stored public OMP metadata.
  *
- * OMP 18.1.21 can expose a storage-key-like value such as `-project-omp-kit`
- * in `/api/sessions.folder` for sessions whose real cwd is
- * `/home/user/project/omp-kit`. `/api/session/trace.cwd` remains the public
- * filesystem-path field. Accept both representations instead of reproducing
- * OMP's session-directory encoding rules locally.
+ * OMP 18.2.1+ exposes the real working directory in SessionSummary.folder, so
+ * current collection can filter before trace reads. Stored v1 evidence also
+ * retains trace cwd, and accepting both fields keeps summaries created around
+ * the pre-18.2.1 folder bug queryable without reproducing OMP storage encoding.
  */
 export function folderFilterMatches(filter: string, summaryFolder: string, cwd: string | null | undefined): boolean {
 	const needle = filter.trim();
