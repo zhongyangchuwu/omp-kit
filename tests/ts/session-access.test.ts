@@ -253,6 +253,31 @@ test("owned server stops once on success, read failure and consumer failure", as
 	}
 });
 
+test("owned server can route startup logs away from stdout", async () => {
+	const stdout: unknown[][] = [];
+	const stderr: unknown[][] = [];
+	const originalLog = console.log;
+	const originalError = console.error;
+	console.log = (...args: unknown[]) => { stdout.push(args); };
+	console.error = (...args: unknown[]) => { stderr.push(args); };
+	try {
+		await withLocalOmpStats(async api => requireEvidence(await api.listSessions(1)), {
+			start: async () => {
+				console.log("Building stats client...");
+				return { hostname: "127.0.0.1", port: 3847, stop: () => undefined };
+			},
+			fetch: async () => Response.json([]),
+			startLogsToStderr: true,
+		});
+		console.log("after-start");
+	} finally {
+		console.log = originalLog;
+		console.error = originalError;
+	}
+	assert.deepEqual(stdout, [["after-start"]]);
+	assert.deepEqual(stderr, [["Building stats client..."]]);
+});
+
 test("sync failures propagate and release the owned server", async () => {
 	let stops = 0;
 	await assert.rejects(withLocalOmpStats(async api => requireEvidence(await api.sync()), {
