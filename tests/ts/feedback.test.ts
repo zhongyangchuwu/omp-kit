@@ -13,6 +13,8 @@ process.env.PI_CODING_AGENT_DIR = isolatedAgentDir;
 
 // The extension resolves getAgentDir during module loading; dynamic imports keep this test's
 // official agent-dir target isolated from the user's profile while preserving that behavior.
+const piUtils = await import("@oh-my-pi/pi-utils");
+piUtils.__resetDirsFromEnvForTests();
 const piSdk = await import("@oh-my-pi/pi-coding-agent");
 const feedback = await import("../../extensions/feedback");
 const { zod, getAgentDir } = piSdk;
@@ -163,6 +165,7 @@ afterAll(async () => {
 	else process.env.OMP_PROFILE = previousOmpProfile;
 	if (previousPiProfile === undefined) delete process.env.PI_PROFILE;
 	else process.env.PI_PROFILE = previousPiProfile;
+	piUtils.__resetDirsFromEnvForTests();
 });
 
 describe("feedback schema", () => {
