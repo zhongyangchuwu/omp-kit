@@ -74,8 +74,8 @@ by the current public trace surface. That limitation stays explicit in Runtime/C
 
 For retained Main-session tool calls, full investigation also derives bounded facts from
 the structured public entries: tool identity, terminal/error observation, active versus
-off-branch location, and descriptors from the existing Scope V1 classifiers when their
-tool contracts apply. Raw tool arguments and results are used only in memory and are not
+off-branch location, and independent boundary, operation and resource facts from structured tool classifiers
+when their contracts apply. Raw tool arguments and results are used only in memory and are not
 copied into the report. Unsupported tools such as generic shell remain unclassified. Retained entries do
 not expose a historical workspace root per entry, so the retained-tree classifier does
 not reuse the current cwd to reinterpret old absolute paths; that uncertainty is
@@ -121,7 +121,7 @@ than claiming exhaustive history.
 
 ### Why scan is trace-only by default
 
-A full Scope V1 report may read selected public session entries for each tool action
+A full structured action-fact report may read selected public session entries for each tool action
 and walk a bounded parent chain to recover structured tool-call input. That is useful
 for one session, but multiplying it across a large history can create many local
 entry reads. On the OMP 18.2.5 compatibility candidate, built-in full scans first use the trace tool label as a
@@ -137,11 +137,11 @@ sync + bounded session list
 -> tool-error / terminal-missing / resolution-gap / coverage-conflict rules
 -> keep tool-error as supporting evidence; select candidates from attention/dynamic coverage
 -> aggregate counts + candidate session keys
--> full Scope V1 drill-down only where useful
+-> full structured action-fact drill-down only where useful
 ```
 
 It does **not** run the scope classifiers or read selected entries. Use `scan --full`
-only when bulk Scope V1 enrichment is intentionally worth that cost. This is still a
+only when bulk structured action-fact enrichment is intentionally worth that cost. This is still a
 local read-only analysis surface; it does not run models, tests or publication.
 
 The explicit-session form remains supported. The session file must belong to the
@@ -166,7 +166,7 @@ generic diagnostic. `--help` performs no profile or stats access.
 
 ## Batch scan output
 
-`omp-kit.session-assurance-scan/v1` is deliberately a compact index over per-session
+`omp-kit.session-assurance-scan/v2` is deliberately a compact index over per-session
 assurance results rather than another raw trace store. It contains:
 
 - scan mode (`trace-only` or explicit `full`);
@@ -174,7 +174,7 @@ assurance results rather than another raw trace store. It contains:
 - filter presence, `since`, and requested limit;
 - scanned/assessed/candidate counts;
 - aggregate action, subagent, attention-finding and dynamic-coverage-gap counts;
-- optional full-scan scope diagnostics (`candidates`, prefiltered unsupported actions,
+- optional full-scan action-fact diagnostics (`candidates`, prefiltered unsupported actions,
   recovery attempts, actual entry reads/cache hits, parent hops and timing);
 - finding-code counts;
 - candidate rows with opaque session key, timestamps and bounded finding codes.
@@ -192,9 +192,9 @@ candidates had no side effects.
 
 ## What is delivered
 
-`omp-kit.session-assurance/v1` carries normalized action observations, per-source
-coverage, optional observed-scope facts, rule execution results and generic
-evidence-linked findings. The current default full-report profile enables five
+`omp-kit.session-assurance/v2` carries normalized action observations, per-source
+coverage, independent boundary/operation/resource facts, rule execution results and
+generic evidence-linked findings. The current default full-report profile enables six
 built-in rules:
 
 | Rule/finding | Meaning | Not a claim that |
@@ -203,17 +203,18 @@ built-in rules:
 | `omp-kit.terminal-missing` / `terminal-missing` | Every available sample for an action lacks terminal evidence; supporting evidence only | A process is still running or certainly failed |
 | `omp-kit.resolution-gap` / `resolution-gap` | Promotes a missing terminal into bounded review semantics, including a yielded task result with no observed parent delivery | The work is still executing, failed, or was unauthorized |
 | `omp-kit.coverage-gap` / `coverage-gap` | A trace limit, unavailable/unassessed source, conflict or inherently unobserved surface | An unobserved effect did not occur |
-| `omp-kit.scope-expansion` / `scope-expansion` | A later classified action on one track first reaches a previously unseen observed boundary | The action was unauthorized, risky, or semantically out of scope |
+| `omp-kit.scope-expansion` / `scope-expansion` | A later classified action on one track first reaches a previously unseen observed boundary; supporting evidence only | The action was unauthorized, risky, or semantically out of scope |
+| `omp-kit.cross-boundary-write` / `cross-boundary-write` | A newly observed host/external boundary shares one classifier group with a structured write operation | The write was unauthorized, unsafe, malicious, or outside user intent |
 
 Tool-result return and background-job terminal are separate observations. Missing
 `isError` is represented as `errorReported: false` (no flag observed), never as a
 verified process result. A mixed terminal history is preserved as conflicting
-observations, not silently promoted to recovered/successful or stale evidence. `tool-error` and raw `terminal-missing` findings are presented in the Evidence section rather than Attention. `resolution-gap` is the attention layer for missing closure: a normal missing background span remains `background-resolution-unobserved`; for the currently observed OMP async task-job contract, a child track that has a successful observed `yield` while the parent background span remains unterminated is reported as `task-result-undelivered`. OMP stats opens a background span on `async-running` and closes it only on parent `async-result` delivery, so child yield is not treated as parent resolution. Scope expansion remains a separate attention signal.
+observations, not silently promoted to recovered/successful or stale evidence. `tool-error` and raw `terminal-missing` findings are presented in the Evidence section rather than Attention. `resolution-gap` is the attention layer for missing closure: a normal missing background span remains `background-resolution-unobserved`; for the currently observed OMP async task-job contract, a child track that has a successful observed `yield` while the parent background span remains unterminated is reported as `task-result-undelivered`. OMP stats opens a background span on `async-running` and closes it only on parent `async-result` delivery, so child yield is not treated as parent resolution. Scope expansion remains supporting Evidence. Cross-boundary write is the separate Attention composition over independent boundary and operation facts.
 
-Observed scope is documented separately in [assurance-scope.md](assurance-scope.md).
-It distinguishes `workspace`, `host-user`, `host-system`, `external`, and `unknown`
-boundaries while keeping requested scope and authorized scope explicitly outside V1.
-Generic shell/eval semantics are deliberately left unclassified rather than guessed.
+Observed action facts are documented separately in [assurance-scope.md](assurance-scope.md).
+Boundary, operation and resource are independent dimensions; requested scope and
+authorized scope remain outside the fact layer. Generic shell/eval semantics are
+deliberately left unclassified rather than guessed.
 
 ## Rule system boundaries
 
@@ -245,9 +246,8 @@ and presentation. No rule DSL or dynamic filesystem discovery is introduced.
 
 Adding an ordinary built-in rule should require its rule module and tests plus
 explicit registry/profile decisions. Shared semantics belong in normalized
-observations/derived facts instead of a rule dependency DAG. Scope follows this
-principle: classifiers derive reusable scope facts; `scope-expansion` only evaluates
-those facts.
+observations/derived facts instead of a rule dependency DAG. Action facts follow this principle: classifiers derive reusable boundary, operation and
+resource observations; rules consume only the dimensions they need.
 
 Rule states distinguish `evaluated`, `partial`, `skipped` and `failed`. Evaluated
 means evaluated over the stated bounded scope, not exhaustive coverage. Engine
@@ -277,8 +277,7 @@ separate from assurance rule enablement.
 Each full-report finding retains source/session/track/span and available entry/tool-call
 references. The caller retains source-to-session-file mapping for OMP-native drill-down.
 No new trace viewer is supplied. Absolute file/cwd paths, transcript titles, raw
-arguments, outputs and trace `detail` previews are not copied into the report. Scope
-enrichment uses raw tool arguments only transiently in memory. Tool labels, native
+arguments, outputs and trace `detail` previews are not copied into the report. Action-fact enrichment uses raw tool arguments only transiently in memory. Tool labels, native
 identifiers, timing, classifier identity and correlation hashes remain private
 metadata; this is NOT an anonymized or automatically publishable format. #33 still
 owns publication.
@@ -291,9 +290,9 @@ rollback. Returned child tracks still do not prove exhaustive retained child cov
 Detected source movement, cross-view mismatch, wrong views and invalid payloads are
 unassessed, not empty successful histories.
 
-Scope additionally records its own trace availability and per-tool classification
-coverage. A valid empty trace is distinct from an unavailable trace, and an unsupported
-tool is distinct from an action with no scope. The current limitations include generic
+Structured action facts additionally record shared trace availability and per-tool
+classification coverage. A valid empty trace is distinct from an unavailable trace,
+and an unsupported tool is distinct from an action with no classified facts. The current limitations include generic
 shell semantics, transitive tool effects, symlink targets, child absolute workspace
 roots and cross-track causal ordering.
 
@@ -304,8 +303,8 @@ remain outside complete observation.
 
 Tests use synthetic public traces and injectable readers, including missing and
 conflicting observations, engine isolation, deterministic composition, registry/profile
-separation, privacy projection, selected-entry scope recovery, explicit unclassified
-actions, per-track scope expansion, batch catalog/filter behavior, pre-trace folder
+separation, privacy projection, selected-entry action-fact recovery, explicit unclassified
+actions, independent fact dimensions, per-track scope expansion, cross-boundary-write composition, batch catalog/filter behavior, pre-trace folder
 pruning, zero-entry default scan, unsupported-tool prefiltering, full-scan diagnostics,
 opaque-key drill-down, CLI exit behavior and no-IO help. Repository CI validates
 the unmodified Bun/SDK suite. This is not acceptance in a user's installed OMP session.
