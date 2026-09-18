@@ -8,9 +8,13 @@ import {
 	type RuntimeEvidenceLimitation,
 	type RuntimeJobResolution,
 	type RuntimeJobStatus,
+	type RuntimeToolAction,
+	type RuntimeToolScope,
 	type RuntimeTreeEntry,
 	type SourceCoverage,
 } from "./model";
+import type { ScopeToolCall } from "./scope/model";
+import { BUILTIN_SCOPE_CLASSIFIERS } from "./scope/registry";
 
 function isObject(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -85,9 +89,115 @@ function jobResolutionsFromEntry(
 	return facts;
 }
 
+interface RuntimeToolResultSummary {
+	terminal: boolean;
+	errorReported: boolean;
+}
+
+function toolResultSummaries(entries: readonly unknown[]): Map<string, RuntimeToolResultSummary> {
+	const byCall = new Map<string, RuntimeToolResultSummary>();
+	for (const entry of entries) {
+		if (!isObject(entry) || entry.type !== "message" || !isObject(entry.message)) continue;
+		const message = entry.message;
+		if (message.role !== "toolResult" || typeof message.toolCallId !== "string" || !message.toolCallId) continue;
+		const existing = byCall.get(message.toolCallId);
+		byCall.set(message.toolCallId, {
+			terminal: true,
+			errorReported: existing?.errorReported === true || message.isError === true,
+		});
+	}
+	return byCall;
+}
+
+function dedupeScopes(scopes: readonly RuntimeToolScope[]): RuntimeToolScope[] {
+	const byKey = new Map<string, RuntimeToolScope>();
+	for (const scope of scopes) byKey.set(`${scope.boundary}\u0000${scope.access}\u0000${scope.resource}`, scope);
+	return [...byKey.values()].sort((a, b) => {
+		const left = `${a.boundary}\u0000${a.access}\u0000${a.resource}`;
+		const right = `${b.boundary}\u0000${b.access}\u0000${b.resource}`;
+		return left.localeCompare(right);
+	});
+}
+
+function classifyRuntimeTool(
+	actionId: string,
+	position: number,
+	toolName: string,
+	argumentsValue: unknown,
+	options: { workspaceRoot?: string | null; homeDir?: string | null; classifyTools?: boolean },
+): { status: RuntimeToolAction["scopeStatus"]; scopes: RuntimeToolScope[] } {
+	if (!options.classifyTools) return { status: "not-assessed", scopes: [] };
+	if (!isObject(argumentsValue)) return { status: "unclassified", scopes: [] };
+	const call: ScopeToolCall = {
+		actionId,
+		trackKey: assuranceId("runtime-main-track", actionId),
+		position,
+		toolName,
+		arguments: argumentsValue,
+		evidence: [],
+	};
+	const scopes: RuntimeToolScope[] = [];
+	try {
+		for (const classifier of BUILTIN_SCOPE_CLASSIFIERS) {
+			const result = classifier.classify(call, {
+				workspaceRoot: options.workspaceRoot ?? null,
+				homeDir: options.homeDir ?? null,
+			});
+			if (result === "not-applicable") continue;
+			scopes.push(...result.map(item => ({
+				boundary: item.boundary,
+				access: item.access,
+				resource: item.resource,
+			})));
+		}
+	} catch {
+		return { status: "unclassified", scopes: [] };
+	}
+	const deduped = dedupeScopes(scopes);
+	return { status: deduped.length ? "classified" : "unclassified", scopes: deduped };
+}
+
+function toolActionsFromEntries(
+	entries: readonly unknown[],
+	activeIds: ReadonlySet<string>,
+	sessionKey: string,
+	options: { workspaceRoot?: string | null; homeDir?: string | null; classifyTools?: boolean },
+): RuntimeToolAction[] {
+	const results = toolResultSummaries(entries);
+	const actions: RuntimeToolAction[] = [];
+	let position = 0;
+	for (const entry of entries) {
+		const identity = entryIdentity(entry);
+		if (!identity || !isObject(entry) || entry.type !== "message" || !isObject(entry.message)) continue;
+		const message = entry.message;
+		if (message.role !== "assistant" || !Array.isArray(message.content)) continue;
+		for (const block of message.content) {
+			if (!isObject(block) || block.type !== "toolCall" ||
+				typeof block.id !== "string" || !block.id ||
+				typeof block.name !== "string" || !block.name) continue;
+			const actionId = assuranceId("runtime-main-tool", sessionKey, identity.id, block.id);
+			const result = results.get(block.id);
+			const classification = classifyRuntimeTool(actionId, position, block.name, block.arguments, options);
+			actions.push({
+				id: actionId,
+				entryId: identity.id,
+				toolCallId: block.id,
+				toolName: block.name,
+				position: position++,
+				branch: activeIds.has(identity.id) ? "active" : "off-branch",
+				terminal: result?.terminal ? "observed" : "missing",
+				errorReported: result?.errorReported === true,
+				scopeStatus: classification.status,
+				scopes: classification.scopes,
+			});
+		}
+	}
+	return actions.sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
+}
+
 function availableRuntimeRead<Entry>(
 	read: EvidenceRead<RuntimeEntrySnapshot<Entry>>,
-): read is Extract<typeof read, { status: "available" }> {
+): read is Extract<EvidenceRead<RuntimeEntrySnapshot<Entry>>, { status: "available" }> {
 	return read.status === "available" && read.consistency !== "source-changed";
 }
 
@@ -117,12 +227,17 @@ export function runtimeSourceCoverage<Entry>(
 }
 
 /**
- * Project public runtime entries into bounded retained-tree and coordination facts.
- * Raw message content, tool arguments/results and paths stay out of the report.
+ * Project public runtime entries into bounded retained-tree, tool and coordination facts.
+ * Raw message text, tool arguments/results and paths stay out of the report.
  */
 export function deriveRuntimeEvidence<Entry>(
 	read: EvidenceRead<RuntimeEntrySnapshot<Entry>>,
 	activeRead?: EvidenceRead<RuntimeEntrySnapshot<Entry>>,
+	options: {
+		readonly classifyTools?: boolean;
+		readonly workspaceRoot?: string | null;
+		readonly homeDir?: string | null;
+	} = {},
 ): RuntimeEvidence | undefined {
 	if (!availableRuntimeRead(read)) return undefined;
 	const retainedTree = read.scope.source === "omp-runtime" && read.scope.view === "all-retained-entries";
@@ -151,6 +266,10 @@ export function deriveRuntimeEvidence<Entry>(
 		"child-retained-history-unavailable",
 		"not-an-atomic-snapshot",
 	]);
+	if (options.classifyTools) {
+		limitations.add("retained-tool-scope-declared-targets-only");
+		limitations.add("retained-generic-shell-unclassified");
+	}
 
 	for (const entry of read.data.entries) {
 		const identity = entryIdentity(entry);
@@ -169,6 +288,7 @@ export function deriveRuntimeEvidence<Entry>(
 		retainedTree,
 		entries: entries.sort((a, b) => a.timestamp === b.timestamp ? a.id.localeCompare(b.id) :
 			(a.timestamp ?? "").localeCompare(b.timestamp ?? "") || a.id.localeCompare(b.id)),
+		toolActions: toolActionsFromEntries(read.data.entries, activeIds, sessionKey, options),
 		jobResolutions: [...new Map(resolutions.map(item => [item.id, item])).values()].sort(compareIds),
 		limitations: [...limitations].sort(),
 	};
