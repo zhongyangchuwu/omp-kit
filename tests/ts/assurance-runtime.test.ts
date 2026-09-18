@@ -172,9 +172,11 @@ test("renderer exposes retained-tree/tool evidence without turning cancellation 
 		runtime,
 	}, []);
 	const rendered = renderAssuranceReport(report, BUILTIN_ASSURANCE_RULES);
-	assert.match(rendered, /Retained Main tree: 5 entries \| 3 active \| 2 off-branch/);
-	assert.match(rendered, /Retained Main tool actions: 1 \| 0 active \| 1 off-branch/);
-	assert.match(rendered, /Off-branch classified scope: external\/read\/service 1/);
-	assert.match(rendered, /CodeBoundaryScout: cancelled \(active\)/);
-	assert.doesNotMatch(rendered, /unauthorized|unsafe/i);
+	assert.match(rendered, /Needs review[\s\S]*✓ Nothing needs review/);
+	assert.match(rendered, /Main session[\s\S]*3 active · 2 off-branch/);
+	assert.match(rendered, /1 Main tool action · 1 terminal result/);
+	assert.match(rendered, /Background jobs[\s\S]*✓ CodeBoundaryScout · cancelled/);
+	assert.match(rendered, /Classification[\s\S]*Retained Main tools: 1 classified · 0 unclassified/);
+	assert.match(rendered, /Visibility[\s\S]*Retained child\/subagent branches are not fully available/);
+	assert.doesNotMatch(rendered, /Rules\n|omp-kit\.|unauthorized|unsafe/i);
 });
