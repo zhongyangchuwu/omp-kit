@@ -268,9 +268,12 @@ export function buildAssurancePresentation(
 
 function pushRuntimeText(lines: string[], view: RuntimeView): void {
 	lines.push("  Main session");
-	lines.push(view.retainedTree
-		? `    ${view.activeEntries} active · ${view.offBranchEntries} off-branch`
-		: `    ${view.activeEntries} active entries`);
+	if (view.retainedTree) {
+		lines.push(`    Current path: ${view.activeEntries} retained entries`);
+		lines.push(`    Other branches: ${view.offBranchEntries} retained entries`);
+	} else {
+		lines.push(`    ${view.activeEntries} active entries`);
+	}
 	if (view.toolActions > 0) {
 		const terminalParts = [
 			`${view.toolActions} Main tool ${plural(view.toolActions, "action")}`,
@@ -401,9 +404,13 @@ export function renderAssuranceWidgetLines(
 
 	const runtime = presentation.runtime;
 	if (runtime) {
-		lines.push(style("text", runtime.retainedTree
-			? `Main · ${runtime.activeEntries} active · ${runtime.offBranchEntries} off-branch`
-			: `Main · ${runtime.activeEntries} active entries`));
+		if (runtime.retainedTree) {
+			lines.push(style("text", "Main session"));
+			lines.push(style("text", `  Current path: ${runtime.activeEntries} retained entries`));
+			lines.push(style("text", `  Other branches: ${runtime.offBranchEntries} retained entries`));
+		} else {
+			lines.push(style("text", `Main · ${runtime.activeEntries} active entries`));
+		}
 		for (const job of runtime.jobs.slice(0, 2)) {
 			const marker = job.status === "failed" ? "✗" : "✓";
 			const tone: AssuranceTone = job.status === "failed" ? "error" : "success";
