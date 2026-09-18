@@ -285,7 +285,7 @@ function printScanReport(report: AssuranceScanReport): string {
 	if (report.performance?.actionFacts) {
 		const facts = report.performance.actionFacts;
 		lines.push(`Action fact recovery: ${facts.candidates} candidates | ${facts.prefilteredUnsupported} prefiltered unsupported | ${facts.recoveryAttempts} recovered | ${facts.entryReadRequests} entry reads | ${facts.entryCacheHits} cache hits`);
-		lines.push(`Action fact timing: ${(scope.totalMs / 1000).toFixed(1)}s total | ${(scope.recoveryMs / 1000).toFixed(1)}s entry recovery | ${(scope.classificationMs / 1000).toFixed(3)}s classification | ${facts.parentHops} parent hops`);
+		lines.push(`Action fact timing: ${(facts.totalMs / 1000).toFixed(1)}s total | ${(facts.recoveryMs / 1000).toFixed(1)}s entry recovery | ${(facts.classificationMs / 1000).toFixed(3)}s classification | ${facts.parentHops} parent hops`);
 	}
 	if (report.candidates.length > 0) {
 		lines.push("Candidates:");
@@ -295,7 +295,7 @@ function printScanReport(report: AssuranceScanReport): string {
 		if (report.candidates.length > 20) lines.push(`  ... ${report.candidates.length - 20} more candidates in --json output`);
 		lines.push("Deep dive: omp-kit-assurance --key SESSION_KEY");
 	}
-	if (report.mode === "trace-only") lines.push("structured action facts was not expanded during this first pass; use --full only when bulk action-fact enrichment is worth the selected-entry cost.");
+	if (report.mode === "trace-only") lines.push("Structured action facts were not expanded during this first pass; use --full only when bulk action-fact enrichment is worth the selected-entry cost.");
 	return lines.join("\n");
 }
 
