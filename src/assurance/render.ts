@@ -74,11 +74,13 @@ export function renderAssuranceReport(report: AssuranceReport, registry: readonl
 		const observedTerminals = toolActions.filter(item => item.terminal === "observed").length;
 		const missingTerminals = toolActions.length - observedTerminals;
 		const errors = toolActions.filter(item => item.errorReported).length;
-		lines.push(`  Retained Main tool actions: ${toolActions.length} | ${activeTools} active | ${offBranchTools} off-branch`);
+		lines.push(report.runtime.retainedTree
+			? `  Retained Main tool actions: ${toolActions.length} | ${activeTools} active | ${offBranchTools} off-branch`
+			: `  Active Main tool actions: ${toolActions.length}`);
 		lines.push(`  Tool terminal evidence: ${observedTerminals} observed | ${missingTerminals} missing | ${errors} errors reported`);
 		const scopeCounts = new Map<string, number>();
 		for (const item of toolActions) scopeCounts.set(item.scopeStatus, (scopeCounts.get(item.scopeStatus) ?? 0) + 1);
-		if (toolActions.length > 0) lines.push(`  Retained tool scope: ${[...scopeCounts.entries()].sort().map(([status, count]) => `${status} ${count}`).join(", ")}`);
+		if (toolActions.length > 0) lines.push(`  Main tool scope: ${[...scopeCounts.entries()].sort().map(([status, count]) => `${status} ${count}`).join(", ")}`);
 		const offBranchScopes = new Map<string, number>();
 		for (const item of toolActions.filter(item => item.branch === "off-branch")) {
 			for (const scope of item.scopes) {
