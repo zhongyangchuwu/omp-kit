@@ -26,7 +26,7 @@ function trace(tracks: TraceTrack[], cwd = "/home/test/project"): SessionTrace {
 		title: "PRIVATE_TITLE",
 		startedAt: 1,
 		endedAt: 20,
-		mtimeMs: 21, etag: "test-etag",
+		mtimeMs: 21, etag: "test-etag", etag: "test-etag",
 		tracks,
 		summary: { wallMs: 19, modelMs: 0, toolMs: 1, idleMs: 18, turns: 1, requests: 1,
 			toolCalls: tracks.flatMap(value => value.spans).filter(span => span.kind === "tool").length,
