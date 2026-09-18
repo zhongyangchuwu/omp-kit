@@ -173,7 +173,7 @@ test("renderer exposes retained-tree/tool evidence without turning cancellation 
 	}, []);
 	const rendered = renderAssuranceReport(report, BUILTIN_ASSURANCE_RULES);
 	assert.match(rendered, /Needs review[\s\S]*✓ Nothing needs review/);
-	assert.match(rendered, /Main session[\s\S]*3 active · 2 off-branch/);
+	assert.match(rendered, /Main session[\s\S]*Current path: 3 retained entries[\s\S]*Other branches: 2 retained entries/);
 	assert.match(rendered, /1 Main tool action · 1 terminal result/);
 	assert.match(rendered, /Background jobs[\s\S]*✓ CodeBoundaryScout · cancelled/);
 	assert.match(rendered, /Classification[\s\S]*Retained Main tools: 1 classified · 0 unclassified/);
