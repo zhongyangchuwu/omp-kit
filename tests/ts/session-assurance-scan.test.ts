@@ -177,10 +177,10 @@ test("full scan prefilters unsupported tool names before selected-entry reads", 
 		full: true,
 	});
 	assert.equal(entryCalls, 0);
-	assert.equal(result.report.performance?.scope.candidates, 1);
-	assert.equal(result.report.performance?.scope.prefilteredUnsupported, 1);
-	assert.equal(result.report.performance?.scope.recoveryAttempts, 0);
-	assert.equal(result.report.performance?.scope.entryReadRequests, 0);
+	assert.equal(result.report.performance?.actionFacts.candidates, 1);
+	assert.equal(result.report.performance?.actionFacts.prefilteredUnsupported, 1);
+	assert.equal(result.report.performance?.actionFacts.recoveryAttempts, 0);
+	assert.equal(result.report.performance?.actionFacts.entryReadRequests, 0);
 });
 
 test("scan keys can be resolved for a later full single-session drill-down without exposing paths", async () => {
