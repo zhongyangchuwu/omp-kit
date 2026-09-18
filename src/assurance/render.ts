@@ -59,6 +59,29 @@ export function renderAssuranceReport(report: AssuranceReport, registry: readonl
 	if (evidenceMeta.length === 0) lines.push("  No supporting-evidence rules registered.");
 	else lines.push("  Supporting evidence is retained for review context and does not by itself trigger attention.");
 
+	if (report.runtime) {
+		lines.push("", "Runtime");
+		const activeEntries = report.runtime.entries.filter(item => item.branch === "active").length;
+		const offBranchEntries = report.runtime.entries.length - activeEntries;
+		const parentIds = new Set(report.runtime.entries.flatMap(item => item.parentId ? [item.parentId] : []));
+		const leaves = report.runtime.entries.filter(item => !parentIds.has(item.id)).length;
+		lines.push(report.runtime.retainedTree
+			? `  Retained Main tree: ${report.runtime.entries.length} entries | ${activeEntries} active | ${offBranchEntries} off-branch | ${leaves} leaves`
+			: `  Active Main branch: ${activeEntries} entries`);
+		if (report.runtime.jobResolutions.length === 0) {
+			lines.push("  Observed job terminals: none");
+		} else {
+			const counts = new Map<string, number>();
+			for (const item of report.runtime.jobResolutions) counts.set(item.status, (counts.get(item.status) ?? 0) + 1);
+			lines.push(`  Observed job terminals: ${[...counts.entries()].sort().map(([status, count]) => `${status} ${count}`).join(", ")}`);
+			for (const item of report.runtime.jobResolutions.slice(0, 6)) {
+				lines.push(`    ${atom(item.jobId)}: ${item.status} (${item.branch})`);
+			}
+			if (report.runtime.jobResolutions.length > 6) lines.push("    More runtime job facts are retained in JSON output.");
+		}
+		for (const limitation of report.runtime.limitations) lines.push(`  runtime: ${atom(limitation)}`);
+	}
+
 	lines.push("", "Scope");
 	if (!report.scope || report.scope.traceCoverage === "unavailable") {
 		lines.push("  NOT ASSESSED");
