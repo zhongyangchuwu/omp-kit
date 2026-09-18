@@ -327,7 +327,7 @@ Do not build an analysis helper pre-emptively. A small exporter/report helper ea
 2. OMP 18.1.19 native sessions/trace plus selective entry usage is the accepted telemetry path when paired with omp-kit-owned metadata for material experiments.
 3. Worker capability evaluation now defaults to routine observational dogfood in real omp-kit development rather than one-tool-at-a-time synthetic A/B runs.
 4. Broad role-appropriate capability surfaces may be enabled first, then pruned from natural-use evidence while preserving consequence boundaries such as read-only review.
-5. Remote/cloud replication remains optional under Issue #12; accepted local artifacts may remain `local-retained`.
+5. Remote replication of a selected experiment artifact remains optional within Issue #12's evidence lifecycle; accepted artifacts may remain `local-retained`. A general remote publication/query pipeline for routine session-derived data belongs to #33 and is not a prerequisite for experiment acceptance.
 6. Revisit the manifest schema or add a tiny analysis/export helper only after real development creates a repeated need. Do not build a benchmark platform first.
 
-Tracking: GitHub Issues #5, #12, and completed #13.
+Tracking: GitHub Issues #5, #12, #33, and completed #13.
