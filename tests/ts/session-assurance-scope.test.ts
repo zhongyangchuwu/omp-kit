@@ -3,10 +3,11 @@ import assert from "node:assert/strict";
 import type { SessionTrace, TraceSpan, TraceTrack } from "@oh-my-pi/omp-stats/shared-types";
 import { buildAssuranceReport } from "../../src/assurance/engine";
 import { renderAssuranceReport } from "../../src/assurance/render";
-import { scopeExpansionRule } from "../../src/assurance/rules/scope-expansion";
+import { scopeExpansionRule, scopeWriteExpansionRule } from "../../src/assurance/rules/scope-expansion";
 import { deriveTraceScopeEvidence } from "../../src/assurance/scope/derive";
 import { BUILTIN_SCOPE_CLASSIFIERS } from "../../src/assurance/scope/registry";
 import { normalizeTraceReads, type TraceInput } from "../../src/assurance/trace-observations";
+import type { ScopeAccess, ScopeEvidence, ScopeObservation } from "../../src/assurance/scope/model";
 import type { SessionEntryReader } from "../../src/session/omp-stats";
 
 const file = "/home/test/project/session.jsonl";
@@ -166,7 +167,7 @@ test("child absolute paths are not compared with the root cwd", async () => {
 	assert.ok(scope.limitations.includes("child-workspace-root-unverified"));
 });
 
-test("scope expansion is per-track first appearance, not a risk ranking or cross-track order", async () => {
+test("read-only boundary expansion stays evidence rather than Attention", async () => {
 	const childFile = "/home/test/project/child.jsonl";
 	const main = track("main", [
 		toolSpan("m1", "c1", "result-one", "read", 1),
@@ -181,9 +182,82 @@ test("scope expansion is per-track first appearance, not a risk ranking or cross
 	const source = input(trace([main, child]));
 	const normalized = normalizeTraceReads([source]);
 	const scope = await deriveTraceScopeEvidence([source], normalized, entryReader(entries), BUILTIN_SCOPE_CLASSIFIERS, { homeDir: "/home/test" });
-	const report = buildAssuranceReport({ ...normalized, scope }, [scopeExpansionRule]);
+	const report = buildAssuranceReport({ ...normalized, scope }, [scopeExpansionRule, scopeWriteExpansionRule]);
 	assert.deepEqual(report.findings.map(item => item.code), ["new-boundary-external"]);
-	assert.equal(report.rules[0].status, "evaluated");
+	assert.equal(report.rules.find(item => item.ruleId === "omp-kit.scope-expansion")?.presentation.section, "evidence");
+	assert.equal(report.rules.find(item => item.ruleId === "omp-kit.scope-write-expansion")?.findings.length, 0);
+	const rendered = renderAssuranceReport(report, [scopeExpansionRule, scopeWriteExpansionRule]);
+	assert.match(rendered, /✓ Nothing needs review/);
+	assert.match(rendered, /Supporting observations[\s\S]*Scope boundary observations: 1/);
+});
+
+function syntheticExpansionScope(access: ScopeAccess, boundary: "workspace" | "host-user" | "host-system" | "external" = "external"): ScopeEvidence {
+	const observation = (
+		id: string,
+		position: number,
+		valueBoundary: ScopeObservation["boundary"],
+		valueAccess: ScopeAccess,
+	): ScopeObservation => ({
+		id,
+		actionId: `action-${id}`,
+		trackKey: "track-main",
+		position,
+		boundary: valueBoundary,
+		access: valueAccess,
+		resource: valueBoundary === "external" ? "service" : "filesystem",
+		classifier: { id: "test.scope", version: 1 },
+		evidence: [{ sourceId: "test", sessionKey: "session", trackId: "main", spanId: id }],
+	});
+	return {
+		traceCoverage: "available",
+		observations: [
+			observation("baseline", 0, boundary === "workspace" ? "external" : "workspace", "read"),
+			observation("expansion", 1, boundary, access),
+		],
+		actionCoverage: [
+			{ actionId: "action-baseline", trackKey: "track-main", position: 0, status: "classified", evidence: [] },
+			{ actionId: "action-expansion", trackKey: "track-main", position: 1, status: "classified", evidence: [] },
+		],
+		limitations: [],
+	};
+}
+
+test("cross-boundary writes are Attention while execute, unknown and workspace writes stay evidence", () => {
+	for (const boundary of ["host-user", "host-system", "external"] as const) {
+		const writeInput = { actions: [], coverage: [], scope: syntheticExpansionScope("write", boundary) };
+		assert.equal(scopeWriteExpansionRule.evaluate(writeInput).findings.length, 1);
+		assert.equal(scopeExpansionRule.evaluate(writeInput).findings.length, 0);
+	}
+
+	for (const access of ["read", "execute", "unknown"] as const) {
+		const value = { actions: [], coverage: [], scope: syntheticExpansionScope(access, "external") };
+		assert.equal(scopeWriteExpansionRule.evaluate(value).findings.length, 0);
+		assert.equal(scopeExpansionRule.evaluate(value).findings.length, 1);
+	}
+
+	const workspaceWrite = { actions: [], coverage: [], scope: syntheticExpansionScope("write", "workspace") };
+	assert.equal(scopeWriteExpansionRule.evaluate(workspaceWrite).findings.length, 0);
+	assert.equal(scopeExpansionRule.evaluate(workspaceWrite).findings.length, 1);
+});
+
+test("structured external write expansion remains worth reviewing", async () => {
+	const spans = [
+		toolSpan("s1", "c1", "result-one", "read", 1),
+		toolSpan("s2", "c2", "result-two", "github", 3),
+	];
+	const entries = {
+		...chain("c1", "read", { path: "src/a.ts" }, "one"),
+		...chain("c2", "github", { op: "pr_create", title: "PRIVATE_TITLE" }, "two"),
+	};
+	const source = input(trace([track("main", spans)]));
+	const normalized = normalizeTraceReads([source]);
+	const scope = await deriveTraceScopeEvidence([source], normalized, entryReader(entries), BUILTIN_SCOPE_CLASSIFIERS, { homeDir: "/home/test" });
+	const report = buildAssuranceReport({ ...normalized, scope }, [scopeExpansionRule, scopeWriteExpansionRule]);
+	assert.deepEqual(report.findings.map(item => item.code), ["new-boundary-external-write"]);
+	const rendered = renderAssuranceReport(report, [scopeExpansionRule, scopeWriteExpansionRule]);
+	assert.match(rendered, /1 item worth reviewing/);
+	assert.match(rendered, /External boundary first observed through a write/);
+	assert.doesNotMatch(rendered, /authorized|safe to proceed/i);
 });
 
 test("partial scope classification makes expansion partial and renderer exposes classification coverage", async () => {
