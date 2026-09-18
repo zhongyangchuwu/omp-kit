@@ -87,7 +87,9 @@ export type RuntimeEvidenceLimitation =
 	| "main-session-only"
 	| "child-retained-history-unavailable"
 	| "not-an-atomic-snapshot"
-	| "invalid-retained-entry-shape";
+	| "invalid-retained-entry-shape"
+	| "retained-tool-scope-declared-targets-only"
+	| "retained-generic-shell-unclassified";
 
 export interface RuntimeEvidence {
 	readonly sessionKey: string;
