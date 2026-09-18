@@ -121,9 +121,9 @@ test("attention findings select a candidate while tool errors stay visible as co
 test("single-session rendering separates attention from supporting error evidence", () => {
 	const value = report("/private/render.jsonl", [span({ isError: true })]);
 	const rendered = renderAssuranceReport(value, BUILTIN_ASSURANCE_RULES);
-	assert.match(rendered, /Attention[\s\S]*Resolution gaps: 0/);
-	assert.match(rendered, /Evidence[\s\S]*Missing terminal observations: 0[\s\S]*Tool errors reported: 1/);
-	assert.match(rendered, /Supporting evidence is retained for review context/);
+	assert.match(rendered, /Needs review[\s\S]*✓ Nothing needs review/);
+	assert.match(rendered, /What happened[\s\S]*Supporting observations[\s\S]*Tool errors reported: 1/);
+	assert.doesNotMatch(rendered, /Rules\n|omp-kit\./);
 	assert.equal(value.rules.find(rule => rule.ruleId === toolErrorRule.meta.id)?.presentation.section, "evidence");
 	assert.equal(value.rules.find(rule => rule.ruleId === missingTerminalRule.meta.id)?.presentation.section, "evidence");
 	assert.equal(value.rules.find(rule => rule.ruleId === resolutionGapRule.meta.id)?.presentation.section, "attention");
