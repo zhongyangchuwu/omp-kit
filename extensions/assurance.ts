@@ -1,5 +1,7 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { homedir } from "node:os";
+import { randomUUID } from "node:crypto";
 import {
 	getAgentDir,
 	type ExtensionAPI,
@@ -53,10 +55,22 @@ export async function persistAssuranceOutput(
 	rendered: string,
 ): Promise<void> {
 	await mkdir(paths.directory, { recursive: true });
-	await Promise.all([
-		writeFile(paths.text, `${rendered}\n`, "utf8"),
-		writeFile(paths.json, `${JSON.stringify(report, null, 2)}\n`, "utf8"),
-	]);
+	const token = randomUUID();
+	const textTemp = `${paths.text}.${token}.tmp`;
+	const jsonTemp = `${paths.json}.${token}.tmp`;
+	try {
+		await Promise.all([
+			writeFile(textTemp, `${rendered}\n`, "utf8"),
+			writeFile(jsonTemp, `${JSON.stringify(report, null, 2)}\n`, "utf8"),
+		]);
+		await rename(textTemp, paths.text);
+		await rename(jsonTemp, paths.json);
+	} finally {
+		await Promise.all([
+			rm(textTemp, { force: true }).catch(() => undefined),
+			rm(jsonTemp, { force: true }).catch(() => undefined),
+		]);
+	}
 }
 
 function registryFor(report: AssuranceReport) {
@@ -108,7 +122,13 @@ export async function runCurrentSessionAssurance(
 	const selectedRead = mode === "full"
 		? readRuntimeEntries<SessionEntry>(ctx.sessionManager, "all-retained-entries")
 		: activeRead;
-	const runtime = deriveRuntimeEvidence(selectedRead, mode === "full" ? activeRead : undefined);
+	const runtime = deriveRuntimeEvidence(
+		selectedRead,
+		mode === "full" ? activeRead : undefined,
+		mode === "full"
+			? { classifyTools: true, workspaceRoot: ctx.cwd, homeDir: homedir() }
+			: {},
+	);
 	const runtimeCoverage = mode === "full"
 		? [
 			runtimeSourceCoverage(activeRead, "runtime-active"),
@@ -147,7 +167,7 @@ export function registerAssuranceCommand(
 				pi.logger.warn("omp-kit assurance command failed", {
 					error: error instanceof Error ? error.message : String(error),
 				});
-				ctx.ui.notify("Could not produce the assurance report. Existing saved output was left unchanged.", "error");
+				ctx.ui.notify("Could not produce the assurance report; saved output was not confirmed.", "error");
 			}
 		},
 	});
