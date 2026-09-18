@@ -39,7 +39,7 @@ than claiming exhaustive history.
 A full Scope V1 report may read selected public session entries for each tool action
 and walk a bounded parent chain to recover structured tool-call input. That is useful
 for one session, but multiplying it across a large history can create many local
-entry reads. On OMP 18.2.3, built-in full scans first use the trace tool label as a
+entry reads. On the OMP 18.2.5 compatibility candidate, built-in full scans first use the trace tool label as a
 conservative prefilter: tool names that no built-in Scope V1 classifier supports are
 recorded as `unsupported-tool` without selected-entry recovery. Supported tool names
 still recover structured arguments before classification.
@@ -123,7 +123,7 @@ built-in rules:
 Tool-result return and background-job terminal are separate observations. Missing
 `isError` is represented as `errorReported: false` (no flag observed), never as a
 verified process result. A mixed terminal history is preserved as conflicting
-observations, not silently promoted to recovered/successful or stale evidence. `tool-error` and raw `terminal-missing` findings are presented in the Evidence section rather than Attention. `resolution-gap` is the attention layer for missing closure: a normal missing background span remains `background-resolution-unobserved`; for OMP 18.2.3 async task jobs, a child track that has a successful observed `yield` while the parent background span remains unterminated is reported as `task-result-undelivered`. OMP stats opens a background span on `async-running` and closes it only on parent `async-result` delivery, so child yield is not treated as parent resolution. Scope expansion remains a separate attention signal.
+observations, not silently promoted to recovered/successful or stale evidence. `tool-error` and raw `terminal-missing` findings are presented in the Evidence section rather than Attention. `resolution-gap` is the attention layer for missing closure: a normal missing background span remains `background-resolution-unobserved`; for the currently observed OMP async task-job contract, a child track that has a successful observed `yield` while the parent background span remains unterminated is reported as `task-result-undelivered`. OMP stats opens a background span on `async-running` and closes it only on parent `async-result` delivery, so child yield is not treated as parent resolution. Scope expansion remains a separate attention signal.
 
 Observed scope is documented separately in [assurance-scope.md](assurance-scope.md).
 It distinguishes `workspace`, `host-user`, `host-system`, `external`, and `unknown`
@@ -226,7 +226,7 @@ the unmodified Bun/SDK suite. This is not acceptance in a user's installed OMP s
 
 Historical scanning has now been exercised over 136 normal OMP sessions. The first pass selected 85 sessions; real-data triage showed 65 were selected only by `tool-error`, so #47 preserved tool errors as Evidence while reducing same-sample candidates to 20. #48 then separated raw `terminal-missing` Evidence from `resolution-gap` Attention. The rerun split 145 resolution findings into 90 `background-resolution-unobserved` and 55 `task-result-undelivered` findings.
 
-Event-level review of four small representative task/background candidates found that every sampled session predated OMP 18.2.2. Because 18.2.2/18.2.3 changed background/subagent settlement and retention semantics, that historical corpus remains useful compatibility evidence but should not be used to tune current Attention thresholds further. #31 now waits for a fresh OMP 18.2.3+ natural-session cohort, plus explicit non-candidate, rewind and child-read checks, before another rule/classifier change. The opt-in `/assurance` UI remains deferred until the report proves useful enough to justify product integration.
+Event-level review of four small representative task/background candidates found that every sampled session predated OMP 18.2.2. Because 18.2.2/18.2.3 changed background/subagent settlement and retention semantics, that historical corpus remains useful compatibility evidence but should not be used to tune current Attention thresholds further. #31 now waits for a fresh OMP 18.2.5 natural-session cohort, plus explicit non-candidate, rewind and child-read checks, before another rule/classifier change. The opt-in `/assurance` UI remains deferred until the report proves useful enough to justify product integration.
 The possible Agent-as-prover / Assurance-as-verifier direction remains an open design
 hypothesis rather than an implemented protocol. Neither #31 nor #33 is complete.
 This slice does not provision a database or upload sessions.

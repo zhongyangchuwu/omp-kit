@@ -19,7 +19,7 @@ export function isSessionSummary(value: unknown): value is SessionSummary {
 
 /** Validate consumed public fields, not raw journal internals; retain additive fields. */
 export function isSessionTrace(value: unknown): value is SessionTrace {
-	if (!isObject(value) || !isString(value.file) || !textOrNull(value.cwd) || !textOrNull(value.title) ||
+	if (!isObject(value) || !isString(value.file) || !isString(value.etag) || !textOrNull(value.cwd) || !textOrNull(value.title) ||
 		!numbers(value, ["startedAt", "endedAt", "mtimeMs"]) || !Array.isArray(value.tracks) || !isObject(value.summary)) return false;
 	const summary = value.summary;
 	if (!numbers(summary, ["wallMs", "modelMs", "toolMs", "idleMs", "turns", "requests", "toolCalls", "subagents", "totalTokens", "costTotal", "unpricedRequests"]) ||

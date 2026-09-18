@@ -124,7 +124,7 @@ These are policy-level mitigations, not a claim of ideal event semantics.
 
 ## Evaluation / observed effect
 
-Current evidence establishes persistent continuation in an exercised scenario, plausible and observed wakeup costs, the inspected wait/message limitations, and released final-output retrieval. OMP 18.1.22/18.2.0 removed the local timeout knob and improved waiting diagnostics. Compatibility triage through the pinned 18.2.3 baseline found no later change that resolves the completion-relevant message-filtering gap or the other tracked supervision semantics, so Issue #7 remains open.
+Current evidence establishes persistent continuation in an exercised scenario, plausible and observed wakeup costs, the inspected wait/message limitations, and released final-output retrieval. OMP 18.1.22/18.2.0 removed the local timeout knob and improved waiting diagnostics. Compatibility triage through the 18.2.5 candidate baseline found no later change that resolves the completion-relevant message-filtering gap or the other tracked supervision semantics, so Issue #7 remains open.
 
 A portable cost curve for checkpoint cadence and orchestration shapes across providers remains unestablished. That belongs with delegation economics (Issue #8) and natural real-work telemetry, not a synthetic waiting benchmark by default.
 
@@ -138,7 +138,7 @@ A portable cost curve for checkpoint cadence and orchestration shapes across pro
 
 ## Current status
 
-**Accepted local supervision policy; three runtime semantics remain tracked in inactive Issue #7.**
+**Accepted local supervision policy; runtime supervision gaps remain tracked in inactive Issue #7; 18.2.5 improves subagent interruption/final-yield behavior without resolving those contracts.**
 
 They concern semantic wait filtering, typed peer messages and per-agent read-only LSP. Stable settled final-output retrieval is resolved and should not be reimplemented locally.
 
