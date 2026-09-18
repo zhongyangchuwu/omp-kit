@@ -119,7 +119,7 @@ function summaryLines(
 		const offBranch = report.runtime.entries.length - active;
 		lines.push(report.runtime.retainedTree
 			? `Main tree: ${active} active | ${offBranch} off-branch`
-			: `Main branch: ${active} retained entries`);
+			: `Main branch: ${active} active entries`);
 		const terminals = report.runtime.jobResolutions.map(item => `${item.jobId}=${item.status}`);
 		if (terminals.length) lines.push(`Job terminals: ${terminals.slice(0, 3).join(", ")}${terminals.length > 3 ? " ..." : ""}`);
 	}
