@@ -34,11 +34,11 @@ A separate community report similarly favors separating strong-model planning/ac
 
 Reference: https://www.makerjackie.com/blog/2026-09-07-gpt6-astra
 
-### OMP 18.2.0 `hub wait` semantics
+### OMP 18.2.x `hub wait` semantics
 
 **Type:** released-source/changelog inspection.
 
-OMP 18.2.0 retains unified `hub wait` semantics in which a matching peer message can win the wait before a watched job settles. Therefore a routine peer progress message can still wake Main before the completion-related condition Main was conceptually waiting for.
+The wait/message behavior below was directly inspected on OMP 18.2.0. The repository compatibility review is now current through pinned OMP 18.2.3 and identified no 18.2.1–18.2.3 change that resolves these specific supervision gaps. A matching peer message can therefore still win `hub wait` before a watched job settles, so routine progress traffic can wake Main before the completion-related condition Main was conceptually waiting for.
 
 Since 18.1.22, message/job waits use an OMP-owned adaptive window instead of a caller-supplied timeout: the window starts around 5 seconds and lengthens across back-to-back waits up to about 5 minutes. The old `timeoutMs` argument and `async.pollWaitDuration` setting were removed. In 18.2.0, process waits also report what they were actually blocked on when timing out, improving diagnostics without adding semantic completion filtering.
 
@@ -108,7 +108,7 @@ standard ~5m
 deep     ~10m
 ```
 
-These are coordination hints, not completion promises, empirically optimal constants, or `hub wait` timeout settings. OMP 18.2.0 owns the actual adaptive wait window.
+These are coordination hints, not completion promises, empirically optimal constants, or `hub wait` timeout settings. OMP owns the actual adaptive wait window.
 
 Guidance favors:
 
@@ -124,7 +124,7 @@ These are policy-level mitigations, not a claim of ideal event semantics.
 
 ## Evaluation / observed effect
 
-Current evidence establishes persistent continuation in an exercised scenario, plausible and observed wakeup costs, the inspected wait/message limitations, and released final-output retrieval. OMP 18.1.22/18.2.0 removed the local timeout knob and improved waiting diagnostics, but did not resolve the completion-relevant message-filtering gap. Issue #7 therefore remains open with the same three semantic gaps.
+Current evidence establishes persistent continuation in an exercised scenario, plausible and observed wakeup costs, the inspected wait/message limitations, and released final-output retrieval. OMP 18.1.22/18.2.0 removed the local timeout knob and improved waiting diagnostics. Compatibility triage through the pinned 18.2.3 baseline found no later change that resolves the completion-relevant message-filtering gap or the other tracked supervision semantics, so Issue #7 remains open.
 
 A portable cost curve for checkpoint cadence and orchestration shapes across providers remains unestablished. That belongs with delegation economics (Issue #8) and natural real-work telemetry, not a synthetic waiting benchmark by default.
 
