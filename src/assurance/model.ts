@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import type { ReadConsistency, ReadFailureReason, ReadLimit, ReadScope } from "../session/read-result";
-import type { ScopeAccess, ScopeBoundary, ScopeEvidence, ScopeResource } from "./scope/model";
+import type { ActionFacts, OperationType, ResourceKind, ScopeBoundary } from "./scope/model";
 
-export const ASSURANCE_SCHEMA = "omp-kit.session-assurance/v1" as const;
+export const ASSURANCE_SCHEMA = "omp-kit.session-assurance/v2" as const;
 
 /** Local correlation only. Hashes and native identifiers are NOT anonymization. */
 export function assuranceId(...parts: string[]): string {
@@ -64,12 +64,6 @@ export interface RuntimeJobResolution {
 	readonly entryId: string;
 }
 
-export interface RuntimeToolScope {
-	readonly boundary: ScopeBoundary;
-	readonly access: ScopeAccess;
-	readonly resource: ScopeResource;
-}
-
 export interface RuntimeToolAction {
 	readonly id: string;
 	readonly entryId: string;
@@ -78,8 +72,10 @@ export interface RuntimeToolAction {
 	readonly branch: RuntimeBranchState;
 	readonly terminal: "observed" | "missing";
 	readonly errorReported: boolean;
-	readonly scopeStatus: "classified" | "unclassified" | "not-assessed";
-	readonly scopes: readonly RuntimeToolScope[];
+	readonly factStatus: "classified" | "unclassified" | "not-assessed";
+	readonly boundaries: readonly ScopeBoundary[];
+	readonly operations: readonly OperationType[];
+	readonly resources: readonly ResourceKind[];
 }
 
 export type RuntimeEvidenceLimitation =
@@ -104,8 +100,8 @@ export interface RuntimeEvidence {
 export interface AssuranceInput {
 	readonly actions: readonly ActionObservation[];
 	readonly coverage: readonly SourceCoverage[];
-	/** Optional additive fact surface; absence means scope was not assessed. */
-	readonly scope?: ScopeEvidence;
+	/** Optional independent boundary / operation / resource facts from structured tool contracts. */
+	readonly actionFacts?: ActionFacts;
 	/** Optional public-runtime fact surface. Raw messages/tool payloads are not copied here. */
 	readonly runtime?: RuntimeEvidence;
 }
