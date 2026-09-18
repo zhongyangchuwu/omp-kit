@@ -14,7 +14,7 @@ const summary: SessionSummary = {
 };
 function trace(): SessionTrace {
 	return {
-		file, cwd: summary.folder, title: null, startedAt: 1, endedAt: 2, mtimeMs: 3, etag: "test-etag",
+		file, cwd: summary.folder, title: null, startedAt: 1, endedAt: 2, mtimeMs: 3, etag: "test-etag", etag: "test-etag",
 		tracks: [{
 			id: "main", parentId: null, label: "Main", agent: null, model: null, file, markers: [],
 			spans: [
