@@ -241,6 +241,8 @@ export function buildAssurancePresentation(
 	}
 	for (const result of report.rules.filter(item => item.presentation.section === "coverage")) {
 		for (const finding of result.findings) visibilityCodes.add(finding.code);
+	}
+	for (const result of report.rules) {
 		if (result.status === "failed") visibilityCodes.add("rule-evaluation-failed");
 	}
 
