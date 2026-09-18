@@ -33,7 +33,7 @@ function trace(file: string, spans: TraceSpan[]): SessionTrace {
 		title: null,
 		startedAt: 1,
 		endedAt: 2,
-		mtimeMs: 3, etag: "test-etag", etag: "test-etag",
+		mtimeMs: 3, etag: "test-etag",
 		tracks: [{ id: "main", parentId: null, label: "Main", agent: null, model: null, file, spans, markers: [] }],
 		summary: {
 			wallMs: 1,
