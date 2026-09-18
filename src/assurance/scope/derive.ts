@@ -204,9 +204,19 @@ function traceCoverage(inputs: readonly TraceInput[]): ActionFacts["traceCoverag
 function commonFact(
 	candidate: ToolCandidate,
 	classifier: ActionClassifier,
+	descriptor: ActionDescriptor,
 ) {
 	return {
 		actionId: candidate.actionId,
+		groupId: assuranceId(
+			"action-fact-group",
+			candidate.actionId,
+			classifier.meta.id,
+			String(classifier.meta.version),
+			descriptor.boundary,
+			descriptor.operation,
+			descriptor.resource,
+		),
 		trackKey: candidate.trackKey,
 		position: candidate.position,
 		classifier: { ...classifier.meta },
@@ -292,8 +302,8 @@ export async function deriveTraceActionFacts(
 				throw new Error("Invalid action classifier output");
 			}
 			matched = true;
-			const common = commonFact(candidate, classifier);
 			for (const descriptor of result) {
+				const common = commonFact(candidate, classifier, descriptor);
 				boundaries.push({
 					id: assuranceId("boundary", candidate.actionId, classifier.meta.id, String(classifier.meta.version), descriptor.boundary),
 					...common,
