@@ -6,6 +6,7 @@ import { join } from "node:path";
 import type { ExtensionAPI, ExtensionCommandContext } from "@oh-my-pi/pi-coding-agent";
 import { buildAssuranceReport } from "../../src/assurance/engine";
 import {
+	AssuranceStageError,
 	assuranceOutputPaths,
 	parseAssuranceCommandMode,
 	persistAssuranceOutput,
@@ -67,4 +68,19 @@ test("slash command maps no argument to scan, full to full, and rejects extra mo
 	assert.deepEqual(calls, ["scan", "full"]);
 	assert.ok(notices.some(message => message.includes("Usage: /assurance [full]")));
 	assert.equal(warnings.length, 0);
+});
+
+
+test("slash command reports only a bounded failure stage", async () => {
+	let registered: { handler(args: string, ctx: ExtensionCommandContext): Promise<void> } | undefined;
+	const pi = {
+		registerCommand(_name: string, options: unknown) { registered = options as typeof registered; },
+		logger: { warn: () => undefined },
+	} as unknown as ExtensionAPI;
+	registerAssuranceCommand(pi, async () => { throw new AssuranceStageError("stats-report"); });
+	assert.ok(registered);
+	const notices: string[] = [];
+	const ctx = { ui: { notify: (message: string) => notices.push(message) } } as unknown as ExtensionCommandContext;
+	await registered.handler("", ctx);
+	assert.deepEqual(notices, ["Could not produce the assurance report (stage: stats-report)."]);
 });
