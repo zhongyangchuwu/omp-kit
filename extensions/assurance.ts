@@ -126,7 +126,7 @@ export async function runCurrentSessionAssurance(
 		selectedRead,
 		mode === "full" ? activeRead : undefined,
 		mode === "full"
-			? { classifyTools: true, workspaceRoot: ctx.cwd, homeDir: homedir() }
+			? { classifyTools: true, workspaceRoot: null, homeDir: homedir() }
 			: {},
 	);
 	const runtimeCoverage = mode === "full"
