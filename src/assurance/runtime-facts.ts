@@ -177,13 +177,12 @@ function toolActionsFromEntries(
 				typeof block.name !== "string" || !block.name) continue;
 			const actionId = assuranceId("runtime-main-tool", sessionKey, identity.id, block.id);
 			const result = results.get(block.id);
-			const classification = classifyRuntimeTool(actionId, position, block.name, block.arguments, options);
+			const classification = classifyRuntimeTool(actionId, position++, block.name, block.arguments, options);
 			actions.push({
 				id: actionId,
 				entryId: identity.id,
 				toolCallId: block.id,
 				toolName: block.name,
-				position: position++,
 				branch: activeIds.has(identity.id) ? "active" : "off-branch",
 				terminal: result?.terminal ? "observed" : "missing",
 				errorReported: result?.errorReported === true,
@@ -192,7 +191,7 @@ function toolActionsFromEntries(
 			});
 		}
 	}
-	return actions.sort((a, b) => a.position - b.position || a.id.localeCompare(b.id));
+	return actions.sort(compareIds);
 }
 
 function availableRuntimeRead<Entry>(
