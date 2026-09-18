@@ -5,6 +5,7 @@
     "": {
       "name": "omp-kit",
       "dependencies": {
+        "@oh-my-pi/omp-stats": "18.2.5",
         "@oh-my-pi/pi-coding-agent": "18.2.5",
       },
       "devDependencies": {
