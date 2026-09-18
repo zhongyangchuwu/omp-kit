@@ -55,7 +55,7 @@ Context notes assist current-session continuity, not universal cross-session mem
 
 OMP records sessions and normalizes usage. The session-evidence collector derives compact local summaries using published stats/trace interfaces; see [session evidence](session-evidence.md).
 
-The recorded 18.1.21 interaction exposed a storage-folder versus actual-cwd mismatch. The collector filters real project paths using public trace cwd. Provider data is sampled, cost is cost-equivalent rather than quota, and activity envelopes do not prove compute concurrency.
+The recorded 18.1.21 interaction exposed a storage-folder versus actual-cwd mismatch and remains historical acceptance evidence. OMP 18.2.1 repaired `SessionSummary.folder`; on the pinned 18.2.3 baseline the collector filters project paths from catalog summaries before trace reads. Stored evidence still retains trace cwd for provenance/backward-compatible report filtering. Provider data is sampled, cost is cost-equivalent rather than quota, and activity envelopes do not prove compute concurrency.
 
 ## Supply-chain and configuration discipline
 

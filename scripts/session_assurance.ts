@@ -284,7 +284,7 @@ export async function runAssuranceCli(argv: readonly string[], reader?: SessionA
 	};
 	return reader ? use(reader) : options.origin
 		? use(createOmpStatsClient(options.origin))
-		: withLocalOmpStats(use);
+		: withLocalOmpStats(use, { startLogsToStderr: options.json });
 }
 
 if (import.meta.main) {

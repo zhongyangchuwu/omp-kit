@@ -224,8 +224,9 @@ pruning, zero-entry default scan, unsupported-tool prefiltering, full-scan diagn
 opaque-key drill-down, CLI exit behavior and no-IO help. Repository CI validates
 the unmodified Bun/SDK suite. This is not acceptance in a user's installed OMP session.
 
-Historical scanning has now been exercised over 136 normal OMP sessions and used to reduce tool-error triage noise. Three representative terminal candidates were then inspected: a task child that yielded without observed parent delivery, a mixed error/background session, and a scope-expansion session. This motivated separating raw missing-terminal evidence from resolution attention without yet dropping bash/background candidates. Still required by #31: rerun the historical scan to inspect the distribution of `task-result-undelivered` versus generic resolution gaps, sample both families, and exercise rewind/child-read behavior before further triage changes. The opt-in `/assurance` UI
-remains deferred until the report proves useful enough to justify product integration.
+Historical scanning has now been exercised over 136 normal OMP sessions. The first pass selected 85 sessions; real-data triage showed 65 were selected only by `tool-error`, so #47 preserved tool errors as Evidence while reducing same-sample candidates to 20. #48 then separated raw `terminal-missing` Evidence from `resolution-gap` Attention. The rerun split 145 resolution findings into 90 `background-resolution-unobserved` and 55 `task-result-undelivered` findings.
+
+Event-level review of four small representative task/background candidates found that every sampled session predated OMP 18.2.2. Because 18.2.2/18.2.3 changed background/subagent settlement and retention semantics, that historical corpus remains useful compatibility evidence but should not be used to tune current Attention thresholds further. #31 now waits for a fresh OMP 18.2.3+ natural-session cohort, plus explicit non-candidate, rewind and child-read checks, before another rule/classifier change. The opt-in `/assurance` UI remains deferred until the report proves useful enough to justify product integration.
 The possible Agent-as-prover / Assurance-as-verifier direction remains an open design
 hypothesis rather than an implemented protocol. Neither #31 nor #33 is complete.
 This slice does not provision a database or upload sessions.

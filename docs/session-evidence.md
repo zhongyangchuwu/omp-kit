@@ -39,7 +39,9 @@ bun run evidence:report  -- --folder /path/to/project --since 2026-09-01T00:00:0
 bun run evidence:report  -- --json
 ```
 
-`--folder` accepts the normal project filesystem path or a substring. Matching uses the public session trace `cwd` when available and also accepts OMP's `/api/sessions.folder` value as a fallback. This matters on released OMP versions where stats can expose a session-storage key such as `-project-omp-kit` while the corresponding trace correctly reports `/home/user/project/omp-kit`. omp-kit does not reproduce that storage-key encoding locally.
+For `--json`, stdout is reserved for the JSON document; local OMP stats startup progress is routed to stderr.
+
+`--folder` accepts the normal project filesystem path or a substring. On the pinned OMP 18.2.3 baseline, `SessionSummary.folder` is the real working directory, so collection filters catalog summaries before reading traces. Stored v1 summaries still retain `session.cwd`, and report filtering accepts either field so evidence created around the pre-18.2.1 folder bug remains usable. The old trace-`cwd` prefilter workaround is not part of current collection.
 
 `collect` first asks OMP stats to synchronize its ordinary session data, discovers root sessions, and only rebuilds a derived summary when its compact revision changed. Re-running it over unchanged sessions is idempotent. Summaries created by the pre-fix v1 candidate without explicit `cwd` provenance are refreshed once so later reports can use normal filesystem-path filters reliably.
 
@@ -125,4 +127,4 @@ The collector is local-only. It does not upload telemetry, contact a cloud servi
 - Provider identity is sampled per `(track, model)`, not an exact per-request routing ledger; same-model provider switching may be conflated.
 - Provider sampling depends on the public session-entry payload; unavailable values remain unknown.
 - The collector summarizes the sessions visible to the current OMP stats/profile store; cross-machine aggregation is not part of v1.
-- Remote replication belongs to #12 only after a real backend is chosen.
+- Generic remote replication/publication for routine session-derived data belongs to #33. #12 owns retention/replication decisions for selected material experiment artifacts, not the general SessionEvidence pipeline.
