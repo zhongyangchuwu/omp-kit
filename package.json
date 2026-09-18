@@ -37,6 +37,9 @@
   "omp": {
     "name": "OMP Kit",
     "description": "Model-neutral workers, maintained skills, session evidence, and main-session policy for Oh My Pi",
-    "extensions": ["./extensions/feedback.ts"]
+    "extensions": [
+      "./extensions/feedback.ts",
+      "./extensions/assurance.ts"
+    ]
   }
 }
