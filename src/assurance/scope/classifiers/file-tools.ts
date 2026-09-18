@@ -1,22 +1,22 @@
-import type { ScopeClassifier, ScopeDescriptor, ScopeToolCall } from "../model";
+import type { ActionClassifier, ActionDescriptor, ActionToolCall } from "../model";
 import { classifyPathTarget } from "../path";
 
-function dedupe(values: readonly ScopeDescriptor[]): readonly ScopeDescriptor[] {
-	const byKey = new Map(values.map(value => [`${value.boundary}\u0000${value.access}\u0000${value.resource}`, value]));
+function dedupe(values: readonly ActionDescriptor[]): readonly ActionDescriptor[] {
+	const byKey = new Map(values.map(value => [`${value.boundary}\u0000${value.operation}\u0000${value.resource}`, value]));
 	return [...byKey.values()];
 }
 
-function onePath(call: ScopeToolCall, access: "read" | "write", pathValue: unknown,
-	workspaceRoot: string | null, homeDir: string | null): readonly ScopeDescriptor[] | "not-applicable" {
+function onePath(call: ActionToolCall, operation: "read" | "write", pathValue: unknown,
+	workspaceRoot: string | null, homeDir: string | null): readonly ActionDescriptor[] | "not-applicable" {
 	if (typeof pathValue !== "string") return "not-applicable";
 	// OMP supports delimiter recovery for search tools. Do not reproduce that filesystem-dependent parser here.
 	if ((call.toolName === "grep" || call.toolName === "glob") && pathValue.includes(";")) return "not-applicable";
-	const result = classifyPathTarget(pathValue, access, workspaceRoot, homeDir);
+	const result = classifyPathTarget(pathValue, operation, workspaceRoot, homeDir);
 	return result ? [result] : "not-applicable";
 }
 
-function hashlineEditTargets(input: string, workspaceRoot: string | null, homeDir: string | null): readonly ScopeDescriptor[] {
-	const out: ScopeDescriptor[] = [];
+function hashlineEditTargets(input: string, workspaceRoot: string | null, homeDir: string | null): readonly ActionDescriptor[] {
+	const out: ActionDescriptor[] = [];
 	const header = /^\[([^\]\r\n]+)#[0-9A-F]{4}\]\s*$/gm;
 	for (const match of input.matchAll(header)) {
 		const value = classifyPathTarget(match[1], "write", workspaceRoot, homeDir);
@@ -26,8 +26,8 @@ function hashlineEditTargets(input: string, workspaceRoot: string | null, homeDi
 }
 
 /** Built-in file/search contracts only. It does not inspect generic shell or eval code. */
-export const fileToolScopeClassifier: ScopeClassifier = {
-	meta: { id: "omp-kit.scope.file-tools", version: 1 },
+export const fileToolActionClassifier: ActionClassifier = {
+	meta: { id: "omp-kit.action.file-tools", version: 1 },
 	classify(call, context) {
 		if (call.toolName === "read") {
 			return onePath(call, "read", call.arguments.path, context.workspaceRoot, context.homeDir);
@@ -41,8 +41,8 @@ export const fileToolScopeClassifier: ScopeClassifier = {
 		}
 		if (call.toolName === "edit" || call.toolName === "apply_patch") {
 			if (typeof call.arguments.input !== "string") return "not-applicable";
-			const scopes = hashlineEditTargets(call.arguments.input, context.workspaceRoot, context.homeDir);
-			return scopes.length ? scopes : "not-applicable";
+			const facts = hashlineEditTargets(call.arguments.input, context.workspaceRoot, context.homeDir);
+			return facts.length ? facts : "not-applicable";
 		}
 		return "not-applicable";
 	},
