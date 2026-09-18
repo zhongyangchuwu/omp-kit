@@ -1,6 +1,58 @@
 import type { AssuranceReport, AssuranceRule, AssuranceRuleMeta, Finding, RuleResult } from "./model";
 import type { ScopeBoundary } from "./scope/model";
 
+export type AssurancePresentationMode = "scan" | "full";
+export type AssuranceTone = "accent" | "success" | "warning" | "error" | "muted" | "dim" | "text";
+export type AssuranceStyler = (tone: AssuranceTone, text: string) => string;
+
+export interface AssuranceRenderOptions {
+	readonly mode?: AssurancePresentationMode;
+}
+
+interface FindingView {
+	readonly message: string;
+	readonly context: string | null;
+}
+
+interface SupportingView {
+	readonly label: string;
+	readonly count: number;
+}
+
+interface RuntimeView {
+	readonly activeEntries: number;
+	readonly offBranchEntries: number;
+	readonly retainedTree: boolean;
+	readonly toolActions: number;
+	readonly observedToolTerminals: number;
+	readonly missingToolTerminals: number;
+	readonly jobs: readonly {
+		readonly id: string;
+		readonly status: "completed" | "failed" | "cancelled";
+		readonly branch: "active" | "off-branch";
+	}[];
+	readonly retainedScopeClassified: number;
+	readonly retainedScopeUnclassified: number;
+	readonly retainedScopeUnassessed: number;
+}
+
+interface ScopeView {
+	readonly boundaries: readonly ScopeBoundary[];
+	readonly classified: number;
+	readonly unclassified: number;
+	readonly available: boolean;
+}
+
+interface AssurancePresentation {
+	readonly title: string;
+	readonly attention: readonly FindingView[];
+	readonly supporting: readonly SupportingView[];
+	readonly runtime: RuntimeView | null;
+	readonly scope: ScopeView | null;
+	readonly inspected: readonly string[];
+	readonly visibility: readonly string[];
+}
+
 /** Escape terminal controls/bidi and bound identifiers. This is display safety, not redaction. */
 function atom(text: string): string {
 	return text.replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, "?").slice(0, 160);
@@ -21,130 +73,338 @@ function message(meta: AssuranceRuleMeta, finding: Finding): string {
 	return meta.messages[finding.code] ?? finding.code;
 }
 
+function plural(count: number, singular: string, pluralValue = `${singular}s`): string {
+	return count === 1 ? singular : pluralValue;
+}
+
+function findingContext(finding: Finding): string | null {
+	const ref = finding.evidence[0];
+	if (!ref) return null;
+	const track = ref.trackId === "main" ? "Main" : atom(ref.trackId);
+	if (ref.entryId) return `${track} · entry ${atom(ref.entryId).slice(0, 12)}`;
+	return `${track} · trace evidence`;
+}
+
 const BOUNDARY_ORDER: readonly ScopeBoundary[] = ["workspace", "host-user", "host-system", "external", "unknown"];
 
-/** Generic renderer: layout is shared, concrete labels/messages come from rule metadata. */
-export function renderAssuranceReport(report: AssuranceReport, registry: readonly AssuranceRule[]): string {
+const VISIBILITY_LABELS: Readonly<Record<string, string>> = {
+	"http": "The evidence source returned an HTTP failure.",
+	"transport": "The evidence source could not be reached.",
+	"invalid-json": "The evidence source returned invalid JSON.",
+	"invalid-envelope": "The evidence source returned an invalid payload.",
+	"aborted": "An evidence read was aborted.",
+	"runtime-unavailable": "The runtime evidence source was unavailable.",
+	"runtime-read-failed": "The runtime evidence source could not be read.",
+	"source-changed": "The evidence source changed during the read.",
+	"unexpected-view": "A requested evidence view was not available.",
+	"invalid-trace": "Some trace fields could not be interpreted.",
+	"bounded-session-list": "Session discovery is bounded.",
+	"list-limit-reached": "The session list reached its requested limit.",
+	"active-branches-only": "Trace-derived evidence represents active branches only.",
+	"child-completeness-unknown": "Child/subagent trace completeness is not guaranteed.",
+	"details-are-previews": "Trace details are previews, not full commands.",
+	"single-session-only": "This report covers one session.",
+	"retained-entries-only": "Retained entries do not include erased or external history.",
+	"not-an-atomic-snapshot": "Cross-track reads are not an atomic snapshot.",
+	"conflicting-observations": "Conflicting observations were retained rather than resolved.",
+	"no-trace-input": "No trace input was available.",
+	"process-network-unobserved": "Process and network effects are not exhaustively observed.",
+	"tool-and-background-only": "Current rules cover tool/background evidence, not task quality.",
+	"declared-targets-only": "Scope describes declared targets only.",
+	"generic-shell-unclassified": "Generic shell effects are not classified.",
+	"path-symlink-target-unverified": "Filesystem symlink targets are not verified.",
+	"child-workspace-root-unverified": "Child workspace roots are not verified.",
+	"cross-track-order-unavailable": "Cross-track causal order is unavailable.",
+	"main-session-only": "Retained-tree traversal covers the Main session only.",
+	"child-retained-history-unavailable": "Retained child/subagent branches are not fully available.",
+	"invalid-retained-entry-shape": "Some retained entries could not be interpreted.",
+	"retained-tool-scope-declared-targets-only": "Retained tool scope describes declared targets only.",
+	"retained-workspace-root-unverified": "Historical workspace roots are not verified.",
+	"retained-generic-shell-unclassified": "Generic shell effects in retained history are not classified.",
+};
+
+function coverageCodeOrder(code: string): number {
+	const priority = [
+		"runtime-read-failed",
+		"runtime-unavailable",
+		"source-changed",
+		"conflicting-observations",
+		"child-retained-history-unavailable",
+		"child-completeness-unknown",
+		"retained-workspace-root-unverified",
+		"child-workspace-root-unverified",
+		"retained-generic-shell-unclassified",
+		"generic-shell-unclassified",
+		"process-network-unobserved",
+		"cross-track-order-unavailable",
+		"not-an-atomic-snapshot",
+		"retained-entries-only",
+		"active-branches-only",
+		"details-are-previews",
+		"single-session-only",
+		"tool-and-background-only",
+	];
+	const index = priority.indexOf(code);
+	return index < 0 ? priority.length : index;
+}
+
+function sourceViewLabel(view: string): string {
+	if (view === "active-branch-trace") return "Active trace";
+	if (view === "active-branch-entries") return "Active Main entries";
+	if (view === "all-retained-entries") return "Retained Main tree";
+	if (view === "selected-entry") return "Selected tool entries";
+	if (view === "session-list") return "Session catalog";
+	if (view === "sync") return "Session sync";
+	return atom(view);
+}
+
+export function buildAssurancePresentation(
+	report: AssuranceReport,
+	registry: readonly AssuranceRule[],
+	options: AssuranceRenderOptions = {},
+): AssurancePresentation {
 	const metaById = new Map(registry.map(rule => [rule.meta.id, rule.meta]));
-	const resultById = new Map(report.rules.map(result => [result.ruleId, result]));
 	const metaFor = (result: RuleResult) => metaById.get(result.ruleId) ?? fallbackMeta(result);
-	const lines = ["Session review (evidence snapshot)", "", "Attention"];
-	const attentionMeta = registry.map(rule => rule.meta).filter(meta => meta.presentation.section === "attention");
-	for (const meta of attentionMeta) {
-		const result = resultById.get(meta.id);
-		const label = meta.presentation.summaryLabel ?? meta.title;
-		const count = result && (result.status === "evaluated" || result.status === "partial") ? result.findings.length : "NOT ASSESSED";
-		lines.push(`  ${atom(label)}: ${count}`);
-	}
-	if (attentionMeta.length === 0) lines.push("  No attention rules registered.");
-	const attentionFindings = report.rules
+
+	const attention = report.rules
 		.filter(result => result.presentation.section === "attention")
-		.flatMap(result => result.findings.map(finding => ({ result, finding })));
-	for (const { result, finding } of attentionFindings.slice(0, 8)) {
-		const meta = metaFor(result);
-		lines.push(`  [${finding.id.slice(0, 12)}] ${atom(message(meta, finding))}`);
-		for (const ref of finding.evidence.slice(0, 2)) lines.push(
-			`    ${atom(ref.sourceId)} / ${atom(ref.trackId)} / span ${atom(ref.spanId)}${ref.entryId ? ` / entry ${atom(ref.entryId)}` : ""}`);
-	}
-	if (attentionFindings.length > 8) lines.push("  More findings and all evidence references are in JSON output.");
+		.flatMap(result => result.findings.map(finding => ({
+			message: atom(message(metaFor(result), finding)),
+			context: findingContext(finding),
+		})));
 
-	lines.push("", "Evidence");
-	const evidenceMeta = registry.map(rule => rule.meta).filter(meta => meta.presentation.section === "evidence");
-	for (const meta of evidenceMeta) {
-		const result = resultById.get(meta.id);
-		const label = meta.presentation.summaryLabel ?? meta.title;
-		const count = result && (result.status === "evaluated" || result.status === "partial") ? result.findings.length : "NOT ASSESSED";
-		lines.push(`  ${atom(label)}: ${count}`);
-	}
-	if (evidenceMeta.length === 0) lines.push("  No supporting-evidence rules registered.");
-	else lines.push("  Supporting evidence is retained for review context and does not by itself trigger attention.");
+	const supporting = report.rules
+		.filter(result => result.presentation.section === "evidence")
+		.flatMap(result => {
+			const meta = metaFor(result);
+			if (result.status !== "evaluated" && result.status !== "partial") return [];
+			if (result.findings.length === 0) return [];
+			return [{
+				label: atom(meta.presentation.summaryLabel ?? meta.title),
+				count: result.findings.length,
+			}];
+		});
 
-	if (report.runtime) {
-		lines.push("", "Runtime");
+	const runtime: RuntimeView | null = report.runtime ? (() => {
 		const activeEntries = report.runtime.entries.filter(item => item.branch === "active").length;
 		const offBranchEntries = report.runtime.entries.length - activeEntries;
-		const parentIds = new Set(report.runtime.entries.flatMap(item => item.parentId ? [item.parentId] : []));
-		const leaves = report.runtime.entries.filter(item => !parentIds.has(item.id)).length;
-		lines.push(report.runtime.retainedTree
-			? `  Retained Main tree: ${report.runtime.entries.length} entries | ${activeEntries} active | ${offBranchEntries} off-branch | ${leaves} leaves`
-			: `  Active Main branch: ${activeEntries} entries`);
-		const toolActions = report.runtime.toolActions;
-		const activeTools = toolActions.filter(item => item.branch === "active").length;
-		const offBranchTools = toolActions.length - activeTools;
-		const observedTerminals = toolActions.filter(item => item.terminal === "observed").length;
-		const missingTerminals = toolActions.length - observedTerminals;
-		const errors = toolActions.filter(item => item.errorReported).length;
-		lines.push(report.runtime.retainedTree
-			? `  Retained Main tool actions: ${toolActions.length} | ${activeTools} active | ${offBranchTools} off-branch`
-			: `  Active Main tool actions: ${toolActions.length}`);
-		lines.push(`  Tool terminal evidence: ${observedTerminals} observed | ${missingTerminals} missing | ${errors} errors reported`);
-		const scopeCounts = new Map<string, number>();
-		for (const item of toolActions) scopeCounts.set(item.scopeStatus, (scopeCounts.get(item.scopeStatus) ?? 0) + 1);
-		if (toolActions.length > 0) lines.push(`  Main tool scope: ${[...scopeCounts.entries()].sort().map(([status, count]) => `${status} ${count}`).join(", ")}`);
-		const offBranchScopes = new Map<string, number>();
-		for (const item of toolActions.filter(item => item.branch === "off-branch")) {
-			for (const scope of item.scopes) {
-				const key = `${scope.boundary}/${scope.access}/${scope.resource}`;
-				offBranchScopes.set(key, (offBranchScopes.get(key) ?? 0) + 1);
-			}
-		}
-		if (offBranchScopes.size > 0) {
-			lines.push(`  Off-branch classified scope: ${[...offBranchScopes.entries()].sort().slice(0, 6).map(([key, count]) => `${key} ${count}`).join(", ")}`);
-		}
-		if (report.runtime.jobResolutions.length === 0) {
-			lines.push("  Observed job terminals: none");
-		} else {
-			const counts = new Map<string, number>();
-			for (const item of report.runtime.jobResolutions) counts.set(item.status, (counts.get(item.status) ?? 0) + 1);
-			lines.push(`  Observed job terminals: ${[...counts.entries()].sort().map(([status, count]) => `${status} ${count}`).join(", ")}`);
-			for (const item of report.runtime.jobResolutions.slice(0, 6)) {
-				lines.push(`    ${atom(item.jobId)}: ${item.status} (${item.branch})`);
-			}
-			if (report.runtime.jobResolutions.length > 6) lines.push("    More runtime job facts are retained in JSON output.");
-		}
-		for (const limitation of report.runtime.limitations) lines.push(`  runtime: ${atom(limitation)}`);
-	}
+		const observedToolTerminals = report.runtime.toolActions.filter(item => item.terminal === "observed").length;
+		const missingToolTerminals = report.runtime.toolActions.length - observedToolTerminals;
+		const retainedScopeClassified = report.runtime.toolActions.filter(item => item.scopeStatus === "classified").length;
+		const retainedScopeUnclassified = report.runtime.toolActions.filter(item => item.scopeStatus === "unclassified").length;
+		const retainedScopeUnassessed = report.runtime.toolActions.filter(item => item.scopeStatus === "not-assessed").length;
+		return {
+			activeEntries,
+			offBranchEntries,
+			retainedTree: report.runtime.retainedTree,
+			toolActions: report.runtime.toolActions.length,
+			observedToolTerminals,
+			missingToolTerminals,
+			jobs: report.runtime.jobResolutions.map(item => ({
+				id: atom(item.jobId),
+				status: item.status,
+				branch: item.branch,
+			})),
+			retainedScopeClassified,
+			retainedScopeUnclassified,
+			retainedScopeUnassessed,
+		};
+	})() : null;
 
-	lines.push("", "Scope");
-	if (!report.scope || report.scope.traceCoverage === "unavailable") {
-		lines.push("  NOT ASSESSED");
-	} else {
-		lines.push(`  Trace coverage: ${report.scope.traceCoverage}`);
+	const scope: ScopeView | null = report.scope ? (() => {
 		const observed = new Set(report.scope.observations.map(item => item.boundary));
 		const boundaries = BOUNDARY_ORDER.filter(boundary => observed.has(boundary));
-		lines.push(`  Observed boundaries: ${boundaries.length ? boundaries.join(", ") : "none classified"}`);
 		const classified = report.scope.actionCoverage.filter(item => item.status === "classified").length;
-		const unclassified = report.scope.actionCoverage.length - classified;
-		lines.push(`  Tool actions classified: ${classified}`);
-		lines.push(`  Tool actions unclassified: ${unclassified}`);
+		return {
+			boundaries,
+			classified,
+			unclassified: report.scope.actionCoverage.length - classified,
+			available: report.scope.traceCoverage !== "unavailable",
+		};
+	})() : null;
+
+	const inspected = new Set<string>();
+	for (const source of report.coverage) {
+		if (source.assessed) inspected.add(sourceViewLabel(source.scope.view));
+	}
+	if (scope?.available) inspected.add("Structured tool scope where supported");
+
+	const visibilityCodes = new Set<string>();
+	for (const limitation of report.runtime?.limitations ?? []) visibilityCodes.add(limitation);
+	for (const limitation of report.scope?.limitations ?? []) visibilityCodes.add(limitation);
+	for (const source of report.coverage) {
+		for (const limitation of source.limitations) visibilityCodes.add(limitation);
+		if (!source.assessed && source.reason) visibilityCodes.add(source.reason);
+	}
+	for (const result of report.rules.filter(item => item.presentation.section === "coverage")) {
+		for (const finding of result.findings) visibilityCodes.add(finding.code);
+		if (result.status === "failed") visibilityCodes.add("runtime-read-failed");
 	}
 
-	lines.push("", "Coverage");
-	for (const source of report.coverage) lines.push(
-		`  ${atom(source.sourceId)}: ${source.assessed ? "assessed bounded view" : "NOT ASSESSED"} (${atom(source.scope.view)}; ${atom(source.consistency)})`);
-	if (report.scope) {
-		for (const limitation of report.scope.limitations) lines.push(`  scope: ${atom(limitation)}`);
-	}
-	const coverageFindings = report.rules
-		.filter(result => result.presentation.section === "coverage")
-		.flatMap(result => result.findings.map(finding => ({ result, finding })));
-	const conflicts = coverageFindings.filter(({ finding }) => finding.code === "conflicting-observations").length;
-	if (conflicts) lines.push(`  Evidence conflicts: ${conflicts} (not resolved)`);
-	const seenCoverage = new Set<string>();
-	for (const { result, finding } of coverageFindings) {
-		const key = `${result.ruleId}:${finding.code}`;
-		if (seenCoverage.has(key)) continue;
-		seenCoverage.add(key);
-		lines.push(`  ${atom(finding.code)}: ${atom(message(metaFor(result), finding))}`);
-	}
-	for (const result of report.rules.filter(item => item.status === "failed")) {
-		lines.push(`  Rule ${atom(metaFor(result).title)} failed to evaluate (${atom(result.failure ?? "unknown")}).`);
+	const visibility = [...visibilityCodes]
+		.sort((a, b) => coverageCodeOrder(a) - coverageCodeOrder(b) || a.localeCompare(b))
+		.map(code => VISIBILITY_LABELS[code] ?? atom(code));
+
+	return {
+		title: options.mode === "full" ? "Assurance · Full" : "Assurance",
+		attention,
+		supporting,
+		runtime,
+		scope,
+		inspected: [...inspected],
+		visibility,
+	};
+}
+
+function pushRuntimeText(lines: string[], view: RuntimeView): void {
+	lines.push("  Main session");
+	lines.push(view.retainedTree
+		? `    ${view.activeEntries} active · ${view.offBranchEntries} off-branch`
+		: `    ${view.activeEntries} active entries`);
+	if (view.toolActions > 0) {
+		const terminalParts = [
+			`${view.toolActions} Main tool ${plural(view.toolActions, "action")}`,
+			`${view.observedToolTerminals} terminal ${plural(view.observedToolTerminals, "result")}`,
+		];
+		if (view.missingToolTerminals > 0) terminalParts.push(`${view.missingToolTerminals} missing terminal`);
+		lines.push(`    ${terminalParts.join(" · ")}`);
 	}
 
-	lines.push("", "Rules");
-	for (const result of report.rules) lines.push(`  ${atom(result.ruleId)}@${result.ruleVersion}: ${result.status}`);
-	lines.push("", "No task-quality, authorization or safety verdict. Observed scope is not requested or authorized scope.",
-		"Tool return is not process success; a missing terminal is not proof of a running process.",
-		"Private local metadata, not approved for publication. Native trace/entry references are for local drill-down.");
+	if (view.jobs.length > 0) {
+		lines.push("  Background jobs");
+		for (const job of view.jobs.slice(0, 8)) {
+			const marker = job.status === "failed" ? "✗" : "✓";
+			const branch = job.branch === "off-branch" ? " · off-branch" : "";
+			lines.push(`    ${marker} ${job.id} · ${job.status}${branch}`);
+		}
+		if (view.jobs.length > 8) lines.push(`    · ${view.jobs.length - 8} more terminal job facts in JSON`);
+	}
+}
+
+function pushScopeText(lines: string[], presentation: AssurancePresentation): void {
+	const scope = presentation.scope;
+	if (!scope?.available) return;
+	lines.push("  Scope");
+	lines.push(`    ${scope.boundaries.length ? scope.boundaries.join(", ") : "No classified boundaries"}`);
+}
+
+function pushSupportingText(lines: string[], supporting: readonly SupportingView[]): void {
+	if (supporting.length === 0) return;
+	lines.push("  Supporting observations");
+	for (const item of supporting) lines.push(`    · ${item.label}: ${item.count}`);
+}
+
+function pushClassificationText(lines: string[], presentation: AssurancePresentation): void {
+	const runtime = presentation.runtime;
+	const scope = presentation.scope;
+	const hasRuntimeClassification = runtime &&
+		(runtime.retainedScopeClassified > 0 || runtime.retainedScopeUnclassified > 0 || runtime.retainedScopeUnassessed > 0);
+	const hasTraceClassification = scope?.available && (scope.classified > 0 || scope.unclassified > 0);
+	if (!hasRuntimeClassification && !hasTraceClassification) return;
+	lines.push("  Classification");
+	if (hasRuntimeClassification && runtime) {
+		const parts = [
+			`${runtime.retainedScopeClassified} classified`,
+			`${runtime.retainedScopeUnclassified} unclassified`,
+		];
+		if (runtime.retainedScopeUnassessed > 0) parts.push(`${runtime.retainedScopeUnassessed} not assessed`);
+		lines.push(`    Retained Main tools: ${parts.join(" · ")}`);
+	}
+	if (hasTraceClassification && scope) {
+		lines.push(`    Trace tools: ${scope.classified} classified · ${scope.unclassified} unclassified`);
+	}
+}
+
+/** Human-facing plain-text report. Machine/debug rule details remain in JSON. */
+export function renderAssuranceReport(
+	report: AssuranceReport,
+	registry: readonly AssuranceRule[],
+	options: AssuranceRenderOptions = {},
+): string {
+	const presentation = buildAssurancePresentation(report, registry, options);
+	const lines = [presentation.title, "", "Needs review"];
+	if (presentation.attention.length === 0) {
+		lines.push("  ✓ Nothing needs review");
+	} else {
+		lines.push(`  ! ${presentation.attention.length} ${plural(presentation.attention.length, "item")} worth reviewing`);
+		for (const item of presentation.attention.slice(0, 8)) {
+			lines.push(`  ! ${item.message}`);
+			if (item.context) lines.push(`    ${item.context}`);
+		}
+		if (presentation.attention.length > 8) lines.push("    · More review items and evidence references are retained in JSON.");
+	}
+
+	lines.push("", "What happened");
+	if (presentation.runtime) pushRuntimeText(lines, presentation.runtime);
+	pushScopeText(lines, presentation);
+	pushSupportingText(lines, presentation.supporting);
+	if (!presentation.runtime && !presentation.scope?.available && presentation.supporting.length === 0) {
+		lines.push("  No runtime summary was available.");
+	}
+
+	lines.push("", "Visibility", "  Inspected");
+	if (presentation.inspected.length === 0) lines.push("    · No evidence surface was fully assessed.");
+	else for (const item of presentation.inspected) lines.push(`    ✓ ${item}`);
+	pushClassificationText(lines, presentation);
+	if (presentation.visibility.length > 0) {
+		lines.push("  Not fully visible");
+		for (const item of presentation.visibility) lines.push(`    · ${item}`);
+	}
+
+	lines.push(
+		"",
+		"This is an evidence review, not a task-quality, authorization, or safety verdict.",
+		"Private local metadata. Native entry references are retained for local drill-down.",
+	);
 	return lines.join("\n");
+}
+
+function identityStyle(_tone: AssuranceTone, text: string): string {
+	return text;
+}
+
+/** Compact current-session widget. Styling is injected by the TUI host; plain strings remain usable elsewhere. */
+export function renderAssuranceWidgetLines(
+	report: AssuranceReport,
+	registry: readonly AssuranceRule[],
+	mode: AssurancePresentationMode,
+	style: AssuranceStyler = identityStyle,
+): string[] {
+	const presentation = buildAssurancePresentation(report, registry, { mode });
+	const lines: string[] = [style("accent", presentation.title)];
+	if (presentation.attention.length === 0) {
+		lines.push(style("success", "✓ Nothing needs review"));
+	} else {
+		lines.push(style("warning", `! ${presentation.attention.length} ${plural(presentation.attention.length, "item")} worth reviewing`));
+		for (const item of presentation.attention.slice(0, 2)) {
+			lines.push(style("warning", `  ! ${item.message}`));
+			if (item.context) lines.push(style("muted", `    ${item.context}`));
+		}
+		if (presentation.attention.length > 2) lines.push(style("muted", `  · ${presentation.attention.length - 2} more in saved report`));
+	}
+
+	const runtime = presentation.runtime;
+	if (runtime) {
+		lines.push(style("text", runtime.retainedTree
+			? `Main · ${runtime.activeEntries} active · ${runtime.offBranchEntries} off-branch`
+			: `Main · ${runtime.activeEntries} active entries`));
+		for (const job of runtime.jobs.slice(0, 2)) {
+			const marker = job.status === "failed" ? "✗" : "✓";
+			const tone: AssuranceTone = job.status === "failed" ? "error" : "success";
+			const branch = job.branch === "off-branch" ? " · off-branch" : "";
+			lines.push(style(tone, `${marker} ${job.id} · ${job.status}${branch}`));
+		}
+	}
+
+	const supportingCount = presentation.supporting.reduce((sum, item) => sum + item.count, 0);
+	if (supportingCount > 0) {
+		lines.push(style("muted", `${supportingCount} supporting ${plural(supportingCount, "observation")}`));
+	}
+
+	if (mode === "full" && runtime &&
+		(runtime.retainedScopeClassified > 0 || runtime.retainedScopeUnclassified > 0)) {
+		lines.push(style("dim",
+			`Visibility · ${runtime.retainedScopeClassified} classified · ${runtime.retainedScopeUnclassified} unclassified`));
+	}
+	return lines.slice(0, 10);
 }
