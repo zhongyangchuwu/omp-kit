@@ -208,7 +208,7 @@ async function collect(options: CliOptions): Promise<{ collected: number; skippe
 			index.sessions[summary.file] = { key, revision, collectedAt: evidence.collectedAt };
 			collected += 1;
 		}
-	});
+	}, { startLogsToStderr: options.json });
 	index.updatedAt = new Date().toISOString();
 	await writeJsonAtomic(indexPath, index);
 	return { collected, skipped, report: await loadReport(options) };
