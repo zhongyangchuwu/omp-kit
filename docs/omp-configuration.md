@@ -9,6 +9,7 @@ OMP owns normal settings, model/provider routes, profiles, credentials, MCP sett
 - `skills/`: maintained task guidance and local support resources.
 - `rules/`: Main workflow activation.
 - `extensions/feedback.ts`: bounded feedback behavior.
+- `extensions/assurance.ts`: current-session `/assurance` and `/assurance full` review entry points.
 - `src/` and the session CLIs: derived evidence and assurance behavior.
 
 Core Harness, Experience Skill and Integration categories are architectural descriptions only. They do not configure OMP or grant permissions.
