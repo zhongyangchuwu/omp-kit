@@ -96,6 +96,7 @@ const VISIBILITY_LABELS: Readonly<Record<string, string>> = {
 	"aborted": "An evidence read was aborted.",
 	"runtime-unavailable": "The runtime evidence source was unavailable.",
 	"runtime-read-failed": "The runtime evidence source could not be read.",
+	"rule-evaluation-failed": "An Assurance rule could not be evaluated.",
 	"source-changed": "The evidence source changed during the read.",
 	"unexpected-view": "A requested evidence view was not available.",
 	"invalid-trace": "Some trace fields could not be interpreted.",
@@ -126,6 +127,7 @@ const VISIBILITY_LABELS: Readonly<Record<string, string>> = {
 
 function coverageCodeOrder(code: string): number {
 	const priority = [
+		"rule-evaluation-failed",
 		"runtime-read-failed",
 		"runtime-unavailable",
 		"source-changed",
@@ -239,7 +241,7 @@ export function buildAssurancePresentation(
 	}
 	for (const result of report.rules.filter(item => item.presentation.section === "coverage")) {
 		for (const finding of result.findings) visibilityCodes.add(finding.code);
-		if (result.status === "failed") visibilityCodes.add("runtime-read-failed");
+		if (result.status === "failed") visibilityCodes.add("rule-evaluation-failed");
 	}
 
 	const visibility = [...visibilityCodes]
