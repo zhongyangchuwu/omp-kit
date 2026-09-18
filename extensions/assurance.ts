@@ -12,7 +12,7 @@ import { createInProcessOmpStatsReader } from "../src/session/omp-stats";
 import { readRuntimeEntries } from "../src/session/runtime-entries";
 import { deriveRuntimeEvidence, runtimeSourceCoverage } from "../src/assurance/runtime-facts";
 import { BUILTIN_ASSURANCE_RULES } from "../src/assurance/registry";
-import { renderAssuranceReport } from "../src/assurance/render";
+import { renderAssuranceReport, renderAssuranceWidgetLines, type AssuranceTone } from "../src/assurance/render";
 import type { AssuranceReport } from "../src/assurance/model";
 import { readAssuranceReport, readTraceOnlyAssuranceReport } from "../scripts/session_assurance";
 
@@ -100,31 +100,11 @@ function registryFor(report: AssuranceReport) {
 	return BUILTIN_ASSURANCE_RULES.filter(rule => enabled.has(rule.meta.id));
 }
 
-function summaryLines(
-	mode: AssuranceCommandMode,
-	report: AssuranceReport,
-	paths: AssuranceOutputPaths,
-): string[] {
-	const attention = report.rules
-		.filter(rule => rule.presentation.section === "attention")
-		.reduce((sum, rule) => sum + rule.findings.length, 0);
-	const evidence = report.rules
-		.filter(rule => rule.presentation.section === "evidence")
-		.reduce((sum, rule) => sum + rule.findings.length, 0);
-	const lines = [
-		`Assurance ${mode}: ${attention} attention | ${evidence} evidence`,
-	];
-	if (report.runtime) {
-		const active = report.runtime.entries.filter(entry => entry.branch === "active").length;
-		const offBranch = report.runtime.entries.length - active;
-		lines.push(report.runtime.retainedTree
-			? `Main tree: ${active} active | ${offBranch} off-branch`
-			: `Main branch: ${active} active entries`);
-		const terminals = report.runtime.jobResolutions.map(item => `${item.jobId}=${item.status}`);
-		if (terminals.length) lines.push(`Job terminals: ${terminals.slice(0, 3).join(", ")}${terminals.length > 3 ? " ..." : ""}`);
-	}
-	lines.push(`Saved: ${paths.directory}`);
-	return lines.slice(0, 10);
+function widgetStyle(ctx: ExtensionCommandContext) {
+	return (tone: AssuranceTone, text: string): string => {
+		if (tone === "text") return text;
+		return ctx.ui.theme.fg(tone, text);
+	};
 }
 
 export async function runCurrentSessionAssurance(
@@ -177,8 +157,13 @@ export async function runCurrentSessionAssurance(
 	const paths = assuranceOutputPaths(getAgentDir(), sessionId, mode);
 	await atStage("persist", () => persistAssuranceOutput(paths, report, rendered));
 	await atStage("ui", async () => {
-		ctx.ui.setWidget("omp-kit-assurance", summaryLines(mode, report, paths), { placement: "aboveEditor" });
-		ctx.ui.notify(`Assurance ${mode} saved.`, "info");
+		const lines = renderAssuranceWidgetLines(report, registryFor(report), mode, widgetStyle(ctx));
+		ctx.ui.setWidget(
+			"omp-kit-assurance",
+			[...lines, ctx.ui.theme.fg("dim", `Saved → ${paths.directory}`)].slice(0, 10),
+			{ placement: "aboveEditor" },
+		);
+		ctx.ui.notify(mode === "full" ? "Assurance full report saved." : "Assurance scan saved.", "info");
 	});
 }
 
