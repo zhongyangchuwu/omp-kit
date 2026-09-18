@@ -1,4 +1,18 @@
-# OMP compatibility policy
+# OMP compatibility
+## OMP 18.2.5 compatibility review
+
+**Reviewed:** 2026-09-18. **Candidate pin:** 18.2.5.
+
+The 18.2.4/18.2.5 released changelogs and current package surface were reviewed before changing the local pin.
+
+- **Package surface:** OMP 18.2.5 moves terminal-UI subpaths out of `@oh-my-pi/pi-coding-agent` into `@oh-my-pi/pi-tui`. omp-kit imports only the coding-agent package root plus public `@oh-my-pi/omp-stats` surfaces, so the removed TUI subpaths are not used locally.
+- **Stats/session access:** `@oh-my-pi/omp-stats` 18.2.5 documents session/fork polling performance work, not a public SessionSummary/trace contract change. The 18.2.1 real-working-directory fix remains the current folder contract.
+- **Subagent lifecycle:** 18.2.5 fixes subagents that could spend a run on incremental `yield` calls and makes the forced final yield terminate the run. It also fixes queued parent messages left behind after tool interruptions and adjusts parent IRC interruption prompts.
+- **Assurance implication:** these lifecycle fixes can change the frequency and interpretation of missing parent/background resolution observations. Historical pre-18.2.2 samples remain compatibility evidence only; current Attention rules are not retuned from changelog inspection alone. Fresh 18.2.5 natural sessions are required before another resolution-rule change.
+- **Supervision implication:** the reviewed changes improve interruption/finalization behavior but do not establish completion-relevant message filtering, semantic peer-message kinds, configurable adaptive wait cadence, or runtime-enforced full read-only reviewer LSP. The corresponding upstream tracking remains open.
+
+Repository CI against the 18.2.5 candidate pin establishes source/type/test compatibility only. It does not substitute for installed-runtime dogfood of background/subagent settlement.
+ policy
 
 OMP moves quickly. omp-kit should track the runtime contracts it depends on, not mechanically retest every upstream release.
 
