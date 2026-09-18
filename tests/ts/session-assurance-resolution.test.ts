@@ -113,6 +113,28 @@ test("an explicitly cancelled background task is terminal rather than unresolved
 	);
 });
 
+test("runtime read failure makes resolution partial without degrading trace-only evidence rules", () => {
+	const background = action("background", "background", "task job", "missing", ref("main", "main:bg:Worker"));
+	const runtimeFailure: SourceCoverage = {
+		sourceId: "runtime-retained",
+		sessionKey: "session-key",
+		scope: { source: "omp-runtime", view: "all-retained-entries" },
+		availability: "unavailable",
+		consistency: "not-checked",
+		startedAt: 1,
+		finishedAt: 2,
+		assessed: false,
+		reason: "runtime-read-failed",
+		limitations: ["single-session-only", "retained-entries-only", "not-an-atomic-snapshot"],
+	};
+	const value = buildAssuranceReport(
+		{ actions: [background], coverage: [coverage, runtimeFailure] },
+		[missingTerminalRule, resolutionGapRule],
+	);
+	assert.equal(value.rules.find(rule => rule.ruleId === missingTerminalRule.meta.id)?.status, "evaluated");
+	assert.equal(value.rules.find(rule => rule.ruleId === resolutionGapRule.meta.id)?.status, "partial");
+});
+
 test("an observed terminal does not create either missing-terminal or resolution attention", () => {
 	const value = report([action("tool", "tool", "bash", "observed", ref("main", "main:tool:call"))]);
 	assert.equal(value.findings.length, 0);
