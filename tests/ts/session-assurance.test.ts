@@ -19,7 +19,7 @@ function span(overrides: Partial<TraceSpan> = {}): TraceSpan {
 	return { id: "main:request:call", kind: "tool", start: 1, end: 2, label: "bash", entryId: "result", toolCallId: "call", ...overrides };
 }
 function trace(spans: TraceSpan[] = [], sessionFile = file): SessionTrace {
-	return { file: sessionFile, cwd: "/PRIVATE_CWD", title: "PRIVATE_TITLE", startedAt: 1, endedAt: 2, mtimeMs: 3, etag: "test-etag", etag: "test-etag",
+	return { file: sessionFile, cwd: "/PRIVATE_CWD", title: "PRIVATE_TITLE", startedAt: 1, endedAt: 2, mtimeMs: 3, etag: "test-etag",
 		tracks: [{ id: "main", parentId: null, label: "Main", agent: null, model: null, file: sessionFile, spans, markers: [] }],
 		summary: { wallMs: 1, modelMs: 0, toolMs: 1, idleMs: 0, turns: 1, requests: 0, toolCalls: spans.length,
 			subagents: 0, totalTokens: 0, costTotal: 0, unpricedRequests: 0, toolStats: [] } };
