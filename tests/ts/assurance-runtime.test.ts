@@ -119,6 +119,7 @@ test("full retained-tree facts classify structured off-branch tools without pers
 	const serialized = JSON.stringify(runtime);
 	assert.doesNotMatch(serialized, /PRIVATE_RETAINED_QUERY|PRIVATE_RETAINED_RESULT/);
 	assert.ok(runtime.limitations.includes("retained-tool-scope-declared-targets-only"));
+	assert.ok(runtime.limitations.includes("retained-workspace-root-unverified"));
 	assert.ok(runtime.limitations.includes("retained-generic-shell-unclassified"));
 });
 
