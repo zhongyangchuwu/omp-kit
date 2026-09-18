@@ -20,6 +20,8 @@ export interface ActionClassifierRef {
 interface ActionFactObservation {
 	readonly id: string;
 	readonly actionId: string;
+	/** Opaque correlation for facts projected from the same classifier descriptor. */
+	readonly groupId: string;
 	/** Stable private correlation key for one transcript; native track ids remain in evidence refs. */
 	readonly trackKey: string;
 	/** Tool-order position within one transcript. No cross-track causal order is implied. */
