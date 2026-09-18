@@ -36,6 +36,14 @@ Full investigation is deliberately asymmetric: the current Main session can expo
 retained entries, while child/subagent retained-history completeness is not established
 by the current public trace surface. That limitation stays explicit in Runtime/Coverage.
 
+For retained Main-session tool calls, full investigation also derives bounded facts from
+the structured public entries: tool identity, terminal/error observation, active versus
+off-branch location, and descriptors from the existing Scope V1 classifiers when their
+tool contracts apply. Raw tool arguments and results are used only in memory and are not
+copied into the report. Unsupported tools such as generic shell remain unclassified.
+These descriptors are observed declared targets, not authorization or proof of every
+transitive effect.
+
 A parent-observed terminal job snapshot is also usable lifecycle evidence. In particular,
 a background span that lacks `async-result` is not called unresolved when the retained
 Main-session evidence already records that job as `completed`, `failed`, or
