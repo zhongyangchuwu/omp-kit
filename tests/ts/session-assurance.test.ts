@@ -54,7 +54,7 @@ test("tool errors retain native evidence rather than task failure claims", () =>
 	const value = report(input([span({ isError: true })]));
 	assert.equal(kinds(value, "tool-error").length, 1);
 	assert.equal(kinds(value, "tool-error")[0].evidence[0].toolCallId, "call");
-	assert.equal(value.schemaVersion, "omp-kit.session-assurance/v1");
+	assert.equal(value.schemaVersion, "omp-kit.session-assurance/v2");
 	assert.equal("safe" in value, false);
 });
 test("absence of an error flag is not a verified consequence", () => {
@@ -224,7 +224,7 @@ test("a fourth ordinary rule needs no engine schema or renderer changes", () => 
 		},
 	};
 	const value = buildAssuranceReport(normalizeTraceReads([input([span()])]), [custom]);
-	assert.equal(value.schemaVersion, "omp-kit.session-assurance/v1");
+	assert.equal(value.schemaVersion, "omp-kit.session-assurance/v2");
 	assert.equal(value.findings[0].ruleId, custom.meta.id);
 	assert.equal(value.findings[0].kind, "custom-observation");
 	assert.match(renderAssuranceReport(value, [custom]), /1 item worth reviewing/);
