@@ -19,6 +19,11 @@ also reads the public retained Main-session entries through `sessionManager`. Re
 entries preserve their parent/child structure and are marked `active` or
 `off-branch`; sibling branches are not flattened into a causal timeline.
 
+The interactive command reads the published `@oh-my-pi/omp-stats/trace` surface
+in-process. It does not start a stats dashboard HTTP server inside the running OMP
+extension. The owned-loopback server path remains for standalone CLI/batch consumers
+that do not already run inside OMP.
+
 Both commands persist regenerable private output under the active OMP agent root:
 
 ```text
