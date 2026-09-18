@@ -39,8 +39,11 @@ function yieldedEvidence(input: AssuranceInput, childTrackId: string): readonly 
 
 function hasObservedJobResolution(input: AssuranceInput, action: ActionObservation): boolean {
 	if (!input.runtime?.jobResolutions.length) return false;
-	const resolved = new Set(input.runtime.jobResolutions.map(item => item.jobId));
+	const resolved = new Set(input.runtime.jobResolutions
+		.filter(item => item.branch === "active")
+		.map(item => item.jobId));
 	return action.samples.some(sample => {
+		if (sample.evidence.trackId !== "main") return false;
 		const jobId = backgroundJobId(sample);
 		return jobId !== null && resolved.has(jobId);
 	});
