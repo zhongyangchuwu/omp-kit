@@ -95,6 +95,7 @@ test("an explicitly cancelled background task is terminal rather than unresolved
 		leafId: "cancel-result",
 		retainedTree: true,
 		entries: [],
+		toolActions: [],
 		jobResolutions: [{
 			id: "cancelled-code-boundary-scout",
 			jobId: "CodeBoundaryScout",
