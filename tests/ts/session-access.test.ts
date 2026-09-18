@@ -143,6 +143,7 @@ test("malformed catalog fields fail at the contract boundary", async () => {
 test("malformed trace fields are not trusted through a type assertion", async () => {
 	for (const mutate of [
 		(value: SessionTrace) => { (value as unknown as Record<string, unknown>).tracks = null; },
+		(value: SessionTrace) => { delete (value as unknown as Record<string, unknown>).etag; },
 		(value: SessionTrace) => { (value.tracks[0].spans[0] as unknown as Record<string, unknown>).unterminated = "false"; },
 		(value: SessionTrace) => { value.tracks[0].spans[0].end = 0; },
 		(value: SessionTrace) => { (value.summary as unknown as Record<string, unknown>).toolStats = null; },
