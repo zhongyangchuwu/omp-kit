@@ -275,7 +275,7 @@ export function deriveRuntimeEvidence<Entry>(
 		"not-an-atomic-snapshot",
 	]);
 	if (options.classifyTools) {
-		limitations.add("retained-tool-scope-declared-targets-only");
+		limitations.add("retained-action-facts-declared-targets-only");
 		limitations.add("retained-workspace-root-unverified");
 		limitations.add("retained-generic-shell-unclassified");
 	}
