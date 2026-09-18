@@ -9,7 +9,7 @@ import {
 } from "../src/session/omp-stats";
 import { folderFilterMatches, sessionKey } from "../src/evidence/session-evidence";
 import { buildAssuranceReport } from "../src/assurance/engine";
-import type { AssuranceReport, AssuranceRule } from "../src/assurance/model";
+import type { AssuranceInput, AssuranceReport, AssuranceRule, SourceCoverage } from "../src/assurance/model";
 import { DEFAULT_ASSURANCE_PROFILE, resolveAssuranceProfile } from "../src/assurance/profiles";
 import { BUILTIN_ASSURANCE_RULES } from "../src/assurance/registry";
 import { renderAssuranceReport } from "../src/assurance/render";
@@ -68,6 +68,11 @@ export type AssuranceOptions = AssuranceReportOptions | AssuranceScanOptions;
 export type SessionAssuranceReader = SessionTraceReader & Partial<SessionEntryReader> & Partial<Pick<OmpStatsClient, "sync" | "listSessions">>;
 export type SessionAssuranceCatalogReader = SessionAssuranceReader & Required<Pick<OmpStatsClient, "sync" | "listSessions">>;
 type TraceRead = Awaited<ReturnType<SessionTraceReader["getTrace"]>>;
+
+export interface AssuranceAdditionalFacts {
+	readonly runtime?: AssuranceInput["runtime"];
+	readonly coverage?: readonly SourceCoverage[];
+}
 
 function optionValue(argv: readonly string[], index: number): string {
 	const value = argv[index + 1];
@@ -143,16 +148,22 @@ async function reportFromTraceRead(
 	rules: readonly AssuranceRule[],
 	includeScope: boolean,
 	diagnostics?: ScopeDerivationDiagnostics,
+	additionalFacts: AssuranceAdditionalFacts = {},
 ): Promise<AssuranceReport> {
 	const traceInput: TraceInput = { sourceId: "session", sessionFile, read };
 	const normalized = normalizeTraceReads([traceInput]);
-	if (!includeScope) return buildAssuranceReport(normalized, rules);
+	const enriched: AssuranceInput = {
+		...normalized,
+		coverage: [...normalized.coverage, ...(additionalFacts.coverage ?? [])],
+		...(additionalFacts.runtime ? { runtime: additionalFacts.runtime } : {}),
+	};
+	if (!includeScope) return buildAssuranceReport(enriched, rules);
 	const entryReader: SessionEntryReader | undefined = reader.getEntry
 		? { getEntry: (file, id, entrySignal) => reader.getEntry!(file, id, entrySignal) }
 		: undefined;
 	const scope = await deriveTraceScopeEvidence(
 		[traceInput],
-		normalized,
+		enriched,
 		entryReader,
 		BUILTIN_SCOPE_CLASSIFIERS,
 		{
@@ -162,7 +173,7 @@ async function reportFromTraceRead(
 			...(diagnostics ? { diagnostics } : {}),
 		},
 	);
-	return buildAssuranceReport({ ...normalized, scope }, rules);
+	return buildAssuranceReport({ ...enriched, scope }, rules);
 }
 
 export async function readAssuranceReport(
@@ -170,16 +181,36 @@ export async function readAssuranceReport(
 	sessionFile: string,
 	signal?: AbortSignal,
 	rules: readonly AssuranceRule[] = DEFAULT_PROFILE_RULES,
+	additionalFacts: AssuranceAdditionalFacts = {},
 ): Promise<AssuranceReport> {
-	return reportFromTraceRead(reader, sessionFile, await reader.getTrace(sessionFile, signal), signal, rules, true);
+	return reportFromTraceRead(
+		reader,
+		sessionFile,
+		await reader.getTrace(sessionFile, signal),
+		signal,
+		rules,
+		true,
+		undefined,
+		additionalFacts,
+	);
 }
 
 export async function readTraceOnlyAssuranceReport(
 	reader: SessionAssuranceReader,
 	sessionFile: string,
 	signal?: AbortSignal,
+	additionalFacts: AssuranceAdditionalFacts = {},
 ): Promise<AssuranceReport> {
-	return reportFromTraceRead(reader, sessionFile, await reader.getTrace(sessionFile, signal), signal, TRACE_SCAN_RULES, false);
+	return reportFromTraceRead(
+		reader,
+		sessionFile,
+		await reader.getTrace(sessionFile, signal),
+		signal,
+		TRACE_SCAN_RULES,
+		false,
+		undefined,
+		additionalFacts,
+	);
 }
 
 function asCatalogReader(reader: SessionAssuranceReader): SessionAssuranceCatalogReader {
