@@ -2,43 +2,69 @@
 
 This guide distills reusable AutoDL server lessons from the qwen remote workflow and run logs. It is project-neutral: keep project-specific sync, training, evaluation, and artifact commands in the target project. Provider/image observations below are evidence from that work, not a guarantee for every current image; inspect actual disk, API and job state.
 
-## 1. Storage model
+## 1. AutoDL Pro storage model
 
-AutoDL work should distinguish two storage classes:
+AutoDL Pro currently has **one system disk and no separate data disk**. Official Pro documentation says the system disk defaults to 30GB, may be expanded, and both the default and expanded capacity are billed by day. Powering the instance off retains that disk; it does not turn retained Pro storage into free storage.
 
-| Area | Typical path | Operational meaning |
-| --- | --- | --- |
-| Workspace/data area | `/root/autodl-tmp` | Intended location for repositories, datasets, caches, checkpoints and run artifacts; verify the actual backing disk and lifecycle before relying on retention. |
-| System/root filesystem | `/` | Treat as disposable during release; do not keep the only copy of important artifacts here. |
+`/root/autodl-tmp` is still the preferred project workspace path for compatibility with AutoDL workflows, but on Pro it is a directory on the retained system-disk lifecycle rather than proof of a separate free data disk. AutoDL documents that this directory is preserved by default across reset/image replacement; release is different and clears the instance disk.
 
-Use `REMOTE_WORKDIR` under `/root/autodl-tmp/<project-name>` only after confirming this path is backed by the intended data disk.
+Use:
 
-A run log found a 4090-48G image where `/root/autodl-tmp` still landed on a 30G overlay. Verify disk reality before long jobs:
+```text
+/root/autodl-tmp/<project-name>
+```
+
+for project work only after checking actual capacity and deciding how artifacts will survive instance release.
+
+Verify disk reality before long jobs:
 
 ```bash
 autodl ssh -- df -h / /root/autodl-tmp
 autodl ssh -- nvidia-smi
 ```
 
-If the workspace shares a small overlay with conda, `.venv`, model files, outputs and caches, disk becomes the primary operational risk.
+A prior run found a 4090-48G image where `/root/autodl-tmp` shared the small system overlay. If repositories, environments, model files, caches, checkpoints and outputs share one Pro system disk, disk pressure becomes an operational and billing concern.
 
-## 2. Lifecycle: stop vs release
+Provider contract references, checked 2026-09-19:
 
-| Action | Data/workspace | System disk | Typical use |
-| --- | --- | --- | --- |
-| stop | retained under the service's current contract | retained | pause and continue later |
-| release | verify actual retention; keep an independent copy of important data | cleared | longer idle period after artifacts are safe |
+- [AutoDL Pro data and disk lifecycle](https://www.autodl.com/docs/instance_pro_data/)
+- [AutoDL Pro overview](https://www.autodl.com/docs/instance_pro/)
+- [AutoDL pricing](https://www.autodl.com/docs/price/)
+- [AutoDL Pro API lifecycle](https://www.autodl.com/docs/instance_pro_api/)
 
-`create-pro starts billing immediately`: a successful Pro create was observed to enter `running` directly. Do not treat create as a free reservation.
+Re-check provider documentation when billing or retention semantics matter; prices and product details can change.
+
+## 2. Lifecycle and billing: stop vs release
+
+For **pay-as-you-go Pro compute**, power-off ends compute/GPU time billing, but it does **not** mean the instance has zero ongoing cost. The retained Pro system disk is a separate daily charge.
+
+For prepaid/package billing, the prepaid rental period continues regardless of power state; do not promise savings from shutdown alone.
+
+| Action | Compute | Pro system disk | Data consequence | Typical use |
+| --- | --- | --- | --- | --- |
+| stop | pay-as-you-go compute stops | **continues daily billing while retained** | disk retained | short pause / continue later |
+| release | compute already stopped | retained-instance disk billing ends | system-disk contents are destroyed | long idle period after artifacts are safe |
+
+Important consequences:
+
+- **Power off is a compute-cost action, not a zero-cost action.**
+- AutoDL Pro's default system-disk capacity is paid storage according to current official documentation; expanded capacity is paid as well.
+- Pro system-disk expansion currently cannot be directly shrunk; official docs suggest recreating/cloning when a smaller disk is needed.
+- A stopped Pro instance retains data and can therefore continue producing a daily storage charge until release.
+- Release is destructive. Copy important code, checkpoints, results and environment information somewhere that survives release before executing it.
+
+`create-pro` can enter `running` immediately, so creation can start compute billing. Do not treat create as a free reservation.
 
 Before release:
 
 1. Verify status is `shutdown` or `stopped`.
-2. Confirm important outputs are on verified retained storage or already pulled back.
-3. Confirm no needed setup exists only on the system disk.
-4. Preview `release-pro` and execute only after explicit approval.
+2. Confirm important outputs/checkpoints have been pulled back or copied to storage that survives release.
+3. Confirm no required environment/setup exists only on the Pro system disk.
+4. Inspect the provider billing/instance page when cost is the reason for release; do not infer current charges from power state alone.
+5. Preview `release-pro` and execute only after explicit approval.
+6. Read back instance state after release.
 
-The cost-control shorthand "power off before asking a blocking question" applies only when the user's shutdown policy authorizes it and the instance/job is owned by this task. Do not terminate unrelated jobs or infer stop authority from a pause in conversation.
+The shorthand "power off before asking a blocking question" applies only when shutdown is authorized and useful for stopping pay-as-you-go compute. It does **not** mean ongoing Pro storage cost has stopped. Do not terminate unrelated jobs or infer stop/release authority from a pause in conversation.
 
 ## 3. Secrets and multi-instance control
 
@@ -141,4 +167,4 @@ For ML work, record the run name, server alias, sample count, batch/precision, t
 
 ## 10. Cost control checklist
 
-Before starting, inspect balance/status/stock, preview the resource change and obtain create/start/release approval. During work use logs and inspect disk before checkpoint-heavy tasks. After work preserve artifacts and follow the user's authorized stop/retention plan; release only when system-disk contents are disposable. Read back the final state.
+Before starting, inspect balance/status/stock, preview the resource change and obtain create/start/release approval. During work use logs and inspect disk before checkpoint-heavy tasks. After work preserve artifacts and distinguish **compute shutdown** from **storage-cost termination**: `power-pro stop` can stop pay-as-you-go compute while Pro system-disk daily billing continues. Release only when system-disk contents are disposable and release is explicitly authorized. Read back final instance state and use the provider billing interface for cost confirmation.
