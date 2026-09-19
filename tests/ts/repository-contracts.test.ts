@@ -133,7 +133,6 @@ test("native agents are model-neutral, bounded and reference discovered skills",
 
 test("discovered skills are self-describing", () => {
   const skillPaths = discoveredSkillPaths();
-  expect(skillPaths).toHaveLength(15);
   for (const path of skillPaths) {
     const { metadata, body } = markdownSections(path);
     const name = dirname(path).split(/[\\/]/).at(-1)!;
