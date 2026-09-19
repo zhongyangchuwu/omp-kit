@@ -5,7 +5,7 @@ OMP Kit combines a model-neutral workflow for Oh My Pi (OMP) with a personally m
 ## What is included
 
 - Four task-shaped agents: `luna-code`, `luna-deep`, `luna-doc`, and `sol-review`.
-- Fourteen maintained Skills covering workflow, code taste, product design, debugging, research, testing, verification, language tooling, Skill authoring, AutoDL and document parsing.
+- Maintained Skills covering workflow, code taste, product design, debugging, research, testing, verification, language tooling, Skill authoring, experiment operations and document parsing.
 - A Main-session workflow rule, bounded shared feedback, local session evidence, and human-facing assurance.
 - Current usage documentation, mechanism-level design records, and compact experiment evidence.
 
@@ -72,14 +72,14 @@ See [session evidence](docs/session-evidence.md) and [validation](docs/VALIDATIO
 
 ## Maintenance
 
-The root repository uses Bun/TypeScript for runtime code and deterministic repository contracts. Python/uv are scoped to the AutoDL integration, which owns its own `pyproject.toml`, lockfile and mocked test environment.
+The root repository uses Bun/TypeScript for runtime code and deterministic repository contracts. Additional toolchains belong only to concrete maintained consumers.
 
 ```sh
 bun install --frozen-lockfile
 just verify
 ```
 
-CI runs the same provider-free gate on PR merge refs and on `main` after landing. It covers repository/native-plugin consistency, Skill support files, AutoDL mocked tests, TypeScript typecheck/tests, changed-line hygiene and tracked-file drift. It does not run paid providers, cloud operations or live OMP acceptance scenarios.
+CI runs the same provider-free gate on PR merge refs and on `main` after landing. It covers repository/native-plugin consistency, Skill support files, TypeScript typecheck/tests, changed-line hygiene and tracked-file drift. It does not run paid providers, cloud operations or live OMP acceptance scenarios.
 
 Do not delete a maintained Skill, accepted design, or compact experiment simply because it is not needed for the smallest runtime. Remove confirmed obsolete material, or make a targeted correction supported by a concrete defect or maintainer decision.
 
