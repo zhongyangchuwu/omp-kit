@@ -12,10 +12,9 @@ just verify
 The retained gate covers:
 
 - Bun repository-contract tests for package/native-resource wiring, agents/Skills, documentation/support files and Skill-authoring guides/templates;
-- AutoDL tests in its own frozen uv environment, with APIs and SSH mocked;
 - TypeScript typecheck plus feedback/session-evidence/assurance unit and CLI tests.
 
-CI also checks the committed Bun graph, AutoDL Python lockfile, candidate changed lines and tracked-file drift. PR merge-ref and landed-main checks answer different questions. The root Python helper/test environment, config-copy installer and resource-registry machinery are no longer part of the gate; maintained runtime and documentation contracts remain directly tested.
+CI also checks the committed Bun graph, candidate changed lines and tracked-file drift. PR merge-ref and landed-main checks answer different questions. The root Python helper/test environment, config-copy installer and resource-registry machinery are no longer part of the gate; maintained runtime and documentation contracts remain directly tested.
 
 No cloud spending, external document upload, real model call or user-profile write is part of deterministic acceptance. The gate is not an upstream OMP schema/runtime test.
 
@@ -70,4 +69,4 @@ The original Phase-A, B1 web-search and B2 LSP bundles remain under [evidence/ex
 
 Repeated fresh-session issue-centered project-state recovery and GitHub-offline limitations (#11), robust delegation economics (#8), long-run capability value (#5), and systematic scaffolding ablation (#9) remain unfinished. Documentation cleanup does not supply those experiments.
 
-Retaining Skills also does not certify every external dependency/provider/version. Live AutoDL, cloud parser, profile, browser and LSP claims require relevant authorized runtime checks when they are actually the subject of work.
+Retaining Skills also does not certify every external dependency/provider/version. Cloud parser, profile, browser and LSP claims require relevant authorized runtime checks when they are actually the subject of work.
