@@ -41,7 +41,7 @@ The current feedback extension is deliberately bounded: append observed evidence
 
 MCP is useful when a separate service/process or reuse across clients has real value. An OMP-specific local capability may be simpler as a CLI or extension.
 
-Service integrations must state their credentials, network/data-disclosure behavior, billing and destructive consequences. Keeping AutoDL or document-parser in the Skill library does not authorize starting compute or uploading a document. Dependency installation and account configuration remain deliberate user actions.
+Service integrations must state their credentials, network/data-disclosure behavior, billing and destructive consequences. Keeping an integration Skill such as `document-parser` in the library does not authorize uploading a document or performing other external side effects. Dependency installation and account configuration remain deliberate user actions.
 
 ## Sessions and coordination
 
