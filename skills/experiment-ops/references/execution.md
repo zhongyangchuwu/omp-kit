@@ -34,14 +34,14 @@ Smoke proves execution readiness, not scientific validity or final performance.
 
 ## Durable launch
 
-For unmanaged SSH, a typical pattern is:
+For unmanaged SSH, launch through a wrapper that preserves the project command's terminal status rather than relying on tmux disappearance or the exit status of `tee` alone. A minimal Bash pattern is:
 
 ```bash
 tmux new-session -d -s <run-name> \
-  '<project command> 2>&1 | tee <run-log>'
+  "bash -lc 'set -o pipefail; <project command> 2>&1 | tee <run-log>; rc=\${PIPESTATUS[0]}; printf \"%s\\n\" \"\$rc\" > <run-status>; exit \"\$rc\"'"
 ```
 
-Use project-appropriate environment setup and a distinctive session name such as `<project>-<experiment>-<seed>`. Scheduler/provider jobs should use native job identities and logs rather than unnecessary tmux wrappers.
+Quote the actual project command safely, or prefer a tested project-owned wrapper when the command is complex. The durable record must retain the project command's terminal status. Use project-appropriate environment setup and a distinctive session name such as `<project>-<experiment>-<seed>`. Scheduler/provider jobs should use native job identities and logs rather than unnecessary tmux wrappers.
 
 ## Minimum observability
 
@@ -55,6 +55,7 @@ target/workspace
 backend and backend identity
 command/config source
 log path
+terminal status/evidence path
 artifact/checkpoint path
 inspect/status command
 intentional stop/cancel command

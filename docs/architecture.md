@@ -8,9 +8,9 @@ OMP Kit owns reusable workflow policy, a personally maintained Skill library, bo
 | --- | --- | --- |
 | Core Harness | Four task agents, Main rule, `omp-workflow`, `git-workflow`, `bounded-executor`, `omp-review`, feedback, session evidence and assurance | Defines routing, scope, integration, acceptance, observation and human-facing review |
 | Experience Skills | `code-taste`, `omp-design`, `omp-debug`, `omp-research`, `omp-test`, `omp-verification`, `program-language`, `skill-authoring` | The maintainer's reusable judgment and methods |
-| Integrations | `autodl`, `document-parser`; future service/provider/MCP adapters | Separate dependencies, credentials, network, billing or data-disclosure consequences |
+| Integrations | `document-parser`; future service/provider/MCP adapters | Separate dependencies, credentials, network, billing or data-disclosure consequences |
 
-These categories describe responsibility, not value, maturity, installation state or permission. All fourteen maintained Skills currently coexist under the same `skills/` discovery root. A category does not hide a Skill or change runtime behavior; any future behavior difference must be implemented by a real OMP/package/feature boundary rather than descriptive metadata.
+These categories describe responsibility, not value, maturity, installation state or permission. All maintained Skills currently coexist under the same `skills/` discovery root. A category does not hide a Skill or change runtime behavior; any future behavior difference must be implemented by a real OMP/package/feature boundary rather than descriptive metadata.
 
 A Skill need not depend on omp-kit to be worth maintaining here. `code-taste` and `omp-design`, for example, capture practical user preferences rather than missing OMP runtime features.
 
@@ -26,7 +26,7 @@ Use `just install` for the checkout's native OMP install/link flow. OMP links na
 
 The legacy Harness v2 configuration snapshot, config-copy installer, its exclusive composition helper and tests are retired. User configuration already installed on a machine is not automatically removed. See [installation](omp-installation.md) for migration precautions.
 
-The root repository uses Bun/TypeScript for runtime code and deterministic contracts. AutoDL remains an isolated Python/uv integration with its own `pyproject.toml`, lockfile and tests. Toolchains follow concrete consumers; there is no root Python environment solely for maintenance helpers.
+The root repository uses Bun/TypeScript for runtime code and deterministic contracts. Toolchains follow concrete consumers; there is no root Python environment solely for maintenance helpers.
 
 ## Agent and workflow boundary
 
@@ -57,6 +57,6 @@ Routine summaries stay outside Git. Selected material results may become compact
 
 ## Verification and rationale
 
-`just verify` covers the retained native product and library maintenance surfaces. CI runs it on PR merge refs and landed `main`, with dependency-lock, diff and drift checks. Isolated AutoDL tests mock remote operations; they are not cloud acceptance.
+`just verify` covers the retained native product and library maintenance surfaces. CI runs it on PR merge refs and landed `main`, with dependency-lock, diff and drift checks.
 
 Real OMP/provider/profile behavior needs the relevant target environment. Existing claim-specific evidence and limits live in [VALIDATION](VALIDATION.md). Stable principles and counter-evidence live in [design records](design/README.md), not only in Issues.

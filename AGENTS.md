@@ -24,13 +24,13 @@ Core workflow, maintained experience Skills and integrations may coexist here. T
 
 Use a focused branch/PR for non-trivial changes. Preserve unrelated user work. Run focused checks during implementation. The normal repository acceptance gate is GitHub Actions running `just verify` on the PR merge ref; `main` push CI verifies the landed commit separately.
 
-The gate covers Bun repository contracts for package/native-resource shape, Skills and documentation, AutoDL mocked tests in its own uv environment, and TypeScript typecheck/runtime tests. CI additionally checks dependency lockfiles, changed lines and tracked-file drift. Do not duplicate a passing unchanged full gate merely because a handoff happened.
+The gate covers Bun repository contracts for package/native-resource shape, Skills and documentation, and TypeScript typecheck/runtime tests. CI additionally checks dependency lockfiles, changed lines and tracked-file drift. Do not duplicate a passing unchanged full gate merely because a handoff happened.
 
 No live model, paid cloud or private-profile operation is part of this gate. Runtime claims need claim-specific evidence. Report untested claims explicitly.
 
 `skills/<name>/SKILL.md` and the actual discovery path are the source of truth for maintained Skills. Do not add a shadow registry or parallel activation database unless a real consumer requires one. If a category must affect behavior, implement that distinction in the owning package/plugin/feature mechanism rather than descriptive metadata.
 
-Root repository code and contracts use Bun/TypeScript. Python/uv belong to the AutoDL integration unless a future concrete root consumer justifies adding another environment.
+Root repository code and contracts use Bun/TypeScript. Add another root toolchain only when a concrete maintained consumer justifies it.
 
 ## Durable output
 
