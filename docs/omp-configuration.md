@@ -18,7 +18,7 @@ Core Harness, Experience Skill and Integration categories are architectural desc
 
 Model IDs, service endpoints, tokens, credential databases, profile selection, MCP connections and provider costs belong to the actual OMP environment. Read the installed runtime's public docs/schema before changing them. Core agent definitions remain model-neutral.
 
-Do not commit credentials, real AutoDL secrets files or private machine paths to make an example reproducible. Integration Skills carry their own setup/safety guidance; discovery does not authorize running them.
+Do not commit credentials, real service secrets files or private machine paths to make an example reproducible. Integration Skills carry their own setup/safety guidance; discovery does not authorize running them.
 
 ## Legacy snapshot retirement
 
