@@ -53,7 +53,7 @@ Important consequences:
 - A stopped Pro instance retains data and can therefore continue producing a daily storage charge until release.
 - Release is destructive. Copy important code, checkpoints, results and environment information somewhere that survives release before executing it.
 
-`create-pro` can enter `running` immediately, so creation can start compute billing. Do not treat create as a free reservation.
+`create-pro starts billing immediately`: a successful Pro create can enter `running` immediately, so creation can start compute billing. Do not treat create as a free reservation.
 
 Before release:
 
