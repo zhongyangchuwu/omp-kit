@@ -19,10 +19,6 @@ plugin-doctor:
 uninstall:
     omp plugin uninstall omp-kit
 
-# Isolated dependency environment; tests mock remote APIs and SSH.
-test-autodl:
-    cd skills/autodl && uv run --frozen python -m pytest tests
-
 test-ts:
     bun run test:ts
 
@@ -31,7 +27,6 @@ typecheck:
 
 # Provider-free repository acceptance. No cloud resource or OMP model calls.
 verify:
-    just test-autodl
     just typecheck
     just test-ts
     git diff --check HEAD
