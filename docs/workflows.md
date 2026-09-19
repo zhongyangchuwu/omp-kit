@@ -16,7 +16,7 @@ Use `skill-authoring` for content and supply-chain review. Environment-native se
 
 Use focused tests while making a change. Main reconciles writable scopes and shared consumers before accepting the combined tree. Workers report out-of-scope findings rather than expanding their task.
 
-`just verify` is the repository's provider-free gate. It runs Bun repository/native-resource/Skill/documentation contracts, isolated AutoDL mocked tests, TypeScript typecheck and runtime tests. CI also checks the committed Bun graph, the AutoDL lockfile, candidate diff and tracked-file drift.
+`just verify` is the repository's provider-free gate. It runs Bun repository/native-resource/Skill/documentation contracts plus TypeScript typecheck and runtime tests. CI also checks the committed Bun graph, candidate diff and tracked-file drift.
 
 PR merge-ref CI is the normal pre-merge mechanical evidence. Post-landing `main` CI answers the distinct landed-tree question. Do not repeat a successful unchanged full gate merely because another worker received ownership. A focused repair, changed candidate, local-runtime claim or CI diagnosis can justify new checks.
 
