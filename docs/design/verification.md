@@ -27,12 +27,12 @@ Deterministic checks falsify mechanical contracts such as tests, types, native r
 
 **Type:** repository fact.
 
-`just verify` is the repository-owned contract. It covers Bun repository contracts for native resources, maintained Skills and documentation, AutoDL mocked tests in its isolated Python environment, and TypeScript typecheck/runtime tests. The root Python helper/test environment, obsolete installer validator and resource-registry checks are retired; maintained Skill behavior remains directly tested from the files OMP discovers.
+`just verify` is the repository-owned contract. It covers Bun repository contracts for native resources, maintained Skills and documentation, and TypeScript typecheck/runtime tests. The root Python helper/test environment, obsolete installer validator and resource-registry checks are retired; maintained Skill behavior remains directly tested from the files OMP discovers.
 
 The #18 CI architecture remains:
 
 - read-only repository permission, no project secrets;
-- a committed Bun dependency graph at the root plus AutoDL's isolated Python dependency graph;
+- a committed Bun dependency graph at the root;
 - the repository-owned gate instead of duplicate YAML test logic;
 - changed-line and tracked-file drift checks;
 - PR merge-ref pre-merge evidence and separate landed-main evidence.
