@@ -44,11 +44,11 @@ Choose the lane from observed infrastructure and project conventions, not from p
 | --- | --- | --- |
 | project-native | existing project runner or service | repository already has a reliable run wrapper |
 | scheduler | Slurm, PBS, or site scheduler | managed cluster/HPC |
-| provider | provider job/run system such as AutoDL run submit | cloud/provider-managed execution |
+| provider | provider-native job/run system | cloud/provider-managed execution |
 | unmanaged SSH | tmux by default | ordinary Linux server reached over SSH |
 | local | foreground for cheap bounded work; durable runner when needed | workstation or local server |
 
-When the target is AutoDL, compose with the `autodl` skill for provider-specific lifecycle, billing, secrets, and resource actions. Do not duplicate those policies here.
+When a target has provider- or site-specific lifecycle, billing, quota, credential, or resource policy, use the authoritative provider/site mechanism for those concerns rather than inferring them from process state.
 
 ## Minimum run evidence
 
