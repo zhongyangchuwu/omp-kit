@@ -90,6 +90,8 @@ For a curated commit, record the durable reason/boundary and material verificati
 2. Re-evaluate the owning Issue acceptance criteria.
 3. Close the Issue only if all required criteria are complete; otherwise update its remaining condition/state.
 4. Reconcile short project-state indexes if current priority/blockers changed.
-5. Delete the ordinary feature branch only when no stacked/dependent work still needs it.
+5. Confirm the ordinary PR head branch is removed when no stacked/dependent work still needs it. Prefer the repository host's automatic post-merge branch deletion when available; otherwise delete it explicitly after the safety check.
+
+Automatic post-merge deletion covers merged PR heads, not pushed branches that never became PRs or were superseded by a replacement branch. Reconcile those branches when ownership moves rather than relying on a later repository-wide cleanup.
 
 Clean worktrees only after confirming their work is merged, saved, or intentionally discarded.

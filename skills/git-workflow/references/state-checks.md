@@ -70,4 +70,6 @@ Before deleting a branch or worktree, confirm one of these is true:
 - the work is saved elsewhere;
 - the user explicitly chose to discard it.
 
+Do not use Git ancestry or ahead/behind counts alone to decide whether a PR branch is safe to remove after a squash merge. Squash creates a new default-branch commit, so the old head can legitimately appear diverged or ahead even when its accepted semantics landed. Use the PR's merged state plus the landed tree/current docs as the primary evidence; inspect unique commits only when the branch has no PR, was superseded, or contains work not represented by the merged change.
+
 Worktree cleanup checks both Git state and filesystem ownership. Harness-owned workspaces stay under harness control.
