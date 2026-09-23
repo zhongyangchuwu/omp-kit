@@ -15,6 +15,12 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const AGENT_NAMES = ["luna-code", "luna-deep", "luna-doc", "sol-review"];
+const AGENT_MODEL_ROLES: Record<string, string> = {
+  "luna-code": "@fast_worker",
+  "luna-deep": "@good_worker",
+  "luna-doc": "@fast_worker",
+  "sol-review": "@review",
+};
 
 function read(path: string): string {
   return readFileSync(path, "utf8");
@@ -111,7 +117,7 @@ test("native plugin manifest exposes resources and distributed knowledge", () =>
   }
 });
 
-test("native agents are model-neutral, bounded and reference discovered skills", () => {
+test("native agents use logical model roles, stay concrete-model-neutral, and remain bounded", () => {
   const activeSkills = discoveredSkillNames();
   const agentRoot = join(ROOT, "agents");
   const agents = readdirSync(agentRoot, { withFileTypes: true })
@@ -124,7 +130,10 @@ test("native agents are model-neutral, bounded and reference discovered skills",
     const { metadata, body } = markdownSections(join(agentRoot, `${name}.md`));
     expect(body.length).toBeGreaterThan(0);
     expect(scalar(metadata, "name")).toBe(name);
-    expect(metadata.has("model")).toBe(false);
+    const model = scalar(metadata, "model");
+    expect(model).toBe(AGENT_MODEL_ROLES[name]);
+    expect(model?.startsWith("@")).toBe(true);
+    expect(model?.includes("/")).toBe(false);
     expect(inlineList(metadata.get("tools")).length).toBeGreaterThan(0);
     expect(inlineList(metadata.get("spawns"))).toEqual([]);
     for (const skill of inlineList(metadata.get("autoloadSkills"))) expect(activeSkills.has(skill)).toBe(true);
