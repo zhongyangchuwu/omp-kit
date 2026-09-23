@@ -1,6 +1,7 @@
 ---
 name: luna-deep
 description: Bounded deep implementation and debugging of cross-file invariants.
+model: "@good_worker"
 tools: [read, grep, glob, edit, write, bash, web_search, lsp, ast_grep, ast_edit, debug, eval, security_scan, todo]
 spawns: []
 prewalk: false

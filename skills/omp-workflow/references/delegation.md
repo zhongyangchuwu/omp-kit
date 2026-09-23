@@ -10,7 +10,12 @@ accepted work, not hours spent waiting or a fixed token-share target.
 Use `luna-code` for clear local/pattern-based changes, `luna-deep` for difficult
 cross-file work, `luna-doc` for documentation/config synthesis and `sol-review`
 for an independent high-risk review. Resolve these from the live agent catalog;
-never assume an unavailable agent or tool exists. Model and effort live in config.
+never assume an unavailable agent or tool exists.
+
+The agent files route through logical OMP model roles: `luna-code` and `luna-doc`
+use `@fast_worker`, `luna-deep` uses `@good_worker`, and `sol-review` uses
+`@review`. Concrete model IDs and effort remain in `modelRoles` configuration,
+so model-generation upgrades do not require rewriting omp-kit agents.
 
 Give each workstream an immediate objective, allowed scope, context references and
 completion evidence. Do not restate long discussions the worker can retrieve.

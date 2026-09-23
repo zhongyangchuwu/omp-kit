@@ -16,7 +16,18 @@ Core Harness, Experience Skill and Integration categories are architectural desc
 
 ## Machine/project-owned
 
-Model IDs, service endpoints, tokens, credential databases, profile selection, MCP connections and provider costs belong to the actual OMP environment. Read the installed runtime's public docs/schema before changing them. Core agent definitions remain model-neutral.
+Model IDs, service endpoints, tokens, credential databases, profile selection, MCP connections and provider costs belong to the actual OMP environment. Read the installed runtime's public docs/schema before changing them. Core agent definitions remain concrete-model-neutral: they bind only OMP model-role aliases, never provider/model IDs.
+
+Current agent routing is:
+
+| Agent | Model role |
+| --- | --- |
+| `luna-code` | `@fast_worker` |
+| `luna-deep` | `@good_worker` |
+| `luna-doc` | `@fast_worker` |
+| `sol-review` | `@review` |
+
+The machine/project configuration owns the concrete selectors behind those aliases. Upgrading from one model generation to another therefore changes `modelRoles`, not the omp-kit agent files.
 
 Do not commit credentials, real service secrets files or private machine paths to make an example reproducible. Integration Skills carry their own setup/safety guidance; discovery does not authorize running them.
 
