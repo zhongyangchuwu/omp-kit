@@ -76,4 +76,8 @@ Names stay lowercase, short, hyphenated, and descriptive. Include an issue numbe
 
 ## Cleanup
 
-Delete ordinary feature branches after merge. Clean worktrees after confirming their work is merged, saved, or intentionally discarded.
+Delete ordinary feature branches after merge. Prefer repository-hosted automatic head-branch deletion when it is available and compatible with stacked/dependent work, then verify the landed state and branch removal.
+
+A pushed branch that is abandoned, renamed, or superseded before a PR exists must be reconciled when ownership moves: either keep it as an intentional recovery point, or confirm its unique work is preserved elsewhere and delete it. Do not accumulate unowned remote branches.
+
+Clean worktrees after confirming their work is merged, saved, or intentionally discarded.
