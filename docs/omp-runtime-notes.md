@@ -35,7 +35,13 @@ Use a tool/CLI when deterministic work or complex side effects warrant an implem
 
 Use an extension when actual OMP hooks, lifecycle or custom-tool registration are required. Do not wrap every CLI in an extension just to make the diagram uniform.
 
-The current feedback extension is deliberately bounded: append observed evidence with supported session provenance. It neither modifies the repository nor promotes reports to policy. No first-class caller-agent identity is fabricated when the public context does not provide it. The Assurance extension is likewise bounded: it reads the current public session/runtime surfaces, writes only regenerable derived reports beneath the OMP agent root, and does not invoke a model or turn the report into authorization/safety policy.
+The feedback extension is deliberately bounded: it appends observed evidence
+with public session and `ctx.agent` identity (kind, registry id, name, depth and
+parent id) where available. It neither modifies the repository nor promotes
+reports to policy. The Assurance extension reads public session/runtime
+surfaces, rejects unpersisted fresh sessions, and writes only regenerable
+derived reports beneath the OMP agent root; it does not invoke a model or turn
+a report into authorization/safety policy.
 
 ## MCP and service integrations
 
@@ -47,7 +53,11 @@ Service integrations must state their credentials, network/data-disclosure behav
 
 OMP owns raw sessions, history, task lifecycle, messaging and capability enforcement. Use the available public contracts rather than reconstructing a private journal format or adding a second scheduler/message/result store.
 
-The recorded 18.1.20 source audit supports `agent://<id>` final artifacts and `history://<id>` transcript retrieval in their relevant session context. Match actual runtime schemas instead of inventing commands from remembered versions. Desired semantic wait/message and reviewer-LSP gaps are tracked in #7.
+OMP 18.3.2 supplies event-driven `wait`, non-consuming `read proc://` status,
+`write agent://<id>` messaging, `agent://<id>` final artifacts and
+`history://<id>` transcript retrieval. A silent `wait` has a 30-minute safety
+cap, not a polling ladder. Match the installed runtime schema; remaining
+semantic message-filtering and reviewer-LSP gaps are tracked in #7.
 
 Context notes assist current-session continuity, not universal cross-session memory. Empty text cleared notes on the earlier tested runtime; never assume an empty mutation call is a read. Current accepted project knowledge lives in repository docs, design and evidence.
 
@@ -55,7 +65,13 @@ Context notes assist current-session continuity, not universal cross-session mem
 
 OMP records sessions and normalizes usage. The session-evidence collector derives compact local summaries using published stats/trace interfaces; see [session evidence](session-evidence.md).
 
-The recorded 18.1.21 interaction exposed a storage-folder versus actual-cwd mismatch and remains historical acceptance evidence. OMP 18.2.1 repaired `SessionSummary.folder`; on the pinned 18.2.3 baseline the collector filters project paths from catalog summaries before trace reads. Stored evidence still retains trace cwd for provenance/backward-compatible report filtering. Provider data is sampled, cost is cost-equivalent rather than quota, and activity envelopes do not prove compute concurrency.
+The recorded 18.1.21 interaction exposed a storage-folder versus actual-cwd
+mismatch and remains historical acceptance evidence. OMP 18.2.1 repaired
+`SessionSummary.folder`; the current collector filters project paths from
+catalog summaries before trace reads. Stored evidence still retains trace cwd
+for provenance/backward-compatible report filtering. Provider data is sampled,
+cost is cost-equivalent rather than quota, and activity envelopes do not prove
+compute concurrency.
 
 ## Supply-chain and configuration discipline
 

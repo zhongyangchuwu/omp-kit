@@ -11,7 +11,27 @@ import {
 	parseAssuranceCommandMode,
 	persistAssuranceOutput,
 	registerAssuranceCommand,
+	runCurrentSessionAssurance,
 } from "../../extensions/assurance";
+
+test("fresh allocated session path is not scanned or reported before disk materialization", async () => {
+	const root = await mkdtemp(join(tmpdir(), "omp-kit-fresh-session-"));
+	try {
+		const notices: string[] = [];
+		const ctx = {
+			waitForIdle: async () => undefined,
+			sessionManager: {
+				getSessionId: () => "fresh-session",
+				getSessionFile: () => join(root, "fresh-session.jsonl"),
+			},
+			ui: { notify: (message: string) => notices.push(message) },
+		} as unknown as ExtensionCommandContext;
+		await runCurrentSessionAssurance({} as ExtensionAPI, "scan", ctx);
+		assert.deepEqual(notices, ["Assurance needs a persisted OMP session before it can scan."]);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+});
 
 test("current-session assurance exposes only scan and full modes", () => {
 	assert.equal(parseAssuranceCommandMode(""), "scan");

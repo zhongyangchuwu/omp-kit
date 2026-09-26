@@ -89,10 +89,11 @@ not decide whether a report is correct, edit policy, modify configuration, creat
 close GitHub Issues, commit code, call a model, upload telemetry, or trigger any other
 self-modification.
 
-OMP 18.1.21 does not expose first-class caller-agent identity in the public extension
-context. Feedback therefore records supported session/file provenance and must not guess
-whether the caller was Main or a particular worker. The session evidence collector can
-later correlate that provenance with OMP trace tracks.
+OMP 18.3.2 exposes `ctx.agent` with kind, registry id, definition name, task depth
+and optional parent id in extension context. Feedback records that public identity
+alongside session/file provenance where available; it does not infer identity
+from transcript paths or depth (depth-zero clones may be subagents). The session
+evidence collector can also correlate session provenance with OMP trace tracks.
 
 Core invariant:
 

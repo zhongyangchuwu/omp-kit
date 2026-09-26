@@ -39,10 +39,11 @@ function entryIdentity(entry: unknown): { id: string; parentId: string | null; t
 	return { id: entry.id, parentId, type: entry.type, timestamp };
 }
 
-function hubDetails(entry: unknown): Record<string, unknown> | null {
+function waitDetails(entry: unknown): Record<string, unknown> | null {
 	if (!isObject(entry) || entry.type !== "message" || !isObject(entry.message)) return null;
 	const message = entry.message;
-	if (message.role !== "toolResult" || message.toolName !== "hub" || !isObject(message.details)) return null;
+	if (message.role !== "toolResult" || message.toolName !== "wait" || !isObject(message.details) ||
+		message.details.op !== "wait") return null;
 	return message.details;
 }
 
@@ -56,34 +57,20 @@ function jobResolutionsFromEntry(
 	branch: RuntimeBranchState,
 	sessionKey: string,
 ): RuntimeJobResolution[] {
-	const details = hubDetails(entry);
-	if (!details) return [];
+	const details = waitDetails(entry);
+	if (!details || !Array.isArray(details.jobs)) return [];
 	const facts: RuntimeJobResolution[] = [];
-	if (Array.isArray(details.jobs)) {
-		for (const job of details.jobs) {
-			if (!isObject(job) || typeof job.id !== "string" || !job.id) continue;
-			const status = terminalJobStatus(job.status);
-			if (!status) continue;
-			facts.push({
-				id: assuranceId("runtime-job-resolution", sessionKey, entryId, job.id, status),
-				jobId: job.id,
-				status,
-				branch,
-				entryId,
-			});
-		}
-	}
-	if (Array.isArray(details.cancelled)) {
-		for (const outcome of details.cancelled) {
-			if (!isObject(outcome) || typeof outcome.id !== "string" || !outcome.id || outcome.status !== "cancelled") continue;
-			facts.push({
-				id: assuranceId("runtime-job-resolution", sessionKey, entryId, outcome.id, "cancelled"),
-				jobId: outcome.id,
-				status: "cancelled",
-				branch,
-				entryId,
-			});
-		}
+	for (const job of details.jobs) {
+		if (!isObject(job) || typeof job.id !== "string" || !job.id) continue;
+		const status = terminalJobStatus(job.status);
+		if (!status) continue;
+		facts.push({
+			id: assuranceId("runtime-job-resolution", sessionKey, entryId, job.id, status),
+			jobId: job.id,
+			status,
+			branch,
+			entryId,
+		});
 	}
 	return facts;
 }

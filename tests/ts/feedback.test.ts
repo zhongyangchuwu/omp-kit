@@ -42,6 +42,7 @@ const feedbackSchema = createFeedbackSchema(zod);
 
 type RuntimeContext = {
 	cwd: string;
+	agent?: unknown;
 	sessionManager: {
 		getSessionId?: () => string;
 		getSessionFile?: () => string | undefined;
@@ -147,15 +148,34 @@ async function invokeTool(
 	cwd = isolatedAgentDir,
 	sessionId = "feedback-test-session",
 	sessionFile: string | undefined = join(isolatedAgentDir, "sessions", "feedback-test.jsonl"),
+	agent?: unknown,
 ): Promise<unknown> {
 	return tool.execute("feedback-test-call", validInput, undefined, undefined, {
 		cwd,
+		agent,
 		sessionManager: {
 			getSessionId: () => sessionId,
 			getSessionFile: () => sessionFile,
 		},
 	});
 }
+
+test("persists registry identity for depth-zero clones and same-name sibling workers", async () => {
+	await rm(join(getAgentDir(), "omp-kit"), { recursive: true, force: true });
+	const registered = registerFeedbackTool();
+	const agents = [
+		{ kind: "sub", id: "0-Tan", name: "sub", depth: 0 },
+		{ kind: "sub", id: "1-Tan", name: "sub", depth: 0 },
+		{ kind: "sub", id: "Worker1", name: "luna-code", depth: 1, parentId: "Main" },
+		{ kind: "sub", id: "Worker2", name: "luna-code", depth: 1, parentId: "Main" },
+	];
+	for (const [index, agent] of agents.entries()) {
+		await invokeTool(registered.tool, "/workspace/worker", `worker-session-${index}`, undefined, agent);
+	}
+
+	const lines = (await readFile(feedbackPath(), "utf8")).trimEnd().split(/\r?\n/);
+	expect(lines.map(line => JSON.parse(line).agent)).toEqual(agents);
+});
 
 afterAll(async () => {
 	await rm(isolatedAgentDir, { recursive: true, force: true });
