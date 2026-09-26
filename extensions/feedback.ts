@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { appendFile, mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { getAgentDir, type ExtensionAPI } from "@oh-my-pi/pi-coding-agent";
+import { agentContextFromRuntime, type AgentContextEvidence } from "../src/session/agent-context";
 
 export const FEEDBACK_CATEGORIES = [
 	"activation",
@@ -35,6 +36,7 @@ export interface FeedbackContext {
 	cwd: string;
 	sessionId?: string;
 	sessionFile?: string;
+	agent?: AgentContextEvidence;
 }
 
 export interface FeedbackRecord extends FeedbackInput {
@@ -44,6 +46,7 @@ export interface FeedbackRecord extends FeedbackInput {
 	cwd: string;
 	sessionId?: string;
 	sessionFile?: string;
+	agent?: AgentContextEvidence;
 }
 
 type SessionProvenance = {
@@ -73,6 +76,7 @@ export function buildFeedbackRecord(input: FeedbackInput, context: FeedbackConte
 		cwd: context.cwd,
 		...(context.sessionId === undefined ? {} : { sessionId: context.sessionId }),
 		...(context.sessionFile === undefined ? {} : { sessionFile: context.sessionFile }),
+		...(context.agent && Object.keys(context.agent).length > 0 ? { agent: context.agent } : {}),
 		category: input.category,
 		severity: input.severity,
 		summary: input.summary,
@@ -81,13 +85,18 @@ export function buildFeedbackRecord(input: FeedbackInput, context: FeedbackConte
 	};
 }
 
-export function feedbackContextFromRuntime(cwd: string, sessionManager: SessionProvenance): FeedbackContext {
+export function feedbackContextFromRuntime(
+	cwd: string,
+	sessionManager: SessionProvenance,
+	agentContext?: AgentContextEvidence,
+): FeedbackContext {
 	const sessionId = sessionManager.getSessionId?.();
 	const sessionFile = sessionManager.getSessionFile?.();
 	return {
 		cwd,
 		...(sessionId ? { sessionId } : {}),
 		...(sessionFile ? { sessionFile } : {}),
+		...(agentContext && Object.keys(agentContext).length > 0 ? { agent: agentContext } : {}),
 	};
 }
 
@@ -105,7 +114,10 @@ export default function feedbackExtension(pi: ExtensionAPI): void {
 		approval: "write",
 		parameters: createFeedbackSchema(pi.zod),
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-			const record = buildFeedbackRecord(params, feedbackContextFromRuntime(ctx.cwd, ctx.sessionManager));
+			const record = buildFeedbackRecord(
+				params,
+				feedbackContextFromRuntime(ctx.cwd, ctx.sessionManager, agentContextFromRuntime(ctx)),
+			);
 			const filePath = join(getAgentDir(), "omp-kit", "feedback.jsonl");
 
 			await appendFeedbackRecord(filePath, record);
