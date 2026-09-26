@@ -8,14 +8,12 @@ function allSamplesMissing(action: ActionObservation): boolean {
 function backgroundJobId(sample: ActionSample): string | null {
 	const prefix = `${sample.evidence.trackId}:bg:`;
 	if (!sample.evidence.spanId.startsWith(prefix)) return null;
-	const jobId = sample.evidence.spanId.slice(prefix.length);
-	return jobId || null;
+	const indexedJobId = /^(\d+):(.+)$/.exec(sample.evidence.spanId.slice(prefix.length));
+	return indexedJobId?.[2] || null;
 }
 
 /**
- * OMP trace background span IDs are `${parentTrack}:bg:${jobId}`.
- * Async task job IDs are the child-agent IDs; nested child tracks are parent/job.
- * Return null unless the sample matches that exact structured trace shape.
+ * Async task job IDs are child-agent IDs; nested child tracks are parent/job.
  */
 function taskChildTrack(sample: ActionSample): string | null {
 	if (sample.toolName !== "task job") return null;
@@ -43,7 +41,6 @@ function hasObservedJobResolution(input: AssuranceInput, action: ActionObservati
 		.filter(item => item.branch === "active")
 		.map(item => item.jobId));
 	return action.samples.some(sample => {
-		if (sample.evidence.trackId !== "main") return false;
 		const jobId = backgroundJobId(sample);
 		return jobId !== null && resolved.has(jobId);
 	});
@@ -83,8 +80,8 @@ export const resolutionGapRule: AssuranceRule = {
 					}];
 				}
 
-				// A parent-observed terminal hub snapshot/cancel result closes the lifecycle
-				// question even when the stats background span never received async-result.
+				// An active wait result closes the lifecycle question even when
+				// the background span never received async-result delivery.
 				if (hasObservedJobResolution(input, action)) return [];
 
 				const yieldRefs: EvidenceRef[] = [];
