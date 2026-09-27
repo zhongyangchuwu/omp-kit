@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
@@ -115,7 +116,7 @@ export async function runCurrentSessionAssurance(
 	await ctx.waitForIdle();
 	const sessionId = ctx.sessionManager.getSessionId();
 	const sessionFile = ctx.sessionManager.getSessionFile();
-	if (!sessionFile) {
+	if (!sessionFile || !existsSync(sessionFile)) {
 		ctx.ui.notify("Assurance needs a persisted OMP session before it can scan.", "warning");
 		return;
 	}

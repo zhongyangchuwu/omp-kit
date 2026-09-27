@@ -53,7 +53,7 @@ test("a yielded async task without parent delivery is called out as an undeliver
 		"background",
 		"task job",
 		"missing",
-		ref("main", "main:bg:RuntimeFeedbackSmoke", "spawn-result"),
+		ref("main", "main:bg:0:RuntimeFeedbackSmoke", "spawn-result"),
 	);
 	const yielded = action(
 		"yield",
@@ -68,15 +68,15 @@ test("a yielded async task without parent delivery is called out as an undeliver
 	assert.deepEqual(finding?.evidence.map(item => item.entryId).sort(), ["spawn-result", "yield-result"]);
 });
 
-test("a nested task job maps its job id to the nested child track", () => {
-	const background = action("background", "background", "task job", "missing", ref("Parent", "Parent:bg:Child"));
+test("indexed background spans correlate nested task yields", () => {
+	const background = action("background", "background", "task job", "missing", ref("Parent", "Parent:bg:2:Child"));
 	const yielded = action("yield", "tool", "yield", "observed", ref("Parent/Child", "Parent/Child:yield:call"));
 	const finding = report([background, yielded]).findings.find(item => item.kind === "resolution-gap");
 	assert.equal(finding?.code, "task-result-undelivered");
 });
 
 test("missing non-task background closure remains unresolved without inventing completion", () => {
-	const background = action("background", "background", "bash job", "missing", ref("main", "main:bg:bg_7"));
+	const background = action("background", "background", "bash job", "missing", ref("main", "main:bg:7:bg_7"));
 	const unrelatedYield = action("yield", "tool", "yield", "observed", ref("OtherAgent", "OtherAgent:yield:call"));
 	const finding = report([background, unrelatedYield]).findings.find(item => item.kind === "resolution-gap");
 	assert.equal(finding?.code, "background-resolution-unobserved");
@@ -88,7 +88,7 @@ test("an explicitly cancelled background task is terminal rather than unresolved
 		"background",
 		"task job",
 		"missing",
-		ref("main", "main:bg:CodeBoundaryScout", "spawn-result"),
+		ref("main", "main:bg:0:CodeBoundaryScout", "spawn-result"),
 	);
 	const runtime: RuntimeEvidence = {
 		sessionKey: "session-key",
@@ -113,13 +113,33 @@ test("an explicitly cancelled background task is terminal rather than unresolved
 	);
 });
 
+test("indexed nested background spans correlate terminal child job IDs", () => {
+	const background = action("background", "background", "task job", "missing", ref("Parent", "Parent:bg:3:Child"));
+	const runtime: RuntimeEvidence = {
+		sessionKey: "session-key",
+		leafId: "wait-result",
+		retainedTree: true,
+		entries: [],
+		toolActions: [],
+		jobResolutions: [{
+			id: "wait-child",
+			jobId: "Child",
+			status: "completed",
+			branch: "active",
+			entryId: "wait-result",
+		}],
+		limitations: ["main-session-only", "child-retained-history-unavailable", "not-an-atomic-snapshot"],
+	};
+	assert.equal(report([background], runtime).findings.some(item => item.kind === "resolution-gap"), false);
+});
+
 test("off-branch terminal evidence does not close an active Main resolution gap", () => {
 	const background = action(
 		"background",
 		"background",
 		"task job",
 		"missing",
-		ref("main", "main:bg:CodeBoundaryScout", "spawn-result"),
+		ref("main", "main:bg:0:CodeBoundaryScout", "spawn-result"),
 	);
 	const runtime: RuntimeEvidence = {
 		sessionKey: "session-key",
@@ -144,7 +164,7 @@ test("off-branch terminal evidence does not close an active Main resolution gap"
 });
 
 test("runtime read failure makes resolution partial without degrading trace-only evidence rules", () => {
-	const background = action("background", "background", "task job", "missing", ref("main", "main:bg:Worker"));
+	const background = action("background", "background", "task job", "missing", ref("main", "main:bg:0:Worker"));
 	const runtimeFailure: SourceCoverage = {
 		sourceId: "runtime-retained",
 		sessionKey: "session-key",

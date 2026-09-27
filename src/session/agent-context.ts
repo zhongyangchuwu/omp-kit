@@ -8,6 +8,8 @@ import type { ExtensionCommandContext } from "@oh-my-pi/pi-coding-agent";
  * which worker produced an observation.
  */
 export interface AgentContextEvidence {
+	readonly kind?: "main" | "sub";
+	readonly id?: string;
 	readonly name?: string;
 	readonly depth?: number;
 	readonly parentId?: string;
@@ -35,6 +37,8 @@ export function agentContextFromRuntime(
 
 	const value = agent as Record<string, unknown>;
 	return {
+		kind: value.kind === "main" || value.kind === "sub" ? value.kind : undefined,
+		id: asOptionalString(value.id),
 		name: asOptionalString(value.name),
 		depth: asOptionalNumber(value.depth),
 		parentId: asOptionalString(value.parentId),

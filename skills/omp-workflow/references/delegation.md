@@ -39,15 +39,16 @@ implicit change to worker ownership.
 ## Lifecycle
 
 Use OMP's ordinary `task` tool to launch the chosen custom agent. Record its actual
-returned id, scope and expected evidence. Use the available `hub` interface or
-runtime result-delivery mechanism to continue that worker; consult the live schema
-rather than guessing a `hub wait` command. Do not promise persistence after an
-unverified restart/park/revival path. If the worker cannot be revived, launch a new
-one with a concise checkpoint and known context references.
+returned id, scope and expected evidence. Results and peer messages auto-deliver;
+use `wait` only when there is no other useful work. Use `read proc://` for a
+non-consuming job/service status snapshot, `write agent://<id>` for a checkpoint
+message, and `write proc://<id>/kill` to cancel a specific job. Consult the live
+schema rather than guessing a coordination command. Do not promise persistence
+after an unverified restart/park/revival path. If the worker cannot be revived,
+launch a new one with a concise checkpoint and known context references.
 
-When blocked, wait for completion through supported blocking or async delivery.
-Avoid short repeated polling and needless supervisor wakeups. If built-in Vibe is
-being used instead, load `vibe-compat.md`; `vibe_wait` rules are not generic hub APIs.
+Avoid repeated status reads and needless supervisor wakeups. If built-in Vibe is
+being used instead, load `vibe-compat.md`; `vibe_wait` is not the ordinary wait tool.
 
 ## Time budget and supervision
 
@@ -62,21 +63,20 @@ Known slow builds, installs or external services may justify a longer window bas
 observed baselines. The estimate is for supervisor cadence only; it is not a requirement
 for the worker to sacrifice correctness or skip decision-critical verification.
 
-OMP 18.1.22+ message/job waits own their wait window: it starts at about 5 seconds and
-lengthens across back-to-back waits up to about 5 minutes. The former `timeoutMs`
-argument and `async.pollWaitDuration` setting no longer exist. Do not invent those
-arguments or wrap `hub wait` in a short polling loop to recreate them. Let the runtime
-block according to its current contract, and treat a returned all-running snapshot as
-status evidence rather than a reason for an immediate repeated model turn.
-
-The task-shape checkpoint above is a director policy, not a `hub wait` parameter. If the
-work materially exceeds that checkpoint, inspect current status once and decide whether
-new information warrants intervention.
+OMP 18.3.0+ `wait` returns on the first owned job result, incoming peer message or
+steering interrupt. Otherwise it has a single 30-minute safety cap, not an
+adaptive polling ladder or caller-configurable timeout. Results may auto-deliver
+while Main does useful work. A task-shape checkpoint is an expectation to assess
+at the next natural wakeup or useful-work boundary, **not** a scheduled wakeup:
+a silent worker may remain uninspected until the 30-minute cap if Main blocks in
+`wait`. Do not recreate a short polling loop to enforce these estimates. If
+earlier intervention is essential, avoid a blocking wait and inspect
+`read proc://` at a natural work boundary.
 
 On the **first material overrun**:
 
-1. inspect supported job/agent status (`hub jobs` / `hub list` or the equivalent live
-   schema) rather than repeatedly polling every few seconds;
+1. inspect the non-consuming `read proc://` status once rather than repeatedly
+   polling;
 2. if the worker is still running without a delivered result, send one concise checkpoint
    request asking for progress, current blocker, next action and whether director help is
    needed;

@@ -1,4 +1,35 @@
 # OMP compatibility
+
+## OMP 18.3.2 compatibility review
+
+**Reviewed:** 2026-09-26. **Exact dependency and installed runtime:** 18.3.2.
+
+Released changes since the previous 18.2.5 review were mapped to omp-kit's
+maintained integration surfaces:
+
+- **Coordination:** 18.3.0 deprecated `hub` in favor of event-driven `wait`,
+  non-consuming `read proc://` status and `write agent://<id>` messages. The
+  current `wait` has no adaptive polling ladder or per-call timeout; a silent
+  worker can remain blocked until its 30-minute safety cap. Task-shape
+  checkpoints in the delegation guide are expectations at natural wakeups,
+  not scheduled runtime checks.
+- **Assurance:** released stats traces index background spans as
+  `${trackId}:bg:${index}:${jobId}`. Parent terminal observations also arrive
+  through `wait` tool results. Resolution correlation must consume those
+  released shapes, not old unindexed spans or `hub`-only results.
+- **Feedback:** 18.3.2 exposes `ctx.agent.kind`, registry `id`, definition
+  `name`, task `depth` and optional `parentId`. Preserve kind and id to
+  distinguish sibling workers and depth-zero clones; session id/file remain
+  separate provenance.
+- **Fresh sessions:** `getSessionFile()` may be an allocated path before the
+  session is persisted. `/assurance` must not report a fresh empty session as
+  though it had a readable transcript.
+
+The package pin and installed runtime being equal does not establish every
+runtime-facing behavior. Focused regressions and source/type checks cover
+their specified cases; plugin discovery and real session behavior require
+their own observation. The prior 18.2.5 findings below remain historical.
+
 ## OMP 18.2.5 compatibility review
 
 **Reviewed:** 2026-09-18. **Candidate pin:** 18.2.5.
@@ -115,6 +146,6 @@ Feedback and collector acceptance remain claim-specific evidence from OMP 18.1.2
 /api/session/trace.cwd -> real project cwd
 ```
 
-That historical mismatch was fixed in OMP 18.2.1. On the current 18.2.5 baseline, collectors use `SessionSummary.folder` for pre-trace path filtering; trace `cwd` remains evidence metadata rather than the folder-filter workaround. See [validation](VALIDATION.md) for the older acceptance evidence and its historical limitation.
+That historical mismatch was fixed in OMP 18.2.1. On the then-pinned 18.2.5 baseline, collectors used `SessionSummary.folder` for pre-trace path filtering; trace `cwd` remained evidence metadata rather than the folder-filter workaround. See [validation](VALIDATION.md) for the older acceptance evidence and its historical limitation.
 
 Historical #9521 preview experiments remain useful hardening evidence, not a current release blocker. #4 accepted feedback shared between Main/workers with bounded reporting consequences. Future scoping changes should be assessed on their actual benefit and impact.

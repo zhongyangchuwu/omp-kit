@@ -38,9 +38,17 @@ Reference: https://www.makerjackie.com/blog/2026-09-07-gpt6-astra
 
 **Type:** released-source/changelog inspection.
 
-The wait/message behavior below was directly inspected on OMP 18.2.0. The repository compatibility review is now current through pinned OMP 18.2.3 and identified no 18.2.1–18.2.3 change that resolves these specific supervision gaps. A matching peer message can therefore still win `hub wait` before a watched job settles, so routine progress traffic can wake Main before the completion-related condition Main was conceptually waiting for.
+The wait/message behavior below was directly inspected on OMP 18.2.0. The
+subsequent review through then-pinned 18.2.3 identified no change resolving
+these gaps. On that runtime, a matching peer message could win `hub wait`
+before a watched job settled and wake Main on routine progress traffic.
 
-Since 18.1.22, message/job waits use an OMP-owned adaptive window instead of a caller-supplied timeout: the window starts around 5 seconds and lengthens across back-to-back waits up to about 5 minutes. The old `timeoutMs` argument and `async.pollWaitDuration` setting were removed. In 18.2.0, process waits also report what they were actually blocked on when timing out, improving diagnostics without adding semantic completion filtering.
+Since 18.1.22, those message/job waits used an OMP-owned adaptive window
+instead of a caller-supplied timeout: roughly 5 seconds to 5 minutes across
+back-to-back waits. The old `timeoutMs` argument and `async.pollWaitDuration`
+setting were removed. In 18.2.0, process waits also reported what they were
+blocked on when timing out. These are historical 18.2.x mechanics, not the
+current `wait` contract described below.
 
 The peer-message contract still does not provide a general workflow-semantic kind such as:
 
@@ -108,13 +116,16 @@ standard ~5m
 deep     ~10m
 ```
 
-These are coordination hints, not completion promises, empirically optimal constants, or `hub wait` timeout settings. OMP owns the actual adaptive wait window.
+These are rough task expectations, not completion promises or scheduled wakeups.
+OMP 18.3.2 `wait` returns on a job result, peer message or interrupt; a silent
+worker can keep it blocked until its 30-minute safety cap. Inspect earlier only
+at a natural work boundary without a blocking wait.
 
 Guidance favors:
 
-- letting the current OMP wait contract block instead of recreating a short polling loop;
-- avoiding repeated supervisor turns on all-running snapshots with no new information;
-- one checkpoint request after a meaningful task-level overrun;
+- using `wait` only when no useful work remains and accepting its event-driven wakeup;
+- using `read proc://` for an occasional non-consuming status check, not a polling loop;
+- requesting a checkpoint after a meaningful task-level overrun observed at a natural wakeup;
 - stop/split/escalate after repeated comparable overrun or stagnation;
 - coherent worker reuse when task continuity justifies it;
 - final-output retrieval through `agent://<id>` and transcript evidence through `history://<id>` when the released surfaces apply;
@@ -124,7 +135,12 @@ These are policy-level mitigations, not a claim of ideal event semantics.
 
 ## Evaluation / observed effect
 
-Current evidence establishes persistent continuation in an exercised scenario, plausible and observed wakeup costs, the inspected wait/message limitations, and released final-output retrieval. OMP 18.1.22/18.2.0 removed the local timeout knob and improved waiting diagnostics. Compatibility triage through the 18.2.5 candidate baseline found no later change that resolves the completion-relevant message-filtering gap or the other tracked supervision semantics, so Issue #7 remains open.
+Earlier OMP 18.1.22/18.2.0 removed the local timeout knob and improved waiting
+diagnostics. OMP 18.3.0 replaced the `hub` tool with event-driven `wait`,
+`proc://` status/control and `agent://` messaging; 18.3.2 `wait` has a
+30-minute safety cap rather than an adaptive polling ladder. It still wakes on
+any incoming peer message, not only decision-relevant messages. Historical
+wait evidence above remains version-scoped; Issue #7 tracks remaining gaps.
 
 A portable cost curve for checkpoint cadence and orchestration shapes across providers remains unestablished. That belongs with delegation economics (Issue #8) and natural real-work telemetry, not a synthetic waiting benchmark by default.
 
@@ -138,9 +154,10 @@ A portable cost curve for checkpoint cadence and orchestration shapes across pro
 
 ## Current status
 
-**Accepted local supervision policy; runtime supervision gaps remain tracked in inactive Issue #7; 18.2.5 improves subagent interruption/final-yield behavior without resolving those contracts.**
-
-They concern semantic wait filtering, typed peer messages and per-agent read-only LSP. Stable settled final-output retrieval is resolved and should not be reimplemented locally.
+**Accepted local supervision policy; runtime gaps remain tracked in inactive
+Issue #7.** OMP 18.3.2 supplies event-driven waits and stable settled final-output
+retrieval, but not semantic peer-message filtering or runtime-enforced per-agent
+read-only LSP. A 30-minute safety cap is not a configurable task-level checkpoint.
 
 ## Related implementation / Issues
 

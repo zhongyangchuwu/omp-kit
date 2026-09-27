@@ -5,6 +5,9 @@ import { deriveRuntimeEvidence, runtimeSourceCoverage } from "../../src/assuranc
 import { renderAssuranceReport } from "../../src/assurance/render";
 import { BUILTIN_ASSURANCE_RULES } from "../../src/assurance/registry";
 import { readRuntimeEntries, type RuntimeEntrySource } from "../../src/session/runtime-entries";
+import type { ActionObservation } from "../../src/assurance/model";
+import { resolutionGapRule } from "../../src/assurance/rules/resolution-gap";
+import { missingTerminalRule } from "../../src/assurance/rules/terminal-missing";
 
 type Entry = {
 	id: string;
@@ -51,10 +54,9 @@ const cancelled: Entry = {
 	timestamp: "2026-09-18T10:03:00Z",
 	message: {
 		role: "toolResult",
-		toolName: "hub",
+		toolName: "wait",
 		details: {
-			op: "cancel",
-			cancelled: [{ id: "CodeBoundaryScout", status: "cancelled" }],
+			op: "wait",
 			jobs: [{ id: "CodeBoundaryScout", type: "task", status: "cancelled", label: "CodeBoundaryScout", durationMs: 941000 }],
 		},
 	},
@@ -70,6 +72,56 @@ function source(): RuntimeEntrySource<Entry> {
 		getEntries: () => retained,
 	};
 }
+
+test("terminal wait outcomes retain status, branch, and parent resolution behavior", () => {
+	const base = source();
+	const offBranchWait: Entry = {
+		id: "off-branch-wait",
+		parentId: "discarded",
+		type: "message",
+		timestamp: "2026-09-18T10:01:45Z",
+		message: {
+			role: "toolResult",
+			toolName: "wait",
+			details: { op: "wait", jobs: [{ id: "OffBranchJob", status: "failed" }] },
+		},
+	};
+	const retainedSource: RuntimeEntrySource<Entry> = {
+		...base,
+		getEntries: () => [...base.getEntries(), offBranchWait],
+	};
+	const active = readRuntimeEntries(retainedSource, "active-branch-entries", () => 10);
+	const retained = readRuntimeEntries(retainedSource, "all-retained-entries", () => 10);
+	const runtime = deriveRuntimeEvidence(retained, active);
+	assert.ok(runtime);
+	assert.deepEqual(runtime.jobResolutions.map(item => [item.jobId, item.status, item.branch] as const)
+		.sort(([left], [right]) => left.localeCompare(right)), [
+		["CodeBoundaryScout", "cancelled", "active"],
+		["OffBranchJob", "failed", "off-branch"],
+	]);
+	const background: ActionObservation = {
+		id: "background",
+		kind: "background",
+		samples: [{
+			toolName: "task job",
+			terminal: "missing",
+			errorReported: false,
+			evidence: {
+				sourceId: "session",
+				sessionKey: runtime.sessionKey,
+				trackId: "main",
+				spanId: "main:bg:0:CodeBoundaryScout",
+				entryId: "spawn-result",
+			},
+		}],
+	};
+	const report = buildAssuranceReport({
+		actions: [background],
+		coverage: [runtimeSourceCoverage(retained, "runtime-retained")],
+		runtime,
+	}, [missingTerminalRule, resolutionGapRule]);
+	assert.equal(report.findings.some(item => item.kind === "resolution-gap"), false);
+});
 
 test("retained runtime facts preserve active/off-branch identity and terminal cancellation", () => {
 	const active = readRuntimeEntries(source(), "active-branch-entries", () => 10);
