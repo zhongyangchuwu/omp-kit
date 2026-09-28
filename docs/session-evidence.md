@@ -41,9 +41,20 @@ bun run evidence:report  -- --json
 
 For `--json`, stdout is reserved for the JSON document; local OMP stats startup progress is routed to stderr.
 
-`--folder` accepts the normal project filesystem path or a substring. On the pinned OMP 18.2.3 baseline, `SessionSummary.folder` is the real working directory, so collection filters catalog summaries before reading traces. Stored v1 summaries still retain `session.cwd`, and report filtering accepts either field so evidence created around the pre-18.2.1 folder bug remains usable. The old trace-`cwd` prefilter workaround is not part of current collection.
+`--folder` accepts the normal project filesystem path or a substring. Since
+OMP 18.2.1, `SessionSummary.folder` is the real working directory, so collection
+filters catalog summaries before reading traces. Stored v1 summaries still
+retain `session.cwd`, and report filtering accepts either field so evidence
+created around the earlier folder bug remains usable. The old trace-`cwd`
+prefilter workaround is not part of current collection.
 
-`collect` first asks OMP stats to synchronize its ordinary session data, discovers root sessions, and only rebuilds a derived summary when its compact revision changed. Re-running it over unchanged sessions is idempotent. Summaries created by the pre-fix v1 candidate without explicit `cwd` provenance are refreshed once so later reports can use normal filesystem-path filters reliably.
+`collect` explicitly requests a stats catalog sync and waits for successful
+completion before listing root sessions. OMP 18.4.2 queues this ingestion via
+POST `/api/sync`; the client checks `/api/status` with a two-minute bound rather
+than treating the 202 response as complete. Derived summaries are rebuilt only
+when their compact revision changes. Re-running collection over unchanged
+sessions is idempotent. Summaries created by the pre-fix v1 candidate without
+explicit `cwd` provenance are refreshed once.
 
 ## Storage
 
@@ -93,7 +104,8 @@ The collector uses the released/public OMP stats package/server:
 @oh-my-pi/omp-stats
   startServer()
 
-/api/sync
+POST /api/sync       # request ingestion; await completed /api/status
+GET  /api/status
 /api/sessions
 /api/session/trace
 /api/session/entry     # selective provider provenance only

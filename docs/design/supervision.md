@@ -117,9 +117,11 @@ deep     ~10m
 ```
 
 These are rough task expectations, not completion promises or scheduled wakeups.
-OMP 18.3.2 `wait` returns on a job result, peer message or interrupt; a silent
-worker can keep it blocked until its 30-minute safety cap. Inspect earlier only
-at a natural work boundary without a blocking wait.
+OMP 18.4.2 `wait` returns on a job result, peer message or interrupt. When only
+peer messages can wake it, a message-free wait returns a status snapshot on an
+adaptive 5s → 10s → 30s → 60s → 5m ladder; waits on owned jobs or services
+retain a 30-minute safety cap. Neither path filters routine peer messages or
+guarantees a task-shape checkpoint.
 
 Guidance favors:
 
@@ -136,11 +138,12 @@ These are policy-level mitigations, not a claim of ideal event semantics.
 ## Evaluation / observed effect
 
 Earlier OMP 18.1.22/18.2.0 removed the local timeout knob and improved waiting
-diagnostics. OMP 18.3.0 replaced the `hub` tool with event-driven `wait`,
-`proc://` status/control and `agent://` messaging; 18.3.2 `wait` has a
-30-minute safety cap rather than an adaptive polling ladder. It still wakes on
-any incoming peer message, not only decision-relevant messages. Historical
-wait evidence above remains version-scoped; Issue #7 tracks remaining gaps.
+diagnostics. OMP 18.3.0 replaced `hub` with `wait`, `proc://` status/control and
+`agent://` messaging. OMP 18.4.0 restored an adaptive window only for waits
+without owned jobs or services; owned-job waits still have a 30-minute cap.
+Historical `hub` and 18.3.2 wait evidence above remains version-scoped.
+Incoming peer messages still win without decision-relevance filtering, so
+Issue #7 retains that upstream runtime gap.
 
 A portable cost curve for checkpoint cadence and orchestration shapes across providers remains unestablished. That belongs with delegation economics (Issue #8) and natural real-work telemetry, not a synthetic waiting benchmark by default.
 
@@ -155,9 +158,10 @@ A portable cost curve for checkpoint cadence and orchestration shapes across pro
 ## Current status
 
 **Accepted local supervision policy; runtime gaps remain tracked in inactive
-Issue #7.** OMP 18.3.2 supplies event-driven waits and stable settled final-output
-retrieval, but not semantic peer-message filtering or runtime-enforced per-agent
-read-only LSP. A 30-minute safety cap is not a configurable task-level checkpoint.
+Issue #7.** OMP 18.4.2 supplies a peer-only adaptive window and stable settled
+final-output retrieval, but not semantic peer-message filtering or
+runtime-enforced per-agent read-only LSP. The peer-only ladder is not a
+configurable task-level checkpoint.
 
 ## Related implementation / Issues
 

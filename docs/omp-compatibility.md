@@ -1,5 +1,37 @@
 # OMP compatibility
 
+## OMP 18.4.2 compatibility review
+
+**Reviewed:** 2026-09-28. **Exact package pin and installed runtime:** 18.4.2.
+
+The released 18.3.3–18.4.2 changelogs and affected public contracts were
+reviewed before moving the pin:
+
+- **Stats catalog:** `/api/sync` now accepts POST and returns 202 after queuing
+  background ingestion. The collector and Assurance catalog scans require a
+  completed catalog, so the shared client waits for `/api/status` to report a
+  successful sync before listing sessions. A bounded timeout, caller abort,
+  invalid status or sync error remains an unavailable read, not empty history.
+  The in-process trace and selected-entry interfaces still use their public
+  exports and their consumed shapes have not changed.
+- **Supervision:** 18.4.0 restored the old adaptive 5s/10s/30s/60s/5m window
+  **only** when a `wait` has live peers but no owned job or service. Owned-job
+  and service waits retain the 30-minute safety cap. The released wait source
+  and fix [#13516](https://github.com/can1357/oh-my-pi/pull/13516) clarify this
+  distinction; the 18.4.2 `docs/tools/wait.md` text still describes the older
+  no-ladder behavior. Neither path filters peer messages by workflow kind.
+- **Delegation:** `task` replaced its brief's `complexity` field with
+  `solutionSpace`; omp-kit declares no `complexity` payload, and the current
+  tool schema supplies the new field. 18.4.2 isolates task/Vibe eval kernels
+  per agent instead of sharing parent eval state.
+- **Other changes:** improved subagent settlement, rules on eval-nested tool
+  calls, native resource handling and stats storage reliability do not require
+  a second scheduler, storage layer or local config mirror.
+
+The repository gate checks the candidate source/package contract; it does not
+prove a live model session, private profile, or every stats history size.
+Previous compatibility reviews below retain their release-specific limits.
+
 ## OMP 18.3.2 compatibility review
 
 **Reviewed:** 2026-09-26. **Exact dependency and installed runtime:** 18.3.2.
