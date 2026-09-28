@@ -21,6 +21,10 @@ Give each workstream an immediate objective, allowed scope, context references a
 completion evidence. Do not restate long discussions the worker can retrieve.
 For important invariants or ambiguous behavior, give explicit acceptance criteria.
 
+On OMP 18.4.x, describe the unresolved cause or design choices in the task
+item's `solutionSpace`; a large but mechanical task is still narrow. Do not
+reuse the retired `complexity` field or classify by work volume.
+
 Use one owner for each writable scope. Concurrent independent work is useful;
 concurrent overlapping edits require isolation or a serialized integration plan.
 A director checking evidence should not repeat the entire worker investigation.
@@ -63,15 +67,15 @@ Known slow builds, installs or external services may justify a longer window bas
 observed baselines. The estimate is for supervisor cadence only; it is not a requirement
 for the worker to sacrifice correctness or skip decision-critical verification.
 
-OMP 18.3.0+ `wait` returns on the first owned job result, incoming peer message or
-steering interrupt. Otherwise it has a single 30-minute safety cap, not an
-adaptive polling ladder or caller-configurable timeout. Results may auto-deliver
-while Main does useful work. A task-shape checkpoint is an expectation to assess
-at the next natural wakeup or useful-work boundary, **not** a scheduled wakeup:
-a silent worker may remain uninspected until the 30-minute cap if Main blocks in
-`wait`. Do not recreate a short polling loop to enforce these estimates. If
-earlier intervention is essential, avoid a blocking wait and inspect
-`read proc://` at a natural work boundary.
+OMP 18.4.0+ `wait` returns on the first owned job result, incoming peer message
+or steering interrupt. A wait with only live peers and no owned job or service
+returns a still-running snapshot on an adaptive 5s → 10s → 30s → 60s → 5m
+ladder; a wait on an owned job or service retains a 30-minute safety cap.
+There is no per-call timeout. Results may also auto-deliver while Main does
+useful work. These runtime wakeups are not task-shape checkpoint promises:
+do not call `wait` in a loop to enforce the estimates above. Inspect
+`read proc://` once at a natural work boundary if earlier intervention matters;
+after an empty peer-only snapshot, continue waiting only if nothing changed.
 
 On the **first material overrun**:
 

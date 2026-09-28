@@ -41,12 +41,71 @@ function runtime(): RuntimeEntrySource<Entry> {
 const acceptsPublishedSdk = (source: ReadonlySessionManager) => readRuntimeEntries<SessionEntry>(source);
 void acceptsPublishedSdk;
 
-test("construction is inert and sync is explicit", async () => {
+test("sync requests a completed 18.4 catalog before reporting success", async () => {
 	const calls: string[] = [];
-	const api = createOmpStatsClient(origin, async url => { calls.push(url); return Response.json({}); });
+	let completed = false;
+	const api = createOmpStatsClient(origin, async (url, init) => {
+		const path = new URL(url).pathname;
+		calls.push(`${init?.method ?? "GET"} ${path}`);
+		if (path === "/api/sync") {
+			assert.equal(init?.method, "POST");
+			return Response.json({ sync: { phase: "syncing", lastSyncedAt: null } }, { status: 202 });
+		}
+		if (path === "/api/status") {
+			completed = true;
+			return Response.json({ sync: { phase: "idle", lastSyncedAt: 11 } });
+		}
+		return Response.json(completed ? [summary] : []);
+	}, () => 10);
 	assert.deepEqual(calls, []);
 	requireEvidence(await api.sync());
-	assert.deepEqual(calls, [`${origin}/api/sync`]);
+	assert.deepEqual(requireEvidence(await api.listSessions(20)), [summary]);
+	assert.deepEqual(calls, ["POST /api/sync", "GET /api/status", "GET /api/sessions"]);
+});
+
+test("sync does not mistake a prior completed import for the requested import", async () => {
+	let statusReads = 0;
+	const api = createOmpStatsClient(origin, async url => {
+		if (new URL(url).pathname === "/api/sync") {
+			return Response.json({ sync: { phase: "syncing", lastSyncedAt: 8 } }, { status: 202 });
+		}
+		statusReads++;
+		return Response.json({ sync: { phase: "idle", lastSyncedAt: statusReads === 1 ? 8 : 11 } });
+	}, () => 10);
+	requireEvidence(await api.sync());
+	assert.equal(statusReads, 2);
+});
+
+test("sync fails safely for older HTTP semantics and background ingest errors", async () => {
+	const legacy = createOmpStatsClient(origin, async () => Response.json({ processed: 1 }));
+	const incompatible = await legacy.sync();
+	assert.equal(incompatible.status, "unavailable");
+	if (incompatible.status === "unavailable") assert.equal(incompatible.reason, "http");
+	const error = createOmpStatsClient(origin, async () => Response.json({
+		sync: { phase: "error", lastSyncedAt: null, error: "SECRET private import error" },
+	}, { status: 202 }));
+	const failed = await error.sync();
+	assert.equal(failed.status, "unavailable");
+	assert.doesNotMatch(JSON.stringify(failed), /SECRET/);
+	const malformed = await createOmpStatsClient(origin, async () => Response.json({
+		sync: { phase: "unknown", lastSyncedAt: null },
+	}, { status: 202 })).sync();
+	assert.equal(malformed.status, "unavailable");
+	if (malformed.status === "unavailable") assert.equal(malformed.reason, "invalid-envelope");
+});
+
+test("sync stops when the caller cancels during background import", async () => {
+	const controller = new AbortController();
+	const api = createOmpStatsClient(origin, async url => {
+		if (new URL(url).pathname === "/api/sync") {
+			return Response.json({ sync: { phase: "syncing", lastSyncedAt: null } }, { status: 202 });
+		}
+		controller.abort();
+		return Response.json({ sync: { phase: "syncing", lastSyncedAt: null } });
+	});
+	const cancelled = await api.sync(controller.signal);
+	assert.equal(cancelled.status, "unavailable");
+	if (cancelled.status === "unavailable") assert.equal(cancelled.reason, "aborted");
 });
 
 test("only credential-free loopback origins are accepted", () => {

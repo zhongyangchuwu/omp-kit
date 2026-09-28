@@ -53,11 +53,12 @@ Service integrations must state their credentials, network/data-disclosure behav
 
 OMP owns raw sessions, history, task lifecycle, messaging and capability enforcement. Use the available public contracts rather than reconstructing a private journal format or adding a second scheduler/message/result store.
 
-OMP 18.3.2 supplies event-driven `wait`, non-consuming `read proc://` status,
+OMP 18.4.2 supplies `wait`, non-consuming `read proc://` status,
 `write agent://<id>` messaging, `agent://<id>` final artifacts and
-`history://<id>` transcript retrieval. A silent `wait` has a 30-minute safety
-cap, not a polling ladder. Match the installed runtime schema; remaining
-semantic message-filtering and reviewer-LSP gaps are tracked in #7.
+`history://<id>` transcript retrieval. Message-only waits (no owned job or
+service) return on an adaptive 5s-to-5m ladder; owned-job/service waits retain
+a 30-minute safety cap. Match the installed runtime schema; semantic
+message-filtering and reviewer-LSP gaps remain tracked in #7.
 
 Context notes assist current-session continuity, not universal cross-session memory. Empty text cleared notes on the earlier tested runtime; never assume an empty mutation call is a read. Current accepted project knowledge lives in repository docs, design and evidence.
 

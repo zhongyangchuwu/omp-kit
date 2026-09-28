@@ -1,6 +1,19 @@
+import { setTimeout as delay } from "node:timers/promises";
 import type { SessionSummary, SessionTrace } from "@oh-my-pi/omp-stats/shared-types";
 import { isObject, isSessionSummary, isSessionTrace } from "./omp-stats-contract";
 import type { EvidenceRead, ReadLimit, ReadScope } from "./read-result";
+
+const SYNC_POLL_MS = 250;
+const SYNC_TIMEOUT_MS = 120_000;
+
+type SyncStatus = { sync: { phase: "idle" | "syncing" | "error"; lastSyncedAt: number | null } };
+
+function isSyncStatus(value: unknown): value is SyncStatus {
+	if (!isObject(value) || !isObject(value.sync)) return false;
+	const { phase, lastSyncedAt } = value.sync;
+	return (phase === "idle" || phase === "syncing" || phase === "error") &&
+		(lastSyncedAt === null || (typeof lastSyncedAt === "number" && Number.isFinite(lastSyncedAt)));
+}
 
 export type StatsFetch = (url: string, init?: RequestInit) => Promise<Response>;
 
@@ -117,6 +130,8 @@ export function createOmpStatsClient(
 		accept: (value: unknown) => boolean,
 		limitations: readonly ReadLimit[],
 		signal?: AbortSignal,
+		method: "GET" | "POST" = "GET",
+		expectedStatus?: number,
 	): Promise<EvidenceRead<T>> {
 		const scope: ReadScope = { source: "omp-stats", view };
 		const startedAt = now();
@@ -124,11 +139,11 @@ export function createOmpStatsClient(
 		if (signal?.aborted) return { ...metadata(), status: "unavailable", reason: "aborted" };
 		let response: Response;
 		try {
-			response = await fetcher(new URL(path, base).href, { signal, redirect: "error" });
+			response = await fetcher(new URL(path, base).href, { signal, redirect: "error", method });
 		} catch {
 			return { ...metadata(), status: "unavailable", reason: signal?.aborted ? "aborted" : "transport" };
 		}
-		if (!response.ok) {
+		if (!response.ok || (expectedStatus !== undefined && response.status !== expectedStatus)) {
 			// Never read potentially private HTTP diagnostic bodies.
 			try { await response.body?.cancel(); } catch { /* Best-effort release. */ }
 			return { ...metadata(), status: "unavailable", reason: signal?.aborted ? "aborted" : "http", httpStatus: response.status };
@@ -145,7 +160,31 @@ export function createOmpStatsClient(
 	}
 
 	return {
-		sync: signal => read("sync", "/api/sync", () => true, [], signal),
+		async sync(signal) {
+			const startedAt = now();
+			const timeout = AbortSignal.timeout(SYNC_TIMEOUT_MS);
+			const bounded = signal ? AbortSignal.any([signal, timeout]) : timeout;
+			let result = await read<SyncStatus>("sync", "/api/sync", isSyncStatus, [], bounded, "POST", 202);
+			while (result.status === "available" && (result.data.sync.phase === "syncing" ||
+				(result.data.sync.phase === "idle" && (result.data.sync.lastSyncedAt ?? -1) < startedAt))) {
+				try {
+					await delay(SYNC_POLL_MS, undefined, { signal: bounded });
+				} catch {
+					return {
+						scope: { source: "omp-stats", view: "sync" }, startedAt, finishedAt: now(),
+						limitations: [], consistency: "not-checked", status: "unavailable",
+						reason: bounded.aborted ? "aborted" : "runtime-read-failed",
+					};
+				}
+				result = await read<SyncStatus>("sync", "/api/status", isSyncStatus, [], bounded);
+			}
+			if (result.status === "unavailable") return { ...result, startedAt };
+			if (result.data.sync.phase === "error") return {
+				scope: { source: "omp-stats", view: "sync" }, startedAt, finishedAt: now(),
+				limitations: [], consistency: "not-checked", status: "unavailable", reason: "runtime-read-failed",
+			};
+			return { ...result, startedAt, data: {} };
+		},
 		async listSessions(limit, signal) {
 			if (!Number.isSafeInteger(limit) || limit <= 0) throw new Error("Expected a positive session limit");
 			const result = await read<SessionSummary[]>("session-list", `/api/sessions?limit=${limit}`,
