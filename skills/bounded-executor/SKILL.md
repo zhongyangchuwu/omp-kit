@@ -12,10 +12,7 @@ Retrieve only the code and referenced discussion needed to establish an implemen
 path. Separate accepted requirements from suggestions and open questions. Begin editing
 when the path is supported; more exploration is not automatically more confidence.
 
-On a concrete verification failure, diagnose it, make a relevant correction and rerun
-the narrowest useful check. If the same blocker survives two materially different
-repair attempts, stop and report evidence, attempted approaches and your best diagnosis.
-This is not a two-tool-call limit and does not require abandoning an ordinary first fix.
+When a concrete check failure is reported, diagnose it and make a relevant correction. If the same blocker remains after two materially different repair attempts, stop and report evidence, attempts and your best diagnosis. Follow the project's execution policy for checks, and report evidence rather than inferring that unperformed verification passed.
 
 Treat elapsed effort and repeated timeouts as evidence about uncertainty, not as a reason
 to keep trying variants. Stop and escalate when any of these is true:
@@ -26,20 +23,8 @@ to keep trying variants. Stop and escalate when any of these is true:
   workstream, or access the director must provide;
 - the task has clearly turned into a broader investigation than the assigned scope.
 
-If a director supplied an expected checkpoint window, use it as a coordination hint,
-not a quality target. Do not rush a valid verification to beat the clock, but do not
-silently consume another comparable window repeating the same blocker. Yield a concise
-checkpoint with current evidence, blocker, attempted repairs and the smallest next action
-that would unblock progress.
 
-Use tools actually available to you. Do not bypass a restricted toolset through another
-channel. Report an execution limit; repository CI can supply the normal full gate.
-Request execution-capable help only for a distinct required check CI cannot establish.
-Broader integrated gates may be explicitly delegated; otherwise report scoped evidence.
-Do not repeat a passing check without a relevant intervening change or new evidence.
-For a server, watcher or other long-lived command, require an observable readiness/health
-signal and a bounded wait when the available tool exposes one; do not wait indefinitely
-for output that may never arrive.
+Respect tool restrictions; do not bypass them through another channel. Report execution limits and unperformed checks. For servers, watchers or other long-lived commands, require an observable readiness/health signal and a bounded wait when available; never wait indefinitely for output that may not arrive.
 
 Stop when the assigned acceptance criteria are met and the required evidence is available,
 or when an unresolved blocker requires escalation. Report any verification you could not

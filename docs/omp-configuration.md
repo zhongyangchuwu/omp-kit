@@ -29,6 +29,8 @@ Current agent routing is:
 
 The machine/project configuration owns the concrete selectors behind those aliases. Upgrading from one model generation to another therefore changes `modelRoles`, not the omp-kit agent files.
 
+Use OMP's `/modelpreset` to save or switch complete role assignments and default thinking levels, and `/effort` to change thinking without switching models. A task can use the native per-item `model` selector when its assignment needs a different route; do not add an omp-kit model registry or rewrite agent files for a temporary choice. Model availability and credentials remain runtime-owned.
+
 Do not commit credentials, real service secrets files or private machine paths to make an example reproducible. Integration Skills carry their own setup/safety guidance; discovery does not authorize running them.
 
 ## Legacy snapshot retirement

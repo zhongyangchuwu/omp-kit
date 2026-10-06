@@ -1,57 +1,11 @@
-# Execution cadence
+# Execution and verification ownership
 
-Begin with the immediate objective, constraints and required evidence. Inspect the
-relevant existing conventions, then make the smallest complete in-scope change.
-Add behavior-focused tests for changed behavior; run targeted verification and
-report observed results, not inferred success.
+Start from the assigned objective, constraints and required evidence; inspect relevant conventions and make the smallest complete in-scope change. For coordination, load `delegation.md` and `subagent-context.md` as needed.
 
-For coordinated work, load `delegation.md` and `subagent-context.md`. Delegate
-coherent workstreams, reuse their owner when possible, and avoid rewriting a long
-parent discussion as an expensive new brief. Workers verify their own scope and
-return the evidence needed for integration.
+## Integrated verification
 
-## Worker verification and integrated acceptance
+Main owns builds, tests and smoke checks, including focused checks and the integrated gate. Workers do not run them; provide implementation evidence and report relevant risks or execution limits. After related work settles, Main reconciles the combined tree, selects proportionate checks and uses the repository CI gate for the integrated candidate. Machine-specific OMP/runtime claims need an appropriate smoke check when Main determines one is required. Documentation-only scope does not require a separate verifier before that integration.
 
-Use focused checks while implementing or debugging. A worker should normally run the
-narrowest checks that can falsify its own change and report those results with the
-handoff.
-
-Do **not** run the same repository-wide deterministic gate in every worker merely
-because it is offline or cheap. Repeated full-gate output still consumes tool turns,
-attention and integration time, and on a shared changing tree it can describe a state
-that will not be accepted anyway.
-
-A worker-local full gate is justified when it has a distinct purpose, for example:
-
-- the full suite is needed to diagnose a cross-slice failure that focused checks cannot isolate;
-- Main explicitly requests a worker-local full pass before handoff;
-- an isolated worktree needs a full pass before a risky merge/integration decision;
-- CI itself is unavailable or is the subject of the diagnosis.
-
-Otherwise, after related work settles, Main/integration ownership reconciles the
-combined tree and lets the repository's normal CI full gate evaluate the current PR
-candidate. For omp-kit, `.github/workflows/verify.yml` runs pull requests against the
-GitHub PR merge-ref and runs again on `main` after landing. It checks lockfile freshness,
-runs `just verify`, and rejects tracked-file drift on a clean GitHub-hosted runner. A
-successful current PR gate is the normal pre-merge mechanical acceptance evidence; do
-not repeat the identical full gate locally merely because ownership crossed a handoff.
-
-If later integration, review fixes, or requirement changes alter behavior relevant to
-the gate, the updated PR receives a new CI run because the candidate tree changed.
-Rerun affected focused checks during repair as needed, but do not rerun an unchanged
-successful full gate solely because another workflow phase label was crossed.
-
-Local `just verify` remains useful as an optional pre-push check or when diagnosing CI.
-Machine-specific OMP/runtime/profile claims still need the relevant local or released-
-runtime verification because the repository CI deliberately does not exercise them.
-
-If full project verification is slow, externally metered, destructive, or otherwise
-expensive, choose a proportionate integrated acceptance strategy and use focused checks
-where possible.
-
-Documentation-only workers without an execution tool report that limit; they do not
-need to request a separate local verifier when the repository CI owns the applicable
-full deterministic gate.
 
 ## Integration before strong review
 

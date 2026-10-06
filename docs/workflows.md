@@ -14,7 +14,7 @@ Use `skill-authoring` for content and supply-chain review. Environment-native se
 
 ## Implement, integrate, verify
 
-Use focused tests while making a change. Main reconciles writable scopes and shared consumers before accepting the combined tree. Workers report out-of-scope findings rather than expanding their task.
+Main owns execution of builds, tests and smoke checks after coordinated edits settle; workers author scoped changes/tests and report verification targets without running checks mid-flight. Direct Main work can use focused checks during repair. Main reconciles writable scopes and shared consumers before accepting the combined tree; workers report out-of-scope findings rather than expanding their task.
 
 `just verify` is the repository's provider-free gate. It runs Bun repository/native-resource/Skill/documentation contracts plus TypeScript typecheck and runtime tests. CI also checks the committed Bun graph, candidate diff and tracked-file drift.
 
@@ -25,6 +25,8 @@ Review judges semantics, intent and risk; tests prove only exercised properties.
 ## Normal runtime use
 
 Main uses `omp-workflow` and chooses direct work or bounded delegation. The various maintained design, research, test and quality Skills contribute when their task boundary matches; they do not all need to be loaded for every task.
+
+Prefer native model presets/per-task model selectors, progress/jobs views, `archive` history retrieval and `/dump all` diagnostics to duplicated policy or helper mechanisms. The Main rule only activates the workflow; task-specific references load on demand. Maintained judgment Skills still contribute where native runtime mechanics do not decide intent, scope or acceptance.
 
 Use task-local Issue/PR ownership for multi-session work when durable coordination is useful. Keep accepted behavior and rationale in current docs/design records, not only in Issues. Do not create a parallel phase dossier or local backlog mirror merely to preserve cross-session state.
 

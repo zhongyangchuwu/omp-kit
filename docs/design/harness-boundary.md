@@ -167,15 +167,15 @@ This removes a recurring model-compensation obligation without weakening the dur
 Current default:
 
 ```text
-implementation/debugging
--> focused checks relevant to the change
+Main implementation/debugging
+-> focused checks relevant to the change; workers report targets without running them
 
 settled candidate
 -> one deterministic PR merge-ref gate
 -> post-landing main gate for the distinct landed-tree question
 ```
 
-A local/worker full gate remains available for a distinct purpose: isolated pre-merge safety, cross-slice diagnosis, explicit request, CI diagnosis, or a genuinely local/runtime claim.
+A Main-local full gate remains available for a distinct purpose: isolated pre-merge safety, cross-slice or CI diagnosis, or a genuinely local/runtime claim. Workers do not run builds/tests/smokes on the changing shared tree.
 
 ### Specialized `.planning/` dossier
 

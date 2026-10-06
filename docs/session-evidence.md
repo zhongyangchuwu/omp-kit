@@ -49,7 +49,7 @@ created around the earlier folder bug remains usable. The old trace-`cwd`
 prefilter workaround is not part of current collection.
 
 `collect` explicitly requests a stats catalog sync and waits for successful
-completion before listing root sessions. OMP 18.4.2 queues this ingestion via
+completion before listing root sessions. OMP 18.6.1 queues this ingestion via
 POST `/api/sync`; the client checks `/api/status` with a two-minute bound rather
 than treating the 202 response as complete. Derived summaries are rebuilt only
 when their compact revision changes. Re-running collection over unchanged
@@ -138,5 +138,6 @@ The collector is local-only. It does not upload telemetry, contact a cloud servi
 - Quality/acceptance is not inferred automatically from token or timing counters.
 - Provider identity is sampled per `(track, model)`, not an exact per-request routing ledger; same-model provider switching may be conflated.
 - Provider sampling depends on the public session-entry payload; unavailable values remain unknown.
+- Cost totals retain the existing trace-recorded `usage.cost.total` provenance. Native stats catalog totals may additionally re-price missing costs from the model catalog and request timestamp; those repaired totals can differ from this report. No re-pricing or quota/accounting layer is added here.
 - The collector summarizes the sessions visible to the current OMP stats/profile store; cross-machine aggregation is not part of v1.
 - Generic remote replication/publication for routine session-derived data belongs to #33. #12 owns retention/replication decisions for selected material experiment artifacts, not the general SessionEvidence pipeline.

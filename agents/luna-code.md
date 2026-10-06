@@ -18,6 +18,5 @@ Use specialized tools when they naturally reduce work or improve evidence; do no
 invoke a tool merely to demonstrate availability. Ordinary OMP session telemetry is
 reviewed post-hoc to evaluate which capabilities are actually useful in real work.
 
-Use targeted verification and the bounded-executor repair/stop rules. Report
-changed files, evidence, unresolved risks and blockers. Tool restrictions narrow
+Follow bounded-executor for repair, evidence and stop conditions. Tool restrictions narrow
 capabilities; they are not a filesystem or network sandbox.

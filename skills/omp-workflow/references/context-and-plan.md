@@ -15,9 +15,8 @@ A useful distinction is:
 - session history = how the current session got here;
 - durable planning = what future sessions need to treat as current project state.
 
-Do not create a default `SESSION.md` mirror of history. If full transcripts are ever
-archived for audit/provenance, keep them outside active planning state and do not make
-normal workers read them by default.
+Use OMP's native archive for cross-session history retrieval when needed. Keep it
+outside active planning state; do not copy transcripts into a competing project record.
 
 ## Context output
 
@@ -38,9 +37,8 @@ Keep the context record factual and current. Record chosen decisions and unresol
 questions separately. Summarize only the durable state needed going forward; do not
 copy exploratory dialogue, transient tool output, or the full session transcript.
 
-If provenance matters, reference the relevant evidence when it is durable and
-resolvable, but do not make a cross-session plan depend solely on a session-local
-history URI.
+Do not make durable plans depend on session-local history URIs; reference the native
+archive or durable evidence when cross-session provenance matters.
 
 ## Discussion output
 

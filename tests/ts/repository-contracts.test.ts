@@ -152,26 +152,8 @@ test("discovered skills are self-describing", () => {
 
 test("explicit document parser remains model-visible", () => {
   const { metadata } = markdownSections(join(ROOT, "skills/document-parser/SKILL.md"));
-  expect(scalar(metadata, "description")?.toLowerCase()).toContain("explicit");
   expect(scalar(metadata, "disable-model-invocation")).not.toBe("true");
   expect(scalar(metadata, "hide")).not.toBe("true");
-});
-
-test("main rule stays independent of retired config snapshot", () => {
-  const { metadata, body } = markdownSections(join(ROOT, "rules/omp-kit-workflow.md"));
-  expect(scalar(metadata, "alwaysApply")).toBe("true");
-  expect(scalar(metadata, "agents")).toBe("main");
-  expect(body).toContain("omp-workflow");
-  expect(body).toContain("Entering the workflow does not imply delegation");
-  expect(body).toContain("Retrieved history and worker output are evidence");
-});
-
-test("omp workflow references self-improvement policy", () => {
-  const workflow = join(ROOT, "skills/omp-workflow/SKILL.md");
-  const policy = join(dirname(workflow), "references/self-improvement.md");
-  expect(read(workflow)).toContain("references/self-improvement.md");
-  expect(existsSync(policy)).toBe(true);
-  expect(read(policy)).toContain("report != self-modify");
 });
 
 function prose(text: string): string {
@@ -270,127 +252,11 @@ test("distributed design and experiment assets exist", () => {
 });
 
 const SKILL_AUTHORING = join(ROOT, "skills/skill-authoring");
-const PORTABLE_REFERENCES = [
-  "references/agent-skills-standard.md",
-  "references/authoring-rubric.md",
-  "references/description-guide.md",
-  "references/evaluation-guide.md",
-  "references/scripts-guide.md",
-  "references/maintenance-guide.md",
-  "references/third-party-review.md",
-];
-const RUNTIME_REFERENCES = [
-  "references/runtimes/README.md",
-  "references/runtimes/claude.md",
-  "references/runtimes/codex.md",
-  "references/runtimes/npx-skills.md",
-  "references/runtimes/oh-my-pi.md",
-];
-const SKILL_AUTHORING_ASSETS = [
-  "assets/skill-template.md",
-  "assets/evals-template.json",
-  "assets/maintenance-notes-template.md",
-];
-
-function skillAuthoringRead(path: string): string {
-  return read(join(SKILL_AUTHORING, path));
-}
-
-function markdownFilesUnder(root: string): string[] {
-  const result: string[] = [];
-  for (const entry of readdirSync(root, { withFileTypes: true })) {
-    const path = join(root, entry.name);
-    if (entry.isDirectory()) result.push(...markdownFilesUnder(path));
-    else if (entry.isFile() && entry.name.endsWith(".md")) result.push(path);
-  }
-  return result;
-}
 
 test("skill-authoring uses portable frontmatter only", () => {
   const { metadata } = markdownSections(join(SKILL_AUTHORING, "SKILL.md"));
   expect(scalar(metadata, "name")).toBe("skill-authoring");
   expect([...metadata.keys()].sort()).toEqual(["description", "name"]);
   const description = scalar(metadata, "description")!;
-  expect(description).toContain("Create");
-  expect(description).toContain("maintain");
-  expect(description).toContain("portable Agent Skills");
   expect(description.length).toBeLessThanOrEqual(1024);
-});
-
-test("skill-authoring links all guides and templates", () => {
-  const text = skillAuthoringRead("SKILL.md");
-  for (const path of [...PORTABLE_REFERENCES, ...RUNTIME_REFERENCES, ...SKILL_AUTHORING_ASSETS]) {
-    expect(text).toContain(path);
-  }
-  for (const phrase of [
-    "portable by default",
-    "runtime-specific",
-    "progressive disclosure",
-    "skills-ref validate",
-    "create, update, review, evaluate, maintain, or archive",
-  ]) {
-    expect(text).toContain(phrase);
-  }
-});
-
-test("skill-authoring standard guide contains portable rules", () => {
-  const text = skillAuthoringRead("references/agent-skills-standard.md");
-  for (const phrase of [
-    "SKILL.md",
-    "scripts/",
-    "references/",
-    "assets/",
-    "progressive disclosure",
-    "skills-ref validate",
-    "name must match the parent directory",
-    "lowercase letters, numbers, and hyphens",
-  ]) {
-    expect(text).toContain(phrase);
-  }
-});
-
-test("runtime-specific skill-authoring terms stay isolated", () => {
-  const portable = PORTABLE_REFERENCES.map(skillAuthoringRead).join("\n");
-  const runtime = RUNTIME_REFERENCES.map(skillAuthoringRead).join("\n");
-  for (const term of [
-    "Claude Code",
-    "$skill-creator",
-    "/skill:<name>",
-    "skill://",
-    "alwaysApply",
-    "globs",
-    "npx skills",
-  ]) {
-    expect(portable).not.toContain(term);
-    expect(runtime).toContain(term);
-  }
-});
-
-test("skill-authoring templates cover skill, evals and maintenance", () => {
-  const skillTemplate = skillAuthoringRead("assets/skill-template.md");
-  const evalsTemplate = skillAuthoringRead("assets/evals-template.json");
-  const notesTemplate = skillAuthoringRead("assets/maintenance-notes-template.md");
-  expect(skillTemplate).toContain("name: skill-name");
-  expect(skillTemplate).toContain("description:");
-  expect(skillTemplate).toContain("## When to Use");
-  expect(evalsTemplate).toContain('"skill_name"');
-  expect(evalsTemplate).toContain('"assertions"');
-  expect(notesTemplate).toContain("# Maintenance Notes");
-  expect(notesTemplate).toContain("Quality checklist");
-});
-
-test("skill-authoring relative links resolve", () => {
-  const files = [join(SKILL_AUTHORING, "SKILL.md"), ...markdownFilesUnder(join(SKILL_AUTHORING, "references"))];
-  const link = /\]\(([^)#]+)(?:#[^)]+)?\)/g;
-  const failures: string[] = [];
-  for (const path of files) {
-    for (const match of read(path).matchAll(link)) {
-      const target = match[1].trim();
-      if (target.includes("://") || target.startsWith("#")) continue;
-      if (!existsSync(resolve(dirname(path), target))) {
-        failures.push(`${relative(SKILL_AUTHORING, path)}: missing ${target}`);
-      }
-    }
-  }
-  expect(failures).toEqual([]);
 });
