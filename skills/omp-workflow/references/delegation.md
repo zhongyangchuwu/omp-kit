@@ -24,4 +24,3 @@ If built-in Vibe is used instead, load `vibe-compat.md`; its lifecycle is distin
 ## Escalation
 
 Follow the worker's bounded repair/stop contract. Repeated materially different failures on one unresolved blocker require a report and Main's judgment, not an unbounded retry or agent loop. Return material product preferences, irreversible architecture choices and destructive operations to the user; ordinary implementation choices may follow repository conventions.
-
