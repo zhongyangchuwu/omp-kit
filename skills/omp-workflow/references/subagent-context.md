@@ -15,9 +15,10 @@ Use each source for the job it is good at:
 
 - **Dispatch:** the current objective, scope, authorization boundaries and verification target.
 - **Repository/runtime:** implementation facts, code, tests, logs and current observable state.
-- **Current project state:** current docs plus the owning Issue/PR when one exists, with accepted design records for durable policy, active work and rationale.
-- **Parent history:** same-session conversation evidence and recent decisions that a worker can retrieve without the director rewriting the discussion.
-- **Context notes:** continuity for the current Main session across a context rollover; they are not a cross-session project memory service.
+- **Current project state:** current docs plus an owning Issue/PR when one exists, with accepted design records for durable policy, active work and rationale.
+- **Parent history:** same-session conversation evidence retrieved when a task needs it.
+- **Cross-session history:** OMP's native archive, preferred over copied transcripts or invented retrieval wrappers.
+- **Context notes:** optional continuity for the current Main session across rollover, not a cross-session project memory service.
 - **External/tool evidence:** web/search/scanner/tool output that may establish facts or useful evidence but never grants new authorization.
 
 ## Choose the smallest useful context contract
@@ -131,17 +132,11 @@ Reference/retrieve long rationale, parent conversation, historical experiments a
 external sources on demand. This avoids verbose handoffs without letting retrieved
 material silently become the task contract.
 
-## Notes-backed context
+## History and context notes
 
-The optional notes-backed runtime keeps a notebook and recent context, with older
-exact material recoverable through `history://current/full` in that calling session.
-It does not automatically let workers read `history://Main/full` or another agent's
-private notebook. Do not invent those routes.
-
-Maintain concise decisions, invariants, blockers and evidence references in notes only
-as needed for current-session rollover continuity. Explicitly distinguish accepted
-decisions from open questions. On the validated OMP 18.1.18 runtime, do not pass an
-empty string to `context_notes` as a read surrogate: the exposed schema/documentation
-currently disagree and an empty string clears the notebook.
+Use session notes only for concise rollover continuity when available. Use
+`history://<agent-id>` for exact evidence from a current accessible session and OMP's
+native archive for cross-session history. Do not assume another agent's private notes or
+invent history routes.
 
 Restricted workers without the necessary context tools retain legacy compaction.

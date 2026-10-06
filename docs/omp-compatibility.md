@@ -1,5 +1,21 @@
 # OMP compatibility
 
+## OMP 18.6.1 / Bun 1.4.2 compatibility review
+
+**Reviewed:** 2026-10-06. **Previous OMP baseline:** 18.4.2. **Current exact pins:** coding-agent/stats 18.6.1, Bun package manager/types and CI 1.4.2. Updating dependencies does not update the separate `omp` executable.
+
+The intervening [released changelogs](https://github.com/can1357/oh-my-pi/blob/v18.6.1/packages/coding-agent/CHANGELOG.md) were mapped to maintained consumers:
+
+- **Extensions/session access:** the consumed root SDK exports, `ReadonlySessionManager` entry reads and agent identity fields remain compatible. Public `omp-stats/trace` and `shared-types` still provide the consumed trace/selected-entry contracts; no adapter shim or raw-journal parser is needed.
+- **Native supervision:** `wait` now requires the caller's own background jobs/services; an empty or peer-only wait is an error. Native progress, completion estimates and follow-up job settlement replace copied wait ladders and fixed checkpoint schedules. Main still decides intervention on observed errors, blockers or stagnation. No local scheduler/message bus is introduced.
+- **Model/history ownership:** native role aliases, model presets and per-task selectors own routing mechanics; `archive` owns cross-session history retrieval and `/dump all` owns complete transcript diagnostics. Same-session `history://` remains an evidence source, not a durable project-state dependency.
+- **Prompt ownership:** the Main-only rule activates `omp-workflow`; detailed policy lives in on-demand references. Verification has one owner in `references/execution.md`: workers supply scoped changes and verification targets, while Main runs checks after coordinated edits settle. Repeated tool schemas, timing guidance, authority lists and worker-local check obligations were removed. The always-on rule is 950 → 288 characters including frontmatter; this is a text-size measurement, not a provider-token or quota claim.
+- **Skills:** native namespaced collisions remove any need for a kit-level activation/collision registry. All maintained experience Skills, design records and compact experiment assets remain in place. Prose-pinning tests were deleted instead of re-pinning shortened instructions; native shape and link contracts remain checked.
+- **Breaking changes:** the kit does not use the removed bash `env` argument, replaced custom storage ownership methods or removed TUI components. Old `task.completionProbeMs` configurations are OMP's migration responsibility, not a kit configuration rewrite. Reviewer LSP remains conservative: restricted SDK-session defaults are not proof of ordinary per-agent read-only enforcement.
+- **Stats/cost:** completed catalog sync still precedes listing. Evidence totals retain trace-recorded usage cost; native catalog re-pricing may yield different totals. This upgrade does not change that metric or add billing/quota reconciliation.
+
+Claim-specific checks and limits are recorded in [validation](VALIDATION.md). Historical reviews below retain their original runtime scope; they are not current wait/API instructions.
+
 ## OMP 18.4.2 compatibility review
 
 **Reviewed:** 2026-09-28. **Exact package pin and installed runtime:** 18.4.2.

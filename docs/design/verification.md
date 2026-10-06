@@ -43,7 +43,7 @@ Exact current candidate results live in Actions/PRs, not a self-invalidating Git
 
 **Type:** accepted project policy.
 
-#6 established that scoped worker checks provide evidence while the combined tree needs explicit integration ownership. #9 later removed mechanical duplication across unchanged handoffs. Local effort is reserved for useful focused checks, CI diagnosis and genuinely installed-runtime/profile claims.
+#6 established that scoped worker checks could provide evidence while the combined tree needed explicit integration ownership; #9 later removed duplication across unchanged handoffs. The OMP 18.6.1 workflow now assigns check execution to Main after coordinated edits settle, avoiding concurrent worker builds/tests/smokes. Workers supply scoped changes and verification targets; Main retains focused repair checks, CI diagnosis and installed-runtime evidence.
 
 ### Runtime boundaries
 
@@ -92,16 +92,17 @@ Once the relevant tree changes, an earlier pass may be stale. Before it changes,
 ## Current mechanism
 
 ```text
-implementation/debugging -> focused checks
-related writes settle -> reconcile scopes and shared consumers
+workers -> scoped changes and verification targets, no checks mid-flight
+related writes settle -> Main reconciles scopes and shared consumers
+Main implementation/debugging -> focused checks when needed
 current candidate -> semantic review + PR merge-ref CI
 relevant repair -> new candidate and appropriate new checks
 authorized merge -> landed-main gate
 ```
 
-### Worker-local gate
+### Worker evidence and Main-owned checks
 
-Focused checks are the default. A worker full gate can be useful for an isolated exact final tree, risky pre-merge safety, cross-slice diagnosis, explicit Main request or CI debugging. On a changing shared tree, a worker pass may describe a transient state and cannot automatically establish final acceptance.
+Workers report implementation evidence, affected behavior and verification targets without running builds, tests or smoke checks. Main selects and runs focused checks after coordinated edits settle, and CI owns the normal integrated gate. This avoids validating transient shared-tree states and duplicate concurrent verification; it does not remove required behavior or regression coverage.
 
 ### Integrated gate
 
@@ -127,7 +128,7 @@ The repository cleanup preserves direct contract coverage while removing helper/
 
 ## Counter-evidence and limits
 
-- Worker-local broad checks can be valuable for a distinct risk.
+- Independent check execution can isolate a distinct risk, but Main still owns its assignment and acceptance; worker implementation does not start another verification pass.
 - CI only proves covered properties; it is not proof of user intent or overall usability.
 - High-consequence claims may need E2E/manual/external checks.
 - Avoiding duplication never justifies missing/failed current-candidate checks.

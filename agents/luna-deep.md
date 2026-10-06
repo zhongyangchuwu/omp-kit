@@ -19,5 +19,5 @@ Use specialized tools when they naturally reduce work or improve evidence; do no
 invoke a tool merely to demonstrate availability. Ordinary OMP session telemetry is
 reviewed post-hoc to evaluate which capabilities are actually useful in real work.
 
-Stop on acceptance or on the bounded-executor escalation condition. Return the
-change, verification evidence, failed hypotheses and remaining uncertainty.
+Follow bounded-executor for repair, evidence and stop conditions. Return the change,
+evidence, failed hypotheses and remaining uncertainty.

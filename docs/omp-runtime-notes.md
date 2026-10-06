@@ -29,6 +29,10 @@ Keep task activation clear and load support files as needed. A template is not a
 
 The active Skill tree is the source of truth: each `SKILL.md` owns its identity and activation description, with focused support files loaded as needed. OMP native discovery reads that tree directly; do not add a parallel resource registry solely for library maintenance. Keep unreviewed third-party material outside active discovery paths.
 
+OMP retains differing same-name Skills under native namespaces instead of silently discarding them. Use the discovered `skill://<namespace>/<name>` identity when needed; do not invent an omp-kit collision registry.
+
+OMP already caches compressed Skill-description hints; do not add a parallel kit optimizer. With model credentials available, a fresh native cache can schedule background inference during discovery. Read-only resource loading is not a guarantee of zero model work; offline smokes must isolate credentials and outbound requests without changing the user's settings.
+
 ## Tools and extensions
 
 Use a tool/CLI when deterministic work or complex side effects warrant an implementation rather than fragile shell prose. Prefer clear inputs/results, non-zero failure status, bounded cancellation/cleanup, JSON output where useful, and previews for risky operations.
@@ -53,14 +57,20 @@ Service integrations must state their credentials, network/data-disclosure behav
 
 OMP owns raw sessions, history, task lifecycle, messaging and capability enforcement. Use the available public contracts rather than reconstructing a private journal format or adding a second scheduler/message/result store.
 
-OMP 18.4.2 supplies `wait`, non-consuming `read proc://` status,
-`write agent://<id>` messaging, `agent://<id>` final artifacts and
-`history://<id>` transcript retrieval. Message-only waits (no owned job or
-service) return on an adaptive 5s-to-5m ladder; owned-job/service waits retain
-a 30-minute safety cap. Match the installed runtime schema; semantic
-message-filtering and reviewer-LSP gaps remain tracked in #7.
+On OMP 18.6.1, `wait` waits only for background jobs/services started by its
+caller and errors when there is no owned work. Results and messages auto-deliver;
+wait only when blocked, and use `read proc://` for a non-consuming status check
+when intervention needs evidence. Use native progress/completion estimates rather
+than an omp-kit timing loop. Messaging remains `write agent://<id>`; outputs and
+same-session transcripts remain `agent://<id>` and `history://<id>`. Semantic
+message filtering and per-agent read-only LSP remain separate concerns in #7.
 
-Context notes assist current-session continuity, not universal cross-session memory. Empty text cleared notes on the earlier tested runtime; never assume an empty mutation call is a read. Current accepted project knowledge lives in repository docs, design and evidence.
+For cross-session retrieval, use the read-only native `archive` eval global;
+`/dump all` is the native full main/subagent diagnostic export. Neither replaces
+the purpose-specific assurance or quantitative evidence projection. Context notes
+assist current-session continuity, not cross-session memory: omit text for a read,
+and treat an empty string as a clear operation. Accepted project knowledge stays
+in repository docs, design and evidence.
 
 ## Observation
 

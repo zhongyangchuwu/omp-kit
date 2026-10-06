@@ -10,13 +10,10 @@ merely because the built-in prompt describes that as a normal concurrent shape.
 Use multiple workers only for independent workstreams with non-overlapping writes.
 The concrete model and effort come from config, not from this guide.
 
-Reuse a persistent worker with `vibe_send` when its context remains appropriate.
-When blocked, use `vibe_wait` with `timeout: 300` seconds, or up to 600 for a known
-long operation. This is a maximum wait, not a fixed sleep. Treat a timeout as a
-supervision checkpoint: inspect returned status and progress, grant at most one more
-bounded window when there is substantive progress, and otherwise steer, yield or
-escalate. Never convert a timeout into automatic repeated or indefinite waiting.
-
+Reuse a persistent worker with `vibe_send` when appropriate. Follow live tool
+descriptions for Vibe waiting and progress; avoid copied timeout values or repeated
+checkpoint schedules. Main decides when observed progress, errors or blockers warrant
+intervention. Treat Vibe as distinct from native task supervision.
 
 A good worker is not mandatory supervision for ordinary fast-worker output.
 Select independent review based on failure cost and uncertainty, not every edit.

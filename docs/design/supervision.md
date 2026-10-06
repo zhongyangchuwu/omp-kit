@@ -104,46 +104,35 @@ The durable boundary is runtime/event semantics, not a prose convention telling 
 
 > Spend model turns on changed information or judgment, not polling.
 
-Prefer OMP-native lifecycle, messaging, result artifacts and waiting semantics. Use bounded supervision checkpoints to avoid runaway silence, but do not build an omp-kit scheduler, message bus or result store around upstream primitives.
+Prefer OMP-native lifecycle, messaging, result artifacts and waiting semantics. Main intervenes on observed failure, blockers or stagnation; omp-kit does not provide a scheduler, polling cadence, message bus or result store.
 
 ## Current mechanism
 
-Current workflow guidance offers approximate first-checkpoint windows by task shape:
+OMP 18.6.1 owns progress/completion estimates and background-job settlement.
+Results and messages auto-deliver. `wait` accepts only the caller's own background
+jobs/services and errors when none exist; it is not a peer-only polling API.
+The workflow therefore no longer repeats wait ladders or fixed 2/5/10-minute
+checkpoint buckets as operating instructions.
 
-```text
-quick    ~2m
-standard ~5m
-deep     ~10m
-```
+Main continues useful work while workers run. When blocked, it uses native
+waiting; when a delivered failure, blocker or stalled task needs intervention,
+it obtains a non-consuming status snapshot and asks for a concrete checkpoint.
+Repeated stagnation follows the bounded-executor escalation contract. Stable
+outputs and exact same-session evidence use `agent://` and `history://`;
+cross-session retrieval uses the native read-only `archive` eval global.
 
-These are rough task expectations, not completion promises or scheduled wakeups.
-OMP 18.4.2 `wait` returns on a job result, peer message or interrupt. When only
-peer messages can wake it, a message-free wait returns a status snapshot on an
-adaptive 5s → 10s → 30s → 60s → 5m ladder; waits on owned jobs or services
-retain a 30-minute safety cap. Neither path filters routine peer messages or
-guarantees a task-shape checkpoint.
-
-Guidance favors:
-
-- using `wait` only when no useful work remains and accepting its event-driven wakeup;
-- using `read proc://` for an occasional non-consuming status check, not a polling loop;
-- requesting a checkpoint after a meaningful task-level overrun observed at a natural wakeup;
-- stop/split/escalate after repeated comparable overrun or stagnation;
-- coherent worker reuse when task continuity justifies it;
-- final-output retrieval through `agent://<id>` and transcript evidence through `history://<id>` when the released surfaces apply;
-- actual OMP lifecycle rather than a local clone.
-
-These are policy-level mitigations, not a claim of ideal event semantics.
+This removes duplicated runtime mechanics, not Main's judgment or the unresolved
+semantic-message/read-only-LSP boundaries.
 
 ## Evaluation / observed effect
 
 Earlier OMP 18.1.22/18.2.0 removed the local timeout knob and improved waiting
 diagnostics. OMP 18.3.0 replaced `hub` with `wait`, `proc://` status/control and
-`agent://` messaging. OMP 18.4.0 restored an adaptive window only for waits
-without owned jobs or services; owned-job waits still have a 30-minute cap.
-Historical `hub` and 18.3.2 wait evidence above remains version-scoped.
-Incoming peer messages still win without decision-relevance filtering, so
-Issue #7 retains that upstream runtime gap.
+`agent://` messaging. OMP 18.4.0 temporarily restored an adaptive window for
+waits without owned jobs/services. OMP 18.5.1 removed that peer-only path by
+requiring owned background work; 18.6.1 makes subagent follow-up responses
+waitable/cancellable jobs delivered once. These are release-specific source
+findings, not proof of ideal decision-relevance filtering or portable wait cost.
 
 A portable cost curve for checkpoint cadence and orchestration shapes across providers remains unestablished. That belongs with delegation economics (Issue #8) and natural real-work telemetry, not a synthetic waiting benchmark by default.
 
@@ -153,15 +142,15 @@ A portable cost curve for checkpoint cadence and orchestration shapes across pro
 - Progress messages sometimes contain a real blocker/decision in prose.
 - Separate sessions can reduce supervision overhead while increasing context-transfer cost and losing local state.
 - `agent://<id>` does not make recent job snapshots permanent or add semantic wait predicates.
-- Community reports and checkpoint buckets are not portable performance constants.
+- Community reports and the retired local checkpoint buckets are not portable performance constants.
 
 ## Current status
 
-**Accepted local supervision policy; runtime gaps remain tracked in inactive
-Issue #7.** OMP 18.4.2 supplies a peer-only adaptive window and stable settled
-final-output retrieval, but not semantic peer-message filtering or
-runtime-enforced per-agent read-only LSP. The peer-only ladder is not a
-configurable task-level checkpoint.
+**Accepted native-first supervision policy; runtime gaps remain tracked in
+inactive Issue #7.** The OMP 18.6.1 owned-job wait and native progress surfaces
+supersede local wait-ladder/checkpoint instructions. Semantic peer-message
+filtering and runtime-enforced per-agent read-only LSP remain distinct questions;
+this upgrade does not declare the Issue complete.
 
 ## Related implementation / Issues
 

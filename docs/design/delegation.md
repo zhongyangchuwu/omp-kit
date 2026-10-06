@@ -124,7 +124,7 @@ For parallel writes:
 
 - prefer one owner per writable scope;
 - overlapping/out-of-scope consumers return to Main/integration ownership;
-- workers may verify their own scope, but the integrated tree still needs its own acceptance gate;
+- workers report scoped evidence and verification targets; Main owns check execution after coordinated writes settle and the integrated acceptance gate;
 - strong independent review is selected by risk, not made mandatory for every edit.
 
 ## Evaluation / observed effect
