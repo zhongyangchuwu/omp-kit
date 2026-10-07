@@ -33,6 +33,18 @@ Use OMP's `/modelpreset` to save or switch complete role assignments and default
 
 Do not commit credentials, real service secrets files or private machine paths to make an example reproducible. Integration Skills carry their own setup/safety guidance; discovery does not authorize running them.
 
+## Agent capabilities
+
+Implementation workers autoload `bounded-executor` and `code-taste`; documentation workers autoload `bounded-executor` and can use `bash` for executable documentation and CLI inspection. Main still owns integrated checks. The reviewer autoloads `omp-review` and does not declare `bash`, `eval`, full `lsp` or stateful `security_scan`.
+
+A declared tool is available only when OMP's session and setting gates also allow it. Code/deep/doc LSP requires both `task.enableLsp` and `lsp.enabled`, plus a working native language-server configuration. Register an already-installed server, such as `vtsls`, in the machine/project LSP configuration rather than adding a kit proxy or committing a personal executable path.
+
+All four workers declare semantic `find`, which additionally needs a usable auxiliary `judge` route. `find.enabled: auto` requires a native System One judge; an explicitly chosen chat-model judge requires `find.enabled: on`. Validate the backend before granting `find` to workers, and preserve the auxiliary role in saved model presets. Failed judgment requests are not evidence that the requested code is absent.
+
+Native `task.showResolvedModelBadge` provides routing visibility without changing model selection. `task.isolation.enabled` exposes per-task `isolated: true`; it does not isolate every spawn. Use `task.isolation.apply: false` when Main must inspect task artifacts before integration; eval `agent()` callers must separately pass `apply: false`, since their default is to apply changes. Worktree isolation does not isolate credentials or network access. Optional task effort hints outrank role-selector thinking suffixes, so enable `task.enableEffort` only when that override authority is intended.
+
+Tool lists constrain built-ins, not every inherited MCP/extension capability or direct code-execution side effect. They are not a security sandbox. Keep ordinary reviewer LSP deferred until a normal per-agent read-only contract is available; see [runtime supervision](design/supervision.md).
+
 ## Legacy snapshot retirement
 
 The old tracked `config/` snapshot and its installer are removed from the current source tree. This is not an instruction to delete the user's installed configuration. See [installation and migration](omp-installation.md).

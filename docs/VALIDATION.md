@@ -2,6 +2,21 @@
 
 This document records which claims have evidence, not an automatically refreshed CI badge. Exact current candidate SHAs and run results belong in the owning PR/Actions. Accepted design and compact experiment evidence remain distributed in this repository.
 
+## Native agent capability smoke — OMP 18.8.0 / Bun 1.4.2
+
+The current capability update preserves model-role bindings, adds `code-taste` autoloading to implementation workers and semantic `find` to all four workers, gives the documentation worker `bash`, and removes stateful `security_scan` from the reviewer.
+
+Observed checks:
+
+- Nine focused repository/resource contracts passed.
+- The documentation worker's parsed definition constructed real native tools; its `bash` executed `bun --version` and returned `1.4.2` using an in-memory SessionManager.
+- Reviewer tool construction withheld `bash`, `eval`, full LSP, AST edit and security scan even with LSP/security gates enabled in the isolated fixture. Its device-only write transport rejected a filesystem write, and no target file was created. This does not establish a sandbox against inherited MCP/extensions.
+- An existing `vtsls` was registered in machine-owned native LSP configuration and reported ready. Real TypeScript symbol/reference requests found cross-file consumers; diagnostics reported no errors and one hint in unchanged feedback code.
+- The native configuration loader accepted the directly saved task/auxiliary-judge settings. A semantic before/after comparison preserved all twelve original model routes and unrelated settings; the saved default preset also retains the auxiliary judge. A real scoped `find` call selected the reviewer definition across four agent files with three successful judgment requests and no reported failures. This establishes that scoped path, not general search quality or large-workspace latency.
+- A live `luna-code` task ran with `isolated: true`, read its enabled LSP descriptor, and wrote a single throwaway probe inside the isolated checkout. OMP captured the probe patch with `apply=false`; Main inspected the patch and confirmed the probe was absent from the parent checkout. No build/test/lint/format or existing-file modification occurred in that child. Isolated worker restart/revival and every isolation backend remain outside this claim.
+
+Browser acceptance, general worker revival and broad search-quality claims remain unverified. The personal task-LSP, model-badge, auxiliary-judge and isolation settings remain outside the plugin. Native task apply-back is operator-controlled; eval `agent()` callers must explicitly request `apply: false` when retaining artifacts. This smoke does not replace the PR merge-ref gate or the earlier compatibility checks below.
+
 ## OMP 18.8.0 / Bun 1.4.2 acceptance — 2026-10-07
 
 The installed executable and exact SDK/stats pins report 18.8.0; Bun runtime, package manager/types and CI remain 1.4.2. The released-source audit found no migration needed for the kit's consumed extension, identity, read-only session and stats contracts.

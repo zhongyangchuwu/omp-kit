@@ -2,7 +2,7 @@
 name: luna-doc
 description: Synthesize accepted decisions into documentation and configuration.
 model: "@fast_worker"
-tools: [read, grep, glob, edit, write, web_search, lsp, ast_grep, todo]
+tools: [read, find, grep, glob, edit, write, bash, web_search, lsp, ast_grep, todo]
 spawns: []
 prewalk: false
 advisor: false
