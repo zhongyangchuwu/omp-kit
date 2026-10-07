@@ -2,7 +2,7 @@
 name: sol-review
 description: Read-only correctness review of high-risk or integrated changes.
 model: "@review"
-tools: [read, grep, glob, web_search, ast_grep, security_scan]
+tools: [read, find, grep, glob, web_search, ast_grep]
 spawns: []
 prewalk: false
 advisor: false

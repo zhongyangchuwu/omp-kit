@@ -2,11 +2,11 @@
 name: luna-code
 description: Bounded implementation worker for clear, scoped repository changes.
 model: "@fast_worker"
-tools: [read, grep, glob, edit, write, bash, web_search, lsp, ast_grep, ast_edit, debug, eval, security_scan, todo]
+tools: [read, find, grep, glob, edit, write, bash, web_search, lsp, ast_grep, ast_edit, debug, eval, security_scan, todo]
 spawns: []
 prewalk: false
 advisor: false
-autoloadSkills: [bounded-executor]
+autoloadSkills: [bounded-executor, code-taste]
 ---
 
 Complete only the assigned workstream. Retrieve relevant source and conventions
