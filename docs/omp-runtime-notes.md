@@ -57,13 +57,19 @@ Service integrations must state their credentials, network/data-disclosure behav
 
 OMP owns raw sessions, history, task lifecycle, messaging and capability enforcement. Use the available public contracts rather than reconstructing a private journal format or adding a second scheduler/message/result store.
 
-On OMP 18.6.1, `wait` waits only for background jobs/services started by its
-caller and errors when there is no owned work. Results and messages auto-deliver;
-wait only when blocked, and use `read proc://` for a non-consuming status check
-when intervention needs evidence. Use native progress/completion estimates rather
+On OMP 18.8.0, `wait` waits only for background jobs/services started by its
+caller and errors when there is no owned work. OMP's native wait-completion
+correctness fixes own job settlement; results and messages auto-deliver. Wait
+only when blocked, and use `read proc://` for a non-consuming status check when
+intervention needs evidence. Use native progress/completion estimates rather
 than an omp-kit timing loop. Messaging remains `write agent://<id>`; outputs and
 same-session transcripts remain `agent://<id>` and `history://<id>`. Semantic
 message filtering and per-agent read-only LSP remain separate concerns in #7.
+
+Saved-model restore failures are explicit rather than a silent fallback; an
+intentional route change uses OMP's explicit native model override. omp-kit does
+not itself resume or switch SDK sessions. Native JSON query and visual rendering
+remain OMP-owned, not kit implementations.
 
 For cross-session retrieval, use the read-only native `archive` eval global;
 `/dump all` is the native full main/subagent diagnostic export. Neither replaces

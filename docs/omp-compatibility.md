@@ -1,5 +1,19 @@
 # OMP compatibility
 
+## OMP 18.8.0 / Bun 1.4.2 compatibility review
+
+**Reviewed:** 2026-10-07. **Previous OMP baseline:** 18.6.1. **Current exact pins:** coding-agent/stats 18.8.0, Bun package manager/types and CI 1.4.2. Updating SDK dependencies does not update the separate `omp` executable.
+
+The [coding-agent changelog](https://github.com/can1357/oh-my-pi/blob/v18.8.0/packages/coding-agent/CHANGELOG.md) and [stats changelog](https://github.com/can1357/oh-my-pi/blob/v18.8.0/packages/stats/CHANGELOG.md) identify these changes relevant to maintained integration:
+
+- **Saved-model resume:** 18.6.3 makes saved-model restore failures explicit rather than silently falling back. An intentional model change belongs to OMP's explicit native model override; headless resume must not turn a failed restore into an implicit route change. omp-kit does not resume or switch SDK sessions.
+- **Native completion and interaction:** OMP owns the wait-completion correctness fixes and its native JSON query, visual rendering and title-generation mechanisms. omp-kit does not reimplement these features or copy their instructions into its prompts.
+- **Model ownership:** native title generation may use the session model; startup is not guaranteed to be tiny-model-only or zero-model-work. Model choice and availability remain OMP/environment-owned.
+- **Consumed contracts:** the root extension exports, agent identity, read-only session getters and published stats trace/summary shapes remain compatible by released-source audit. Native stats still owns sync, trace memoization and HTTP caching; no kit adapter, cache or storage migration is needed.
+- **Evidence boundary:** source/type checks and native fixture smoke cover the exercised contracts only; [validation](VALIDATION.md) records their scope. They do not establish live-provider routing, private-session recovery, concurrent child-trace cache freshness or UI visuals.
+
+The prior 18.6.1 review below is retained as historical evidence and is not an 18.8.0 runtime acceptance claim.
+
 ## OMP 18.6.1 / Bun 1.4.2 compatibility review
 
 **Reviewed:** 2026-10-06. **Previous OMP baseline:** 18.4.2. **Current exact pins:** coding-agent/stats 18.6.1, Bun package manager/types and CI 1.4.2. Updating dependencies does not update the separate `omp` executable.

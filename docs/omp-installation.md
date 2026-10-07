@@ -4,7 +4,7 @@
 
 For active omp-kit development, keep one long-lived checkout and install that working tree through OMP's native local install path:
 
-The maintained target is OMP 18.6.1 with Bun 1.4.2. Updating the SDK dependencies does not update the `omp` executable; check `omp --version` and `bun --version` before claiming runtime compatibility.
+The maintained target is OMP 18.8.0 with Bun 1.4.2. Updating the SDK dependencies does not update the `omp` executable; check `omp --version` and `bun --version` before claiming runtime compatibility.
 
 ```sh
 git clone git@github.com:zhongyangchuwu/omp-kit.git
