@@ -49,7 +49,7 @@ created around the earlier folder bug remains usable. The old trace-`cwd`
 prefilter workaround is not part of current collection.
 
 `collect` explicitly requests a stats catalog sync and waits for successful
-completion before listing root sessions. OMP 18.6.1 queues this ingestion via
+completion before listing root sessions. OMP 18.8.0 queues this ingestion via
 POST `/api/sync`; the client checks `/api/status` with a two-minute bound rather
 than treating the 202 response as complete. Derived summaries are rebuilt only
 when their compact revision changes. Re-running collection over unchanged

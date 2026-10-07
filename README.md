@@ -15,7 +15,7 @@ Core Harness resources, maintained experience Skills, and integrations are respo
 
 For a checkout that stays on the latest development state, keep one long-lived clone and let OMP link that working tree through its native local install flow:
 
-Current compatibility target: **OMP 18.6.1 and Bun 1.4.2**. The repository pins the OMP SDK/stats packages and Bun types; CI uses the same Bun version. See [compatibility](docs/omp-compatibility.md) for exercised evidence and limits.
+Current compatibility target: **OMP 18.8.0 and Bun 1.4.2**. The repository pins the OMP SDK/stats packages and Bun types; CI uses the same Bun version. See [compatibility](docs/omp-compatibility.md) for reviewed evidence and limits.
 
 ```sh
 git clone git@github.com:zhongyangchuwu/omp-kit.git

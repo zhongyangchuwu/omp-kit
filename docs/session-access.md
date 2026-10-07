@@ -28,7 +28,7 @@ queries or fragments. Requests reject redirects. Remote publication is not a rea
 to forward raw local session paths to arbitrary HTTP servers; #33 owns that boundary.
 Reads support cancellation and do not add retries, implicit sync or background work.
 
-On OMP 18.6.1, an explicit catalog sync POST returns 202 while ingestion runs
+On OMP 18.8.0, an explicit catalog sync POST returns 202 while ingestion runs
 in the background. The shared client reads `/api/status` until the requested
 sync has completed successfully, or reports an unavailable read on error,
 cancellation or its two-minute bound. Catalog reads never treat a queued sync
