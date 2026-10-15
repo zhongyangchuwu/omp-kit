@@ -57,7 +57,7 @@ Service integrations must state their credentials, network/data-disclosure behav
 
 OMP owns raw sessions, history, task lifecycle, messaging and capability enforcement. Use the available public contracts rather than reconstructing a private journal format or adding a second scheduler/message/result store.
 
-On OMP 18.8.0, `wait` waits only for background jobs/services started by its
+On OMP 18.11.0, `wait` waits only for background jobs/services started by its
 caller and errors when there is no owned work. OMP's native wait-completion
 correctness fixes own job settlement; results and messages auto-deliver. Wait
 only when blocked, and use `read proc://` for a non-consuming status check when
@@ -66,10 +66,14 @@ than an omp-kit timing loop. Messaging remains `write agent://<id>`; outputs and
 same-session transcripts remain `agent://<id>` and `history://<id>`. Semantic
 message filtering and per-agent read-only LSP remain separate concerns in #7.
 
+Ordinary `task` children return their final assistant message by default; schema-bearing `yield` completion is opt-in through `task.structured` or agent frontmatter `structured: true`. Eval `agent()` and workpool keep their structured completion contract. Per-call subagent model overrides are removed; agent roles, presets and native configuration own selection. See [configuration](omp-configuration.md).
+
 Saved-model restore failures are explicit rather than a silent fallback; an
 intentional route change uses OMP's explicit native model override. omp-kit does
 not itself resume or switch SDK sessions. Native JSON query and visual rendering
 remain OMP-owned, not kit implementations.
+
+Native `omp --restore <session>` is the crash-recovery path for an interrupted turn and its subagents, not an omp-kit worker-revival layer. Session entries now record the build that wrote them; `/session` lists those builds, which is more precise than the currently installed executable for a session spanning an upgrade. These native changes do not establish fresh lifecycle acceptance for #7 or #31.
 
 For cross-session retrieval, use the read-only native `archive` eval global;
 `/dump all` is the native full main/subagent diagnostic export. Neither replaces
@@ -77,6 +81,8 @@ the purpose-specific assurance or quantitative evidence projection. Context note
 assist current-session continuity, not cross-session memory: omit text for a read,
 and treat an empty string as a clear operation. Accepted project knowledge stays
 in repository docs, design and evidence.
+
+For shareable diagnostics, native `omp anonymize` and `/dump anon` redact session/subagent copies. Inspect the resulting artifact before sharing; these commands do not authorize publication, replace the private evidence store or complete #33.
 
 ## Observation
 

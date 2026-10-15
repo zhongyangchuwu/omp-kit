@@ -9,7 +9,7 @@ cross-file work, `luna-doc` for documentation/config synthesis and `sol-review`
 for an independent high-risk review. Resolve these from the live agent catalog;
 never assume an unavailable agent or tool exists.
 
-Agent definitions use native model-role aliases, keeping provider-specific IDs out of prompts. Choose a task-specific model selector when the work warrants it; use native presets and selectors rather than adding a model-routing layer here.
+Agent definitions use native model-role aliases, keeping provider-specific IDs out of prompts. Choose the appropriate named agent and native preset; machine-owned `task.agentModelOverrides` can override an agent's configured route. `task`, eval `agent()` and `workpool()` do not accept per-call `model` overrides. Do not add a model-routing layer here.
 
 Give each workstream an immediate objective, allowed scope, context references and completion evidence. Do not restate long discussions the worker can retrieve. State important invariants and acceptance criteria explicitly. Use one owner per writable scope; concurrent independent work is useful, while overlapping edits need isolation or a serialized integration plan.
 
@@ -18,6 +18,8 @@ If a workstream changes a shared interface or contract, Main owns the consumer/i
 ## Lifecycle and supervision
 
 Use OMP's native task lifecycle: use `speculativeLaunch` when appropriate and follow live descriptions for task progress, `completionProbe` and owned-job `wait`. Prefer useful parallel work over waiting. Do not reproduce runtime polling, adaptive-delay, or manual timing/checkpoint schedules in omp-kit guidance. Main decides whether observed progress, errors or a blocker warrant intervention; use native task controls only when action is material. Preserve task scope and evidence if work must be reassigned.
+
+Ordinary `task` workers finish with a plain-text final response; do not require `yield`, output schemas or JSON-path result reads unless structured completion is explicitly enabled for that run or agent. Eval `agent()` and workpool results remain structured. Use the live tool contract rather than forcing all workers back into the older completion mode.
 
 If built-in Vibe is used instead, load `vibe-compat.md`; its lifecycle is distinct from native task supervision.
 

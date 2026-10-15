@@ -1,5 +1,20 @@
 # OMP compatibility
 
+## OMP 18.11.0 / Bun 1.4.2 compatibility review
+
+**Reviewed:** 2026-10-15. **Previous OMP baseline:** 18.8.0. **Current exact pins:** coding-agent/stats 18.11.0; Bun package manager/types and CI remain 1.4.2, TypeScript remains 5.9.3. The installed CLI and npm stable packages report 18.11.0, matching the [published release](https://github.com/can1357/oh-my-pi/releases/tag/v18.11.0). SDK installation does not upgrade the separate executable.
+
+The [coding-agent changelog](https://github.com/can1357/oh-my-pi/blob/v18.11.0/packages/coding-agent/CHANGELOG.md), [stats changelog](https://github.com/can1357/oh-my-pi/blob/v18.11.0/packages/stats/CHANGELOG.md) and released task settings/source were mapped to maintained consumers:
+
+- **Subagent routing:** 18.8.2 removed per-call `model` from `task`, eval `agent()` and workpool. Current configuration, workflow and delegation guidance now use named agents, native presets and machine-owned agent overrides. All four maintained role bindings stay unchanged; no routing shim or personal-config rewrite is added.
+- **Task completion:** 18.10.2 defaults ordinary tasks to final-response text; 18.11.0 adds agent-level `structured: true` alongside `task.structured`. Eval agent/workpool completion remains structured. The [native setting](https://github.com/can1357/oh-my-pi/blob/v18.11.0/packages/coding-agent/src/task/settings.ts) and dynamic schema were checked directly rather than relying on older task-documentation yield instructions. The kit does not force structured mode. Assurance's yield-based child classification remains limited to observed structured/historical results; it does not infer child completion from plain assistant text.
+- **Permission/discovery boundaries:** transport-only `write` now permits `local://` scratch artifacts without granting working-tree writes or outbound agent messaging. Released fixes also make malformed explicit tool lists deny built-ins and prevent discovery from unrelated shared temporary roots. They are native improvements, not a complete MCP/extension sandbox; reviewer LSP and #7 remain separate work.
+- **Public SDK/session contracts:** the consumed root extension exports, agent identity, read-only getters and public stats trace/selected-entry interfaces remain compatible. New optional per-entry writer-build provenance survives the existing runtime snapshot. `agent_end.awaitingAsyncWork`, crash recovery through `omp --restore`, anonymized diagnostic export and session transport remain OMP-owned; no kit journal parser, scheduler or recovery adapter is introduced.
+- **Stats and model work:** upstream fixes scheduled-price estimation and subscription-window grouping. The collector keeps its existing trace-cost metric and completed-sync-before-listing contract; neither quota reconciliation nor a new pricing layer is added. Native compression-cache, fallback, prompt-cache, browser and UI improvements are not evidence of provider savings or broad runtime acceptance.
+- **Removed mechanisms:** the kit has no consumer of `PI_SUBPROCESS_CMD` or the removed Codex Code Mode settings. Machine-owned configuration and optional native account pools, budgets and worktrees remain outside the plugin.
+
+[Validation](VALIDATION.md) records the upgraded focused checks, provider-free native smoke and exact limits. Earlier reviews below retain their original versions and are historical evidence, not current task/model instructions or renewed runtime acceptance.
+
 ## OMP 18.8.0 / Bun 1.4.2 compatibility review
 
 **Reviewed:** 2026-10-07. **Previous OMP baseline:** 18.6.1. **Current exact pins:** coding-agent/stats 18.8.0, Bun package manager/types and CI 1.4.2. Updating SDK dependencies does not update the separate `omp` executable.

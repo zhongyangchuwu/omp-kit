@@ -26,7 +26,7 @@ Review judges semantics, intent and risk; tests prove only exercised properties.
 
 Main uses `omp-workflow` and chooses direct work or bounded delegation. The various maintained design, research, test and quality Skills contribute when their task boundary matches; they do not all need to be loaded for every task.
 
-Prefer native model presets/per-task model selectors, progress/jobs views, `archive` history retrieval and `/dump all` diagnostics to duplicated policy or helper mechanisms. The Main rule only activates the workflow; task-specific references load on demand. Maintained judgment Skills still contribute where native runtime mechanics do not decide intent, scope or acceptance.
+Prefer native model presets and configured agent-role routing, progress/jobs views, `archive` history retrieval and `/dump all` diagnostics to duplicated policy or helper mechanisms. There is no per-call subagent `model` override. The Main rule only activates the workflow; task-specific references load on demand. Maintained judgment Skills still contribute where native runtime mechanics do not decide intent, scope or acceptance.
 
 Use task-local Issue/PR ownership for multi-session work when durable coordination is useful. Keep accepted behavior and rationale in current docs/design records, not only in Issues. Do not create a parallel phase dossier or local backlog mirror merely to preserve cross-session state.
 
