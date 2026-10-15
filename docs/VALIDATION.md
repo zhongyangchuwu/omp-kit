@@ -2,6 +2,20 @@
 
 This document records which claims have evidence, not an automatically refreshed CI badge. Exact current candidate SHAs and run results belong in the owning PR/Actions. Accepted design and compact experiment evidence remain distributed in this repository.
 
+## OMP 18.11.0 / Bun 1.4.2 acceptance — 2026-10-15
+
+The installed CLI and exact SDK/stats dependencies report 18.11.0; Bun runtime, package manager/types and CI remain 1.4.2, with TypeScript 5.9.3 unchanged. Current routing/completion guidance follows the released native contracts without changing worker definitions or personal settings.
+
+Observed local checks:
+
+- Frozen install and TypeScript typecheck passed; 127 focused regressions passed across eight files covering session access, feedback, Assurance, evidence and repository contracts.
+- The reused isolated native install/list/uninstall and SDK resource-discovery smoke found all four role-based agents, fourteen Skills, both extensions and the Main-only workflow rule.
+- The real feedback tool persisted a bounded record with matching session provenance and a custom entry. The fresh-session guard rejected an unpersisted session; `/assurance` and `/assurance full` then wrote reports and emitted SDK widget/notification events for a public-API fixture.
+- The real evidence CLI collected one fixture session with its project path and linked feedback, skipped that unchanged session on repeat, and rendered JSON output.
+- A targeted native-schema smoke observed `task.structured` defaulting off, prose mode stripping schema fields, explicit structured mode preserving them, and per-call `model` being stripped in both modes. A real in-memory SessionManager wrote an 18.11.0 runtime stamp, which the existing detached runtime snapshot preserved.
+
+All runtime fixture state stayed outside Git and the real profile; inherited credentials were cleared, external SDK fetches were blocked and catalog-discovery attempts recorded. No model-generated conversation, live provider routing/authentication, real child completion/revival, browser/Tern visual, anonymized-export privacy or cross-machine recovery acceptance is claimed. SDK UI callbacks are not visual TUI proof. The prior 18.8.0 saved-model, LSP/find and isolated-child results below are historical, not rerun 18.11.0 acceptance. #5/#7/#8/#9/#11/#31/#33 remain open; current-candidate full-gate evidence belongs in the PR/Actions.
+
 ## Native agent capability smoke — OMP 18.8.0 / Bun 1.4.2
 
 The current capability update preserves model-role bindings, adds `code-taste` autoloading to implementation workers and semantic `find` to all four workers, gives the documentation worker `bash`, and removes stateful `security_scan` from the reviewer.

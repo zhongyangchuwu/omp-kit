@@ -29,7 +29,7 @@ Current agent routing is:
 
 The machine/project configuration owns the concrete selectors behind those aliases. Upgrading from one model generation to another therefore changes `modelRoles`, not the omp-kit agent files.
 
-Use OMP's `/modelpreset` to save or switch complete role assignments and default thinking levels, and `/effort` to change thinking without switching models. A task can use the native per-item `model` selector when its assignment needs a different route; saved-session restore failures remain explicit, and intentional overrides belong to OMP rather than an omp-kit session-resume/switch layer. Native title generation may use the session model, so startup is not guaranteed to be tiny-model-only or zero-model-work. Do not add an omp-kit model registry or rewrite agent files for a temporary choice. Model availability and credentials remain runtime-owned.
+Use OMP's `/modelpreset` to save or switch complete role assignments and default thinking levels, and `/effort` to change thinking without switching models. Subagents use configured agent models: `task.agentModelOverrides` takes precedence over agent frontmatter, then the task-role/session fallback. Per-call `model` overrides were removed from `task`, eval `agent()` and `workpool()`; choose an appropriate named agent or native preset instead. Saved-session restore failures remain explicit, and intentional SDK resume overrides belong to OMP rather than an omp-kit session-resume/switch layer. Native title generation may use the session model, so startup is not guaranteed to be tiny-model-only or zero-model-work. Do not add an omp-kit model registry or rewrite agent files for a temporary choice. Model availability and credentials remain runtime-owned.
 
 Do not commit credentials, real service secrets files or private machine paths to make an example reproducible. Integration Skills carry their own setup/safety guidance; discovery does not authorize running them.
 
@@ -43,7 +43,11 @@ All four workers declare semantic `find`, which additionally needs a usable auxi
 
 Native `task.showResolvedModelBadge` provides routing visibility without changing model selection. `task.isolation.enabled` exposes per-task `isolated: true`; it does not isolate every spawn. Use `task.isolation.apply: false` when Main must inspect task artifacts before integration; eval `agent()` callers must separately pass `apply: false`, since their default is to apply changes. Worktree isolation does not isolate credentials or network access. Optional task effort hints outrank role-selector thinking suffixes, so enable `task.enableEffort` only when that override authority is intended.
 
+Native `task` results are plain-text final responses by default. Schema validation and `yield` require `task.structured` or agent frontmatter `structured: true`; eval `agent()` and `workpool()` retain structured completion. The kit's workers do not require a schema, so keep their definitions unchanged rather than enabling legacy completion globally. Treat `agent://<id>` as text unless that run actually produced a structured result.
+
 Tool lists constrain built-ins, not every inherited MCP/extension capability or direct code-execution side effect. They are not a security sandbox. Keep ordinary reviewer LSP deferred until a normal per-agent read-only contract is available; see [runtime supervision](design/supervision.md).
+
+OMP may supply a transport-only `write` to an agent whose list omits it. In 18.11.0 this also permits `local://` scratch artifacts, while working-tree writes remain blocked. This does not grant outbound agent messaging or make the reviewer a complete security sandbox.
 
 ## Legacy snapshot retirement
 
