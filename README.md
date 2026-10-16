@@ -5,7 +5,7 @@ OMP Kit combines a model-neutral workflow for Oh My Pi (OMP) with a personally m
 ## What is included
 
 - Four task-shaped agents: `luna-code`, `luna-deep`, `luna-doc`, and `sol-review`.
-- Maintained Skills covering workflow, code taste, product design, debugging, research, testing, verification, language tooling, Skill authoring, experiment operations and document parsing.
+- Maintained Skills covering workflow, code taste, product design, debugging, research, testing, verification, language tooling, Skill authoring, experiment operations, document parsing and project documentation.
 - A Main-session workflow rule, bounded shared feedback, local session evidence, and human-facing assurance.
 - Current usage documentation, mechanism-level design records, and compact experiment evidence.
 

@@ -9,6 +9,7 @@ The checkout contains current product knowledge, accepted design rationale and c
 | What is this and how do I start? | [Repository README](../README.md), [installation](omp-installation.md) |
 | What is installed and who owns configuration? | [Architecture](architecture.md), [configuration](omp-configuration.md) |
 | How do I use and maintain it? | [Workflows](workflows.md), [Skill design](skill-design.md) |
+| How should project documentation be written or reviewed? | [Project Docs](../skills/project-docs/SKILL.md), [Chinese/English style](../skills/project-docs/references/style.md) |
 | Why is it designed this way? | [Design foundations](design-foundations.md), [design records](design/README.md) |
 | What has been tested, and what has not? | [Validation](VALIDATION.md), [OMP compatibility](omp-compatibility.md) |
 | How are real sessions collected and analyzed? | [Session evidence](session-evidence.md) |
