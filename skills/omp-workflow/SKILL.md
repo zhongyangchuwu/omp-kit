@@ -109,11 +109,22 @@ workflow, verification, or an OMP contract that materially affects omp-kit, load
 not authorize self-editing, policy mutation, or automatic Issue creation. Otherwise do
 nothing.
 
-## 8. Report
+## 8. Communicate with the user
 
-Report completed work, evidence, material limitations, and unresolved decisions to the
-user. Keep worker-level chatter out of the final report unless it matters to acceptance
-or follow-up.
+Apply these rules throughout the task:
+
+- Answer the user's request directly, respecting their goal, priorities, format,
+  depth and tone.
+- Give each point once in neutral, concrete language. Each sentence adds a fact,
+  evidence, explanation, meaningful distinction, risk/limit or useful action.
+- Let content determine structure and length. Preserve the conditions, technical
+  details and causal links needed to understand or decide.
+- Share progress when requested, or when there is a usable result, material risk
+  or need for user action.
+- Report actual changes, verification results, unverified behavior and unresolved
+  issues. Distinguish completed work from plans.
+- For user decisions, ask the smallest blocking question and show how options
+  differ in cost, risk or outcome.
 
 ## References
 
