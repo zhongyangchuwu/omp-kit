@@ -12,8 +12,7 @@ The checkout contains current product knowledge, accepted design rationale and c
 | How should project documentation be written or reviewed? | [Project Docs](../skills/project-docs/SKILL.md), [Chinese/English style](../skills/project-docs/references/style.md) |
 | Why is it designed this way? | [Design foundations](design-foundations.md), [design records](design/README.md) |
 | What has been tested, and what has not? | [Validation](VALIDATION.md), [OMP compatibility](omp-compatibility.md) |
-| How are real sessions collected and analyzed? | [Session evidence](session-evidence.md) |
-| How are sessions reviewed for human attention? | [Session assurance](session-assurance.md), [observed scope](assurance-scope.md) |
+| How does OMP handle session history and usage stats? | [Runtime notes](omp-runtime-notes.md) |
 | Which observations justify a decision? | [Experiment lifecycle](experiments.md), [compact evidence bundles](../evidence/README.md) |
 | Which runtime primitive should an integration use? | [Runtime notes](omp-runtime-notes.md) |
 | Which unfinished problem owns this task? | The relevant open Issue / active PR when one exists |
@@ -26,7 +25,7 @@ Different claims need different sources. Current code/runtime observations estab
 accepted behavior and decisions -> current docs / executable resources
 accepted mechanism rationale    -> docs/design/
 selected decision evidence      -> evidence/experiments/
-raw sessions / routine summaries -> OMP / local evidence store outside Git
+raw sessions / usage stats       -> OMP
 unfinished concrete problem     -> open Issue
 implementation / review / CI    -> PR and Actions
 superseded chronology           -> Git and Issue/PR history

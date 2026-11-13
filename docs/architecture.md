@@ -1,12 +1,12 @@
 # Repository architecture
 
-OMP Kit owns reusable workflow policy, a personally maintained Skill library, bounded feedback and project-specific derived evidence. OMP owns the runtime. The repository also distributes accepted design decisions and compact supporting experiments so a person can understand it without reconstructing Issue history.
+OMP Kit distributes reusable workflow policy, a personally maintained Skill library, and accepted design and experiment knowledge. OMP owns the runtime. The repository carries rationale and compact evidence so a person can understand it without reconstructing Issue history.
 
 ## Resource categories
 
 | Category | Current resources | Boundary |
 | --- | --- | --- |
-| Core Harness | Four task agents, Main rule, `omp-workflow`, `git-workflow`, `bounded-executor`, `omp-review`, feedback, session evidence and assurance | Defines routing, scope, integration, acceptance, observation and human-facing review |
+| Core Harness | Four task agents, Main rule, `omp-workflow`, `git-workflow`, `bounded-executor`, `omp-review` | Defines routing, scope, integration and acceptance |
 | Experience Skills | `code-taste`, `omp-design`, `omp-debug`, `omp-research`, `omp-test`, `omp-verification`, `program-language`, `skill-authoring` | The maintainer's reusable judgment and methods |
 | Integrations | `document-parser`; future service/provider/MCP adapters | Separate dependencies, credentials, network, billing or data-disclosure consequences |
 
@@ -34,7 +34,7 @@ Main owns user intent, routing, material judgment, integration, verification jud
 
 Workers execute scoped work without recursive orchestration. Their tools narrow the action surface but are not a filesystem/network sandbox. `sol-review` retains its conservative review surface; findings return to Main for routing.
 
-The shared `omp_kit_feedback` sink permits Main/worker observations without granting repository, policy, configuration or Issue authority. Reporting does not trigger self-modification. Later triage owns promotion decisions.
+OMP owns task and session lifecycle, native history and stats. The plugin adds no feedback tool, session collector or session-access library.
 
 ## Project knowledge
 
@@ -49,14 +49,14 @@ chronology                  -> Git + Issue/PR history
 
 Issue-centered coordination is the multi-session workflow when an unfinished problem benefits from a durable owner. Projects may be only partially planned, and no complete global work-state index or parallel phase dossier is required. When GitHub is unavailable, the checkout still carries accepted behavior and rationale; unresolved remote Issue details may remain unavailable rather than being duplicated into another mutable state system.
 
-## Session evidence and assurance
+## Session and usage data
 
-OMP owns raw sessions, trace reconstruction, generic stats and usage normalization. omp-kit derives bounded quantitative evidence and human-facing assurance facts/findings from supported OMP evidence without becoming a second raw-journal parser or telemetry database.
+OMP owns raw sessions, trace reconstruction, generic stats and usage normalization. omp-kit does not maintain a secondary session collector, access library or feedback-analysis tool.
 
-Routine summaries stay outside Git. Selected material results may become compact committed experiments under the existing evidence policy. Assurance is a review snapshot with explicit coverage limits, not a proof of task quality or safety.
+Routine session and usage data stay in OMP's native stores. Promote only selected material results to compact committed experiments under the existing evidence policy.
 
 ## Verification and rationale
 
-`just verify` covers the retained native product and library maintenance surfaces. CI runs it on PR merge refs and landed `main`, with dependency-lock, diff and drift checks.
+`just verify` covers retained OMP resources and repository maintenance contracts. CI runs it on PR merge refs and landed `main`, with dependency-lock, diff and drift checks.
 
 Real OMP/provider/profile behavior needs the relevant target environment. Existing claim-specific evidence and limits live in [VALIDATION](VALIDATION.md). Stable principles and counter-evidence live in [design records](design/README.md), not only in Issues.

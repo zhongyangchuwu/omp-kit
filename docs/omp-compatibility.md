@@ -1,19 +1,35 @@
 # OMP compatibility
 
+These dated reviews preserve earlier runtime/API compatibility evidence. The OMP SDK/stats dependencies and session integration described below were retired from omp-kit; their former consumers are historical, not current package pins or capabilities.
+
+## Historical OMP 18.20.0 / Bun 1.4.4 compatibility review — 2026-11-13
+
+**Reviewed:** 2026-11-13. At that time, the installed OMP CLI and coding-agent/stats dependencies reported 18.20.0; Bun package manager/types and CI used 1.4.4. The SDK/stats dependencies have since been removed, so these versions are historical compatibility evidence, not a current OMP compatibility target.
+
+The [coding-agent changelog](https://github.com/can1357/oh-my-pi/blob/v18.20.0/packages/coding-agent/CHANGELOG.md), its archived 18.12 entries and the [stats changelog](https://github.com/can1357/oh-my-pi/blob/v18.20.0/packages/stats/CHANGELOG.md) were mapped to consumers maintained at the time:
+
+- **Runtime and dependencies:** at that release, coding-agent and stats required Bun 1.4.4 or newer. The then-consumed extension identity, read-only session and stats trace/entry interfaces remained available; no kit-owned journal parser or scheduler was introduced.
+- **Routing and supervision:** `task.perCallModel` restores restricted, operator-authorized per-call model selection, off by default. Direct-message replies can be waited on in addition to owned jobs/services; use the live wait contract, not historical 18.11.0 restrictions. Existing agent roles and conservative reviewer capability boundaries remain unchanged.
+- **Removed interfaces:** the kit does not use the removed `taskFile`, blocked todo or eval `display()` interfaces, nor the replaced custom session-storage method. New `ask` and browser signatures are runtime-owned rather than copied into kit code.
+- **Stats and evidence:** stats catalog synchronization and pricing fixes remained upstream-owned. At the time, the collector waited for completed sync and retained trace-recorded cost, not quota or catalog re-pricing.
+- **Discovery:** new or installed Skills can be discovered within an active session. This does not establish automatic reload of every changed resource.
+
+[Validation](VALIDATION.md) records provider-free checks and their limits. In particular, extension loading and child lifecycle in a real worker-thread subagent remain unverified.
+
 ## OMP 18.11.0 / Bun 1.4.2 compatibility review
 
-**Reviewed:** 2026-10-15. **Previous OMP baseline:** 18.8.0. **Current exact pins:** coding-agent/stats 18.11.0; Bun package manager/types and CI remain 1.4.2, TypeScript remains 5.9.3. The installed CLI and npm stable packages report 18.11.0, matching the [published release](https://github.com/can1357/oh-my-pi/releases/tag/v18.11.0). SDK installation does not upgrade the separate executable.
+**Reviewed:** 2026-10-15. **Previous OMP baseline:** 18.8.0. At that review the exact pins were coding-agent/stats 18.11.0, Bun package manager/types and CI 1.4.2, and TypeScript 5.9.3. The installed CLI and npm stable packages then reported 18.11.0, matching the [published release](https://github.com/can1357/oh-my-pi/releases/tag/v18.11.0). SDK installation does not upgrade the separate executable.
 
 The [coding-agent changelog](https://github.com/can1357/oh-my-pi/blob/v18.11.0/packages/coding-agent/CHANGELOG.md), [stats changelog](https://github.com/can1357/oh-my-pi/blob/v18.11.0/packages/stats/CHANGELOG.md) and released task settings/source were mapped to maintained consumers:
 
 - **Subagent routing:** 18.8.2 removed per-call `model` from `task`, eval `agent()` and workpool. Current configuration, workflow and delegation guidance now use named agents, native presets and machine-owned agent overrides. All four maintained role bindings stay unchanged; no routing shim or personal-config rewrite is added.
-- **Task completion:** 18.10.2 defaults ordinary tasks to final-response text; 18.11.0 adds agent-level `structured: true` alongside `task.structured`. Eval agent/workpool completion remains structured. The [native setting](https://github.com/can1357/oh-my-pi/blob/v18.11.0/packages/coding-agent/src/task/settings.ts) and dynamic schema were checked directly rather than relying on older task-documentation yield instructions. The kit does not force structured mode. Assurance's yield-based child classification remains limited to observed structured/historical results; it does not infer child completion from plain assistant text.
+- **Task completion:** 18.10.2 defaults ordinary tasks to final-response text; 18.11.0 adds agent-level `structured: true` alongside `task.structured`. Eval agent/workpool completion remains structured. The [native setting](https://github.com/can1357/oh-my-pi/blob/v18.11.0/packages/coding-agent/src/task/settings.ts) and dynamic schema were checked directly rather than relying on older task-documentation yield instructions. The kit does not force structured mode.
 - **Permission/discovery boundaries:** transport-only `write` now permits `local://` scratch artifacts without granting working-tree writes or outbound agent messaging. Released fixes also make malformed explicit tool lists deny built-ins and prevent discovery from unrelated shared temporary roots. They are native improvements, not a complete MCP/extension sandbox; reviewer LSP and #7 remain separate work.
-- **Public SDK/session contracts:** the consumed root extension exports, agent identity, read-only getters and public stats trace/selected-entry interfaces remain compatible. New optional per-entry writer-build provenance survives the existing runtime snapshot. `agent_end.awaitingAsyncWork`, crash recovery through `omp --restore`, anonymized diagnostic export and session transport remain OMP-owned; no kit journal parser, scheduler or recovery adapter is introduced.
-- **Stats and model work:** upstream fixes scheduled-price estimation and subscription-window grouping. The collector keeps its existing trace-cost metric and completed-sync-before-listing contract; neither quota reconciliation nor a new pricing layer is added. Native compression-cache, fallback, prompt-cache, browser and UI improvements are not evidence of provider savings or broad runtime acceptance.
+- **Public SDK/session contracts:** the then-consumed root extension exports, agent identity, read-only getters and public stats trace/selected-entry interfaces were compatible. New optional per-entry writer-build provenance survived the runtime snapshot. `agent_end.awaitingAsyncWork`, crash recovery through `omp --restore`, anonymized diagnostic export and session transport remain OMP-owned; no kit journal parser, scheduler or recovery adapter was introduced.
+- **Stats and model work:** upstream fixes scheduled-price estimation and subscription-window grouping. The then-existing collector retained its trace-cost metric and completed-sync-before-listing contract; neither quota reconciliation nor a new pricing layer was added. Native compression-cache, fallback, prompt-cache, browser and UI improvements are not evidence of provider savings or broad runtime acceptance.
 - **Removed mechanisms:** the kit has no consumer of `PI_SUBPROCESS_CMD` or the removed Codex Code Mode settings. Machine-owned configuration and optional native account pools, budgets and worktrees remain outside the plugin.
 
-[Validation](VALIDATION.md) records the upgraded focused checks, provider-free native smoke and exact limits. Earlier reviews below retain their original versions and are historical evidence, not current task/model instructions or renewed runtime acceptance.
+[Validation](VALIDATION.md) records the checks and their original limits. This and later historical reviews are not current task/model instructions or renewed runtime acceptance.
 
 ## OMP 18.8.0 / Bun 1.4.2 compatibility review
 
@@ -52,13 +68,7 @@ Claim-specific checks and limits are recorded in [validation](VALIDATION.md). Hi
 The released 18.3.3–18.4.2 changelogs and affected public contracts were
 reviewed before moving the pin:
 
-- **Stats catalog:** `/api/sync` now accepts POST and returns 202 after queuing
-  background ingestion. The collector and Assurance catalog scans require a
-  completed catalog, so the shared client waits for `/api/status` to report a
-  successful sync before listing sessions. A bounded timeout, caller abort,
-  invalid status or sync error remains an unavailable read, not empty history.
-  The in-process trace and selected-entry interfaces still use their public
-  exports and their consumed shapes have not changed.
+- **Stats catalog:** `/api/sync` accepted POST and returned 202 after queuing background ingestion. The then-current session-evidence collector waited for `/api/status` to report a successful sync before listing sessions. A bounded timeout, caller abort, invalid status or sync error remained an unavailable read, not empty history. The in-process trace and selected-entry interfaces used their public exports and the consumed shapes had not changed.
 - **Supervision:** 18.4.0 restored the old adaptive 5s/10s/30s/60s/5m window
   **only** when a `wait` has live peers but no owned job or service. Owned-job
   and service waits retain the 30-minute safety cap. The released wait source
@@ -90,17 +100,10 @@ maintained integration surfaces:
   worker can remain blocked until its 30-minute safety cap. Task-shape
   checkpoints in the delegation guide are expectations at natural wakeups,
   not scheduled runtime checks.
-- **Assurance:** released stats traces index background spans as
-  `${trackId}:bg:${index}:${jobId}`. Parent terminal observations also arrive
-  through `wait` tool results. Resolution correlation must consume those
-  released shapes, not old unindexed spans or `hub`-only results.
 - **Feedback:** 18.3.2 exposes `ctx.agent.kind`, registry `id`, definition
   `name`, task `depth` and optional `parentId`. Preserve kind and id to
   distinguish sibling workers and depth-zero clones; session id/file remain
   separate provenance.
-- **Fresh sessions:** `getSessionFile()` may be an allocated path before the
-  session is persisted. `/assurance` must not report a fresh empty session as
-  though it had a readable transcript.
 
 The package pin and installed runtime being equal does not establish every
 runtime-facing behavior. Focused regressions and source/type checks cover
@@ -114,10 +117,8 @@ their own observation. The prior 18.2.5 findings below remain historical.
 The 18.2.4/18.2.5 released changelogs and current package surface were reviewed before changing the local pin.
 
 - **Package surface:** OMP 18.2.5 moves terminal-UI subpaths out of `@oh-my-pi/pi-coding-agent` into `@oh-my-pi/pi-tui`. omp-kit imports only the coding-agent package root plus public `@oh-my-pi/omp-stats` surfaces, so the removed TUI subpaths are not used locally.
-- **Stats/session access:** `@oh-my-pi/omp-stats` 18.2.5 documents session/fork polling performance work and now makes `SessionTrace.etag` part of the required public trace shape. omp-kit validates that field at the access boundary but does not otherwise consume it. The 18.2.1 real-working-directory fix remains the current folder contract.
+- **Stats/session access:** at the time, `@oh-my-pi/omp-stats` 18.2.5 documented session/fork polling performance work and made `SessionTrace.etag` part of the required public trace shape. The then-current kit validated that field at its access boundary but did not otherwise consume it. The 18.2.1 real-working-directory fix was the folder contract for that collector.
 - **Subagent lifecycle:** 18.2.5 fixes subagents that could spend a run on incremental `yield` calls and makes the forced final yield terminate the run. It also fixes queued parent messages left behind after tool interruptions and adjusts parent IRC interruption prompts.
-- **Assurance implication:** these lifecycle fixes can change the frequency and interpretation of missing parent/background resolution observations. Historical pre-18.2.2 samples remain compatibility evidence only; current Attention rules are not retuned from changelog inspection alone. Fresh 18.2.5 natural sessions are required before another resolution-rule change.
-- **Supervision implication:** the reviewed changes improve interruption/finalization behavior but do not establish completion-relevant message filtering, semantic peer-message kinds, configurable adaptive wait cadence, or runtime-enforced full read-only reviewer LSP. The corresponding upstream tracking remains open.
 
 Repository CI against the 18.2.5 candidate pin establishes source/type/test compatibility only. It does not substitute for installed-runtime dogfood of background/subagent settlement.
 
@@ -143,7 +144,7 @@ Inspect changes relevant to:
 - agent discovery, frontmatter, model resolution and task lifecycle;
 - tool activation, mounted tools, extension/custom/MCP transports and enforcement;
 - Skill/rule discovery, activation, visibility and invocation;
-- extension SDK contracts used by feedback;
+- historical extension SDK contracts used by the retired feedback tool;
 - user-owned configuration/profile/model behavior explicitly relied on by a maintained workflow;
 - session/trace/stats/RPC and stable result/history interfaces;
 - concrete tool/CLI assumptions in maintained Skills when their relevant dependency changes.
@@ -169,7 +170,7 @@ These are defaults, not ceilings. A relevant patch receives targeted audit/smoke
 5. Modify omp-kit only when a relevant accepted contract requires it.
 6. Do not manufacture bookkeeping commits, generic tracking Issues or model tests for every unrelated patch.
 
-Stronger per-agent capability scoping may be useful hardening, but bounded evidence append is not equivalent to authority-bearing mutation. Evaluate consequences instead of reintroducing the old Main-only feedback release blocker automatically.
+Stronger per-agent capability scoping may be useful hardening, but the retired bounded feedback append was not equivalent to authority-bearing mutation. Evaluate consequences instead of reintroducing the old Main-only feedback release blocker automatically.
 
 ## Evidence and state
 
@@ -187,15 +188,15 @@ A changelog/source review is not a full runtime test. Existing smoke evidence re
 
 ### OMP 18.2.3 triage — 2026-09-17
 
-OMP 18.2.3 was the previous exact dependency for omp-kit. This review covered 18.2.1–18.2.3 and the released stats/session source used by evidence and assurance before the later 18.2.5 pin.
+OMP 18.2.3 was the previous exact dependency for omp-kit. This historical review covered 18.2.1–18.2.3 and the released stats/session source used by the then-current session-evidence collector before the later 18.2.5 pin.
 
 Relevant findings:
 
-- **Session folder contract repaired:** 18.2.1 fixed `/api/sessions` so `SessionSummary.folder` is the real working directory instead of an encoded storage key. Evidence and assurance collectors now apply `--folder` before trace reads; the old trace-`cwd` filtering workaround is retired.
+- **Session folder contract repaired:** 18.2.1 fixed `/api/sessions` so `SessionSummary.folder` was the real working directory instead of an encoded storage key. At the time, the session-evidence collector applied `--folder` before trace reads; the old trace-`cwd` filtering workaround had been retired.
 - **Tool-error evidence improved:** 18.2.1 preserves non-throwing tool failure status through extension result rewrites and eval-defined subagent tools. Historical pre-18.2.1 error counts remain useful samples but are not directly comparable to current-runtime coverage.
-- **Background/subagent terminal semantics changed:** 18.2.2 settles stopped-subagent parent jobs correctly and adjusts consumed/recovered background-job retention; 18.2.3 keeps cancelled jobs tracked until execution actually finishes. Historical `terminal-missing` / `resolution-gap` findings therefore retain runtime-version context. Sampled pre-18.2.2 resolution candidates remain compatibility evidence rather than current Attention-threshold tuning evidence.
-- **Selected-entry bulk access remained single-entry:** 18.2.3 serves `/api/session/entry` through single-entry lookup over the transcript. omp-kit avoids unnecessary reads by prefiltering unsupported built-in Scope tool names. Historical full-scan timing alone does not justify a new upstream batch/indexed API; revisit only if normal current-session/full-report interaction or another maintained consumer demonstrates the need.
-- **No maintained contract break found:** agent frontmatter, native plugin installation, feedback provenance, public trace/span shapes used by omp-kit, and stable result/history retrieval remain compatible for current use.
+- **Background/subagent terminal semantics changed:** 18.2.2 settles stopped-subagent parent jobs correctly and adjusts consumed/recovered background-job retention; 18.2.3 keeps cancelled jobs tracked until execution actually finishes. Historical findings therefore retain runtime-version context; samples from before 18.2.2 are not directly comparable to the later contract.
+- **Selected-entry bulk access remained single-entry:** 18.2.3 serves `/api/session/entry` through a single-entry lookup over the transcript.
+- **No maintained contract break found:** at the time, agent frontmatter, native plugin installation, feedback provenance, public session trace and selected-entry shapes, and stable result/history retrieval remained compatible.
 
 The former 18.2.3 exact pin was validated by the repository deterministic gate. This source/type compatibility evidence is separate from historical full-scan timing and from later 18.2.5 runtime dogfood.
 
@@ -209,20 +210,20 @@ Relevant findings:
 - **Hub waiting:** 18.1.22 removed the caller `timeoutMs` argument and `async.pollWaitDuration`; waits now use an OMP-owned adaptive window beginning around 5 seconds and lengthening across consecutive waits to about 5 minutes. 18.2.0 also improves process-wait timeout diagnostics. omp-kit's delegation guidance no longer invents the removed timeout control.
 - **Remaining supervision gap:** current `hub wait` still lets a matching peer message win the wait before job settlement. There is still no general progress/blocker/decision/final message kind for completion-relevant filtering, so Issue #7 remains unresolved rather than spawning a local scheduler/message layer.
 - **Skill UX:** `/skill:<name>` is now represented as an atomic composer chip and user-invoked skill prompts participate more consistently in rewind/tree/copy behavior. This changes interaction/rendering, not the native Skill discovery contract omp-kit relies on.
-- **SDK breaking changes:** `Settings.getGroup()` returns shallow-frozen snapshots; removed MCP response aliases make `callMCP()` return the shared `JsonRpcResponse`. omp-kit does not call those APIs. The direct `@oh-my-pi/pi-coding-agent` dependency was updated to 18.2.0 so extension/session-evidence typecheck and tests compiled against that SDK before later pins.
-- **Historical stats path mismatch:** the 18.2.0 stats parser derived `SessionSummary.folder` with the older `--` decoding logic, so the collector had to use public trace `cwd` for real-path matching. OMP 18.2.1 fixed that contract; current collection no longer depends on this workaround.
+- **SDK breaking changes:** `Settings.getGroup()` returned shallow-frozen snapshots; removed MCP response aliases made `callMCP()` return the shared `JsonRpcResponse`. omp-kit did not call those APIs. The direct `@oh-my-pi/pi-coding-agent` dependency was updated to 18.2.0 so then-current extension/session-evidence typecheck and tests compiled against that SDK before later pins.
+- **Historical stats path mismatch:** the 18.2.0 stats parser derived `SessionSummary.folder` with the older `--` decoding logic, so the then-current collector had to use public trace `cwd` for real-path matching. OMP 18.2.1 fixed that contract; the collector no longer needed the workaround afterward.
 
-No 18.2.0 change identified a need to alter agent frontmatter, the feedback authorization boundary, session-evidence storage ownership, or stable `agent://<id>` / `history://<id>` result retrieval. Deterministic CI against the 18.2.0 package tests source/type compatibility; it is not a new live-provider/runtime acceptance claim.
+At the time, no 18.2.0 change required altering agent frontmatter, the feedback authorization boundary, session-evidence storage ownership, or stable `agent://<id>` / `history://<id>` result retrieval. The feedback and evidence integrations have since been retired; deterministic CI against the 18.2.0 package tested source/type compatibility, not live-provider/runtime acceptance.
 
 ### Existing released-runtime acceptance
 
-Feedback and collector acceptance remain claim-specific evidence from OMP 18.1.21. That testing exposed the stats representation mismatch:
+Feedback and collector acceptance are historical, claim-specific evidence from OMP 18.1.21. That testing exposed the stats representation mismatch:
 
 ```text
 /api/sessions.folder   -> encoded session-storage key
 /api/session/trace.cwd -> real project cwd
 ```
 
-That historical mismatch was fixed in OMP 18.2.1. On the then-pinned 18.2.5 baseline, collectors used `SessionSummary.folder` for pre-trace path filtering; trace `cwd` remained evidence metadata rather than the folder-filter workaround. See [validation](VALIDATION.md) for the older acceptance evidence and its historical limitation.
+That historical mismatch was fixed in OMP 18.2.1. On the then-pinned 18.2.5 baseline, the collector used `SessionSummary.folder` for pre-trace path filtering; trace `cwd` remained evidence metadata rather than the folder-filter workaround. See [validation](VALIDATION.md) for the older acceptance evidence and its historical limitation.
 
-Historical #9521 preview experiments remain useful hardening evidence, not a current release blocker. #4 accepted feedback shared between Main/workers with bounded reporting consequences. Future scoping changes should be assessed on their actual benefit and impact.
+Historical #9521 preview experiments remain useful hardening evidence, not a current release blocker. #4 accepted bounded feedback sharing between Main/workers at the time; that tool is retired. Future scoping changes should be assessed on their actual benefit and impact.

@@ -4,13 +4,11 @@ OMP owns normal settings, model/provider routes, profiles, credentials, MCP sett
 
 ## Repository-owned
 
-- `package.json`: native package metadata and dependency pins.
+- `package.json`: native package metadata and Bun/TypeScript development-tool pins.
 - `agents/`: task roles, declared tool surfaces and Skill autoloading.
 - `skills/`: maintained task guidance and local support resources.
 - `rules/`: Main workflow activation.
-- `extensions/feedback.ts`: bounded feedback behavior.
-- `extensions/assurance.ts`: current-session `/assurance` and `/assurance full` review entry points.
-- `src/` and the session CLIs: derived evidence and assurance behavior.
+- `docs/` and `evidence/`: current guidance, accepted design rationale and selected compact experiments.
 
 Core Harness, Experience Skill and Integration categories are architectural descriptions only. They do not configure OMP or grant permissions.
 
@@ -29,7 +27,7 @@ Current agent routing is:
 
 The machine/project configuration owns the concrete selectors behind those aliases. Upgrading from one model generation to another therefore changes `modelRoles`, not the omp-kit agent files.
 
-Use OMP's `/modelpreset` to save or switch complete role assignments and default thinking levels, and `/effort` to change thinking without switching models. Subagents use configured agent models: `task.agentModelOverrides` takes precedence over agent frontmatter, then the task-role/session fallback. Per-call `model` overrides were removed from `task`, eval `agent()` and `workpool()`; choose an appropriate named agent or native preset instead. Saved-session restore failures remain explicit, and intentional SDK resume overrides belong to OMP rather than an omp-kit session-resume/switch layer. Native title generation may use the session model, so startup is not guaranteed to be tiny-model-only or zero-model-work. Do not add an omp-kit model registry or rewrite agent files for a temporary choice. Model availability and credentials remain runtime-owned.
+Use OMP's `/modelpreset` to save or switch complete role assignments and default thinking levels, and `/effort` to change thinking without switching models. Subagents use configured agent models: `task.agentModelOverrides` takes precedence over agent frontmatter, then the task-role/session fallback. Per-call `model` selection is off by default; the operator may enable `task.perCallModel` for eval only or for both task and eval, restricted to already authorized exact model selectors. Project settings can only narrow that authority. Saved-session restore failures remain explicit, and intentional SDK resume overrides belong to OMP rather than an omp-kit session-resume/switch layer. Native title generation may use the session model, so startup is not guaranteed to be tiny-model-only or zero-model-work. Do not add an omp-kit model registry or rewrite agent files for a temporary choice. Model availability and credentials remain runtime-owned.
 
 Do not commit credentials, real service secrets files or private machine paths to make an example reproducible. Integration Skills carry their own setup/safety guidance; discovery does not authorize running them.
 

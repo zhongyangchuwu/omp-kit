@@ -86,11 +86,9 @@ function discoveredSkillNames(): Set<string> {
 
 test("native plugin manifest exposes resources and distributed knowledge", () => {
   const manifest = JSON.parse(read(join(ROOT, "package.json")));
-  const resourceDirs = ["agents", "extensions", "rules", "skills"];
+  const resourceDirs = ["agents", "rules", "skills"];
   const knowledgeDirs = ["docs", "evidence"];
-  const libraryDirs = ["src"];
-  const packagedFiles = ["scripts/session_assurance.ts", "scripts/session_evidence.ts"];
-  const expectedFiles = [...resourceDirs, ...knowledgeDirs, ...libraryDirs, ...packagedFiles].sort();
+  const expectedFiles = [...resourceDirs, ...knowledgeDirs].sort();
 
   expect(manifest.name).toBe("omp-kit");
   expect(manifest.private).toBe(true);
@@ -98,21 +96,9 @@ test("native plugin manifest exposes resources and distributed knowledge", () =>
   expect([...manifest.files].sort()).toEqual(expectedFiles);
   expect(manifest.omp.name).toBe("OMP Kit");
   expect(manifest.omp.description).toBeTruthy();
-  expect(manifest.omp.extensions).toEqual(["./extensions/feedback.ts", "./extensions/assurance.ts"]);
-  expect(manifest.bin).toEqual({
-    "omp-kit-assurance": "./scripts/session_assurance.ts",
-    "omp-kit-evidence": "./scripts/session_evidence.ts",
-  });
-  expect(manifest.scripts["assurance:report"].endsWith("session_assurance.ts")).toBe(true);
-  expect(manifest.scripts["evidence:collect"].endsWith("session_evidence.ts collect")).toBe(true);
-  expect(manifest.scripts["evidence:report"].endsWith("session_evidence.ts report")).toBe(true);
 
-  for (const path of [...resourceDirs, ...knowledgeDirs, ...libraryDirs]) {
+  for (const path of [...resourceDirs, ...knowledgeDirs]) {
     expect(existsSync(join(ROOT, path))).toBe(true);
-  }
-  for (const path of packagedFiles) expect(existsSync(join(ROOT, path))).toBe(true);
-  for (const extension of manifest.omp.extensions) {
-    expect(existsSync(join(ROOT, extension.replace(/^\.\//, "")))).toBe(true);
   }
 });
 
@@ -180,7 +166,8 @@ function trackedMarkdown(): string[] {
   return output
     .split("\0")
     .filter(Boolean)
-    .map((path) => join(ROOT, path));
+    .map((path) => join(ROOT, path))
+    .filter(existsSync);
 }
 
 const LINK = /\]\(([^\s)]+)(?:\s+"[^"]*")?\)/g;

@@ -1,16 +1,28 @@
 # Validation and evidence boundaries
 
-This document records which claims have evidence, not an automatically refreshed CI badge. Exact current candidate SHAs and run results belong in the owning PR/Actions. Accepted design and compact experiment evidence remain distributed in this repository.
+This document records dated evidence snapshots, not an automatically refreshed CI badge. Historical results for retired components describe behavior at the time, not current plugin capabilities. Exact current candidate SHAs and run results belong in the owning PR/Actions; accepted design and compact experiment evidence remain distributed in this repository.
+
+## Historical OMP 18.20.0 / Bun 1.4.4 compatibility checks — 2026-11-13
+
+At that review, the installed CLI and pinned coding-agent/stats SDK dependencies reported 18.20.0. Bun runtime, package manager/types and CI used 1.4.4; TypeScript remained 5.9.3.
+
+Observed provider-free checks:
+
+- Frozen dependency install and TypeScript typecheck passed; 155 tests passed across fourteen files.
+- An isolated home linked the checkout through `omp install`; native plugin listing showed the enabled manifest, and `omp skill list --json` discovered fifteen Skills without warnings.
+- At the time, the feedback callback wrote a record with session and agent provenance and appended a custom session entry. The real Evidence CLI collected the fixture, skipped it unchanged on repeat and produced a JSON report.
+
+Fixture and derived outputs stayed isolated from the real profile, with inherited credentials removed. The feedback host was a fixture, not an installed-extension dispatch test. These checks record pre-retirement behavior: the feedback tool and Evidence CLI have since been removed. OMP's native session and stats interfaces do not provide an equivalent to the retired feedback analysis. No model-generated session, live provider routing, real child or worker-thread extension loading, recovery, browser visuals or broad runtime acceptance is claimed.
 
 ## OMP 18.11.0 / Bun 1.4.2 acceptance — 2026-10-15
 
-The installed CLI and exact SDK/stats dependencies report 18.11.0; Bun runtime, package manager/types and CI remain 1.4.2, with TypeScript 5.9.3 unchanged. Current routing/completion guidance follows the released native contracts without changing worker definitions or personal settings.
+At that review the installed CLI and exact SDK/stats dependencies reported 18.11.0; Bun runtime, package manager/types and CI were 1.4.2, with TypeScript 5.9.3 unchanged. Routing/completion guidance followed the then-released native contracts without changing worker definitions or personal settings.
 
 Observed local checks:
 
-- Frozen install and TypeScript typecheck passed; 127 focused regressions passed across eight files covering session access, feedback, Assurance, evidence and repository contracts.
-- The reused isolated native install/list/uninstall and SDK resource-discovery smoke found all four role-based agents, fourteen Skills, both extensions and the Main-only workflow rule.
-- The real feedback tool persisted a bounded record with matching session provenance and a custom entry. The fresh-session guard rejected an unpersisted session; `/assurance` and `/assurance full` then wrote reports and emitted SDK widget/notification events for a public-API fixture.
+- Frozen install and TypeScript typecheck passed; 127 focused regressions passed across eight files covering session access, feedback, evidence and repository contracts.
+- The reused isolated native install/list/uninstall and SDK resource-discovery smoke found all four role-based agents, fourteen Skills and the Main-only workflow rule.
+- The real feedback tool persisted a bounded record with matching session provenance and a custom entry.
 - The real evidence CLI collected one fixture session with its project path and linked feedback, skipped that unchanged session on repeat, and rendered JSON output.
 - A targeted native-schema smoke observed `task.structured` defaulting off, prose mode stripping schema fields, explicit structured mode preserving them, and per-call `model` being stripped in both modes. A real in-memory SessionManager wrote an 18.11.0 runtime stamp, which the existing detached runtime snapshot preserved.
 
@@ -38,8 +50,8 @@ The installed executable and exact SDK/stats pins report 18.8.0; Bun runtime, pa
 Observed local checks:
 
 - Frozen install and TypeScript typecheck passed against the upgraded graph; 103 focused regressions passed across eight files.
-- Reused isolated native install/list/uninstall and SDK discovery smoke found four role-based agents, fourteen Skills, both extensions and the Main-only workflow rule.
-- Feedback persisted with session provenance and its custom entry. The unpersisted-session guard, `/assurance` and `/assurance full` report files and SDK widget/notification events passed.
+- Reused isolated native install/list/uninstall and SDK discovery smoke found four role-based agents, fourteen Skills and the Main-only workflow rule.
+- Feedback persisted with session provenance and its custom entry.
 - Evidence CLI collection selected one fixture session, skipped it unchanged on repeat, and reported its project path and linked feedback in JSON.
 - A durably flushed missing-model fixture made headless `createAgentSession` reject with the saved selector. After explicitly accepting the sandbox cwd transition, failed `switchSession` retained the original session id/file and model. An explicit model override selected the supplied catalog model without a fallback warning.
 
@@ -52,10 +64,9 @@ The installed `omp` executable and SDK/stats dependencies report 18.6.1; the sou
 Observed local checks:
 
 - Frozen Bun install and `tsc --noEmit` passed against the upgraded graph.
-- 103 focused tests passed across session access, runtime assurance, resolution/scope, session evidence, feedback, the Assurance extension and repository contracts.
-- An isolated temporary-home smoke exercised native local install/list/uninstall and SDK package loading: all four role-based agents, fourteen Skills, both plugin extensions and the Main-only workflow rule were discovered.
+- 103 focused tests passed across eight files, including session access, session evidence, feedback and repository contracts.
+- An isolated temporary-home smoke exercised native local install/list/uninstall and SDK package loading: all four role-based agents, fourteen Skills and the Main-only workflow rule were discovered.
 - The real native feedback tool persisted a bounded record with the correct session id/file and a matching custom session entry.
-- Native command dispatch rejected an unpersisted session, then `/assurance` and `/assurance full` saved reports and emitted their widget/notification output for a persisted fixture. All reported source reads were available.
 - The real evidence CLI collected the one fixture session, skipped it unchanged on the second collection, and rendered a JSON report with its project path and linked feedback.
 
 The fixture was written through the public SessionManager, not generated by a model. Smoke state remained outside Git and the real user profile. Outbound non-loopback requests were blocked; native background description compression can attempt inference when credentials are inherited, so loading alone is not a zero-model-work guarantee. No live provider, archive-history, model-selection/fallback, browser, terminal visual or child lifecycle acceptance is claimed here. The command smoke observed SDK UI events, not visual TUI layout. Historical runtime/experiment evidence below retains its original scope; #5/#8/#9/#11/#31 are not closed by this upgrade.
@@ -72,7 +83,7 @@ just verify
 The retained gate covers:
 
 - Bun repository-contract tests for package/native-resource shape, agents/Skills, portable frontmatter and documentation/support link resolution; prose wording is not an acceptance contract.
-- TypeScript typecheck plus feedback/session-evidence/assurance unit and CLI tests.
+- TypeScript typecheck and the TypeScript test suite for retained repository resources.
 
 CI also checks the committed Bun graph, candidate changed lines and tracked-file drift. PR merge-ref and landed-main checks answer different questions. The root Python helper/test environment, config-copy installer and resource-registry machinery are no longer part of the gate; maintained runtime and documentation contracts remain directly tested.
 

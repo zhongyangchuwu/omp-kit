@@ -47,7 +47,7 @@ State, ownership, permissions, cancellation, recovery, external facts, read-back
 
 A prompt saying `do not write` is not a runtime security boundary. Authority-bearing capabilities should use runtime-enforced scoping when that boundary matters.
 
-Not every write-shaped tool has the same consequence, however. `omp_kit_feedback` is intentionally a bounded shared evidence sink: Main/workers may append a structured observation, but the tool cannot mutate repository policy, Issues, configuration, or authorize another action. The earlier Main-only capability audit remains useful evidence for future OMP hardening; it is no longer a prerequisite for having feedback at all.
+Earlier, `omp_kit_feedback` was a bounded shared evidence sink: Main/workers could append a structured observation, but the tool could not mutate repository policy, Issues, configuration, or authorize another action. The tool has since been retired; this example records a past capability boundary, not a current integration.
 
 ### Delegation is optional and must earn its coordination cost
 
@@ -63,7 +63,7 @@ Cheap deterministic tests and repository verification should absorb mechanical u
 
 ### Observe normal work before designing experiments around impressions
 
-OMP owns raw session/stat recording. omp-kit now derives compact routine session summaries and links structured feedback so #5/#8/#9 can reason from actual development rather than memory alone. Routine observations are not experiments by default; #12 owns promotion into durable experiment evidence when a sample materially supports a decision.
+OMP owns raw session/stat recording. omp-kit no longer derives routine session summaries or links feedback. Keep routine session data in OMP; promote selected material evidence into `evidence/experiments/` only when a sample supports a decision.
 
 ### Context quality is about authority, not only memory volume
 

@@ -108,11 +108,11 @@ Prefer OMP-native lifecycle, messaging, result artifacts and waiting semantics. 
 
 ## Current mechanism
 
-OMP 18.6.1 owns progress/completion estimates and background-job settlement.
-Results and messages auto-deliver. `wait` accepts only the caller's own background
-jobs/services and errors when none exist; it is not a peer-only polling API.
-The workflow therefore no longer repeats wait ladders or fixed 2/5/10-minute
-checkpoint buckets as operating instructions.
+OMP owns progress/completion estimates and background-job settlement. Results
+and messages auto-deliver. `wait` watches the caller's own background jobs and
+services or an outstanding direct-message reply; it is not a general peer
+polling API. The workflow does not duplicate runtime wait ladders or fixed
+checkpoint schedules.
 
 Main continues useful work while workers run. When blocked, it uses native
 waiting; when a delivered failure, blocker or stalled task needs intervention,
@@ -147,10 +147,10 @@ A portable cost curve for checkpoint cadence and orchestration shapes across pro
 ## Current status
 
 **Accepted native-first supervision policy; runtime gaps remain tracked in
-inactive Issue #7.** The OMP 18.6.1 owned-job wait and native progress surfaces
-supersede local wait-ladder/checkpoint instructions. Semantic peer-message
-filtering and runtime-enforced per-agent read-only LSP remain distinct questions;
-this upgrade does not declare the Issue complete.
+inactive Issue #7.** Native waiting and progress surfaces supersede local
+wait-ladder/checkpoint instructions. Semantic peer-message filtering and
+runtime-enforced per-agent read-only LSP remain distinct questions; this upgrade
+does not declare the Issue complete.
 
 ## Related implementation / Issues
 

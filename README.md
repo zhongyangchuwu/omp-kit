@@ -6,7 +6,7 @@ OMP Kit combines a model-neutral workflow for Oh My Pi (OMP) with a personally m
 
 - Four task-shaped agents: `luna-code`, `luna-deep`, `luna-doc`, and `sol-review`.
 - Maintained Skills covering workflow, code taste, product design, debugging, research, testing, verification, language tooling, Skill authoring, experiment operations, document parsing and project documentation.
-- A Main-session workflow rule, bounded shared feedback, local session evidence, and human-facing assurance.
+- A Main-session workflow rule and other OMP-native definitions.
 - Current usage documentation, mechanism-level design records, and compact experiment evidence.
 
 Core Harness resources, maintained experience Skills, and integrations are responsibility categories, not a ranking of value or a requirement to split repositories. Skills such as `code-taste` and `omp-design` preserve the maintainer's practical experience even when they are useful outside omp-kit. See [architecture](docs/architecture.md).
@@ -15,7 +15,7 @@ Core Harness resources, maintained experience Skills, and integrations are respo
 
 For a checkout that stays on the latest development state, keep one long-lived clone and let OMP link that working tree through its native local install flow:
 
-Current compatibility target: **OMP 18.11.0 and Bun 1.4.2**. The repository pins the OMP SDK/stats packages and Bun types; CI uses the same Bun version. See [compatibility](docs/omp-compatibility.md) for reviewed evidence and limits.
+Repository tooling is pinned to Bun 1.4.4, including Bun types; CI uses the same version. The last pre-retirement OMP runtime review used CLI 18.20.0 and Bun 1.4.4 on 2026-11-13. That review is historical, not a current OMP SDK/stats dependency or compatibility target; see [compatibility history](docs/omp-compatibility.md).
 
 ```sh
 git clone git@github.com:zhongyangchuwu/omp-kit.git
@@ -23,7 +23,7 @@ cd omp-kit
 just install
 ```
 
-`just install` runs the frozen Bun install, `omp install .`, and `omp plugin list`. Current OMP routes a local install target to its native link flow, so the installed plugin points at this checkout instead of making a second development copy. Ordinary edits and `git pull` therefore keep the same plugin registration; restart OMP after changing resources, and rerun `just install` when dependencies or plugin registration change.
+`just install` runs the frozen Bun install, `omp install .`, and `omp plugin list`. Current OMP routes a local install target to its native link flow, so the installed plugin points at this checkout instead of making a second development copy. Ordinary edits and `git pull` therefore keep the same plugin registration. New or installed Skills can be discovered in the running session; restart affected sessions for other loaded resource changes, and rerun `just install` when dependencies or plugin registration change.
 
 Useful maintenance commands:
 
@@ -54,27 +54,17 @@ current user/task intent
 
 Projects may be only partially planned. Do not reconstruct a complete backlog, maintain a global work-state mirror, or create a parallel phase dossier merely so an agent can start. Accepted knowledge belongs in the checkout, not only in GitHub discussion; unresolved task coordination belongs in task-local Issues/PRs when useful. See [workflows](docs/workflows.md) and [design foundations](docs/design-foundations.md).
 
-## Feedback, evidence and assurance
+## Session data
 
-`omp_kit_feedback` records bounded observations encountered during real work. Main and workers may report; recording feedback does not authorize repository, configuration, policy or Issue mutation. There is no mandatory end-of-task reflection.
+OMP owns native session storage, history and usage stats. omp-kit no longer ships a feedback tool, session collector or session-access library; OMP's native session and stats facilities are not an equivalent to the retired feedback analysis.
 
-OMP saves the raw sessions. Run the incremental collector after normal work, manually or through an operator-owned schedule:
+Keep raw sessions and routine usage data in OMP's stores. Commit only selected material decision evidence under `evidence/experiments/`.
 
-```sh
-bun run evidence:collect -- --folder /absolute/path/to/project
-bun run evidence:report -- --folder /absolute/path/to/project
-bun run evidence:report -- --folder /absolute/path/to/project --json
-```
-
-Collection is not a new model turn or an automatically installed daemon. Derived summaries stay outside Git. Selected material decision evidence may be committed under `evidence/experiments/`; full transcripts and raw telemetry do not belong there.
-
-The assurance CLI derives bounded, evidence-linked review findings from OMP session evidence. It is a review snapshot, not a safety proof. See [session assurance](docs/session-assurance.md) and [scope](docs/assurance-scope.md).
-
-See [session evidence](docs/session-evidence.md) and [validation](docs/VALIDATION.md) for current evidence limits.
+See [runtime notes](docs/omp-runtime-notes.md) for current OMP boundaries and [validation](docs/VALIDATION.md) for historical checks.
 
 ## Maintenance
 
-The root repository uses Bun/TypeScript for runtime code and deterministic repository contracts. Additional toolchains belong only to concrete maintained consumers.
+The root repository uses Bun/TypeScript for tests and type-checking. Additional toolchains belong only to concrete maintained consumers.
 
 ```sh
 bun install --frozen-lockfile

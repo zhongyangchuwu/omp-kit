@@ -16,7 +16,7 @@ User/dispatch instructions define intent and authority. Repository/runtime read-
 
 OMP owns runtime, model selection, sessions, task lifecycle, tool enforcement and generic stats. Reuse public OMP contracts rather than building a second scheduler, raw journal parser or telemetry database.
 
-Main owns routing, material decisions, integration and acceptance. Workers perform bounded work and return evidence. Independent review is selected by risk. Structured feedback is a bounded evidence append available to Main/workers, not self-modification authority.
+Main owns routing, material decisions, integration and acceptance. Workers perform bounded work and return evidence. Independent review is selected by risk.
 
 Core workflow, maintained experience Skills and integrations may coexist here. Their categories are architectural descriptions only; they do not change installation, discovery, permissions or maintenance status. Preserve useful support files and their consumers.
 
@@ -24,7 +24,7 @@ Core workflow, maintained experience Skills and integrations may coexist here. T
 
 Use a focused branch/PR for non-trivial changes. Preserve unrelated user work. Run focused checks during implementation. The normal repository acceptance gate is GitHub Actions running `just verify` on the PR merge ref; `main` push CI verifies the landed commit separately.
 
-The gate covers Bun repository contracts for package/native-resource shape, Skills and documentation, and TypeScript typecheck/runtime tests. CI additionally checks dependency lockfiles, changed lines and tracked-file drift. Do not duplicate a passing unchanged full gate merely because a handoff happened.
+The gate covers Bun repository contracts for package/native-resource shape, Skills and documentation, and TypeScript typechecking. CI additionally checks dependency lockfiles, changed lines and tracked-file drift. Do not duplicate a passing unchanged full gate merely because a handoff happened.
 
 No live model, paid cloud or private-profile operation is part of this gate. Runtime claims need claim-specific evidence. Report untested claims explicitly.
 
