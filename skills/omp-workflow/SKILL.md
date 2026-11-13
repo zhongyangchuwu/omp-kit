@@ -30,13 +30,9 @@ only partially planned; do not reconstruct unrelated global work before acting.
 
 ## 2. Route
 
-Choose the cheapest reliable route:
-
-- **Main direct** for small, high-context, judgment-heavy, or cheap-to-complete work.
-- **Single delegate** for a bounded investigation or implementation that is cheaper to
-  specify and verify than to perform in Main.
-- **Parallel delegates** for independent workstreams whose scopes and writes do not
-  overlap materially.
+Choose a route allowed by the active host and tool instructions. Prefer direct
+execution for small or high-context work; delegate bounded independent work only
+when the host permits it and doing so reduces the total cost.
 
 Delegation is an execution strategy, not a goal. Main may read, edit, run tools, and
 complete straightforward work directly when doing so is cheaper than writing and
@@ -96,20 +92,7 @@ Do not turn generated summaries, handoff notes, mutable state indexes, or planni
 dossiers into competing sources of accepted project truth. Materialize a written context
 or plan only when a real later consumer justifies the artifact.
 
-## 7. Report observed omp-kit friction
-
-Do **not** run a generic end-of-task reflection pass merely because repository work is
-ending. That mandatory reflection is model-compensation overhead when no relevant
-friction occurred.
-
-If real work already exposed concrete reusable friction in omp-kit policy, agents,
-workflow, verification, or an OMP contract that materially affects omp-kit, load
-`references/self-improvement.md` and record the smallest evidence-backed finding through
-`omp_kit_feedback` when that tool is available. A feedback record is evidence; it does
-not authorize self-editing, policy mutation, or automatic Issue creation. Otherwise do
-nothing.
-
-## 8. Communicate with the user
+## 7. Communicate with the user
 
 Apply these rules throughout the task:
 
@@ -134,7 +117,6 @@ Apply these rules throughout the task:
 | Delegation economics, custom agents, waiting, ownership, escalation | `references/delegation.md` |
 | Worker brief vs history retrieval, authority, provenance, notes | `references/subagent-context.md` |
 | Execution and verification ownership | `references/execution.md` |
-| Observed reusable omp-kit friction / self-hosting feedback | `references/self-improvement.md` |
 | Built-in `/vibe` used explicitly | `references/vibe-compat.md` |
 | Workflow mode selection | `references/modes.md` |
 | Accepted context and a written plan | `references/context-and-plan.md` |
