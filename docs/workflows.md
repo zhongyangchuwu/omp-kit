@@ -26,14 +26,12 @@ Review judges semantics, intent and risk; tests prove only exercised properties.
 
 Main uses `omp-workflow` and chooses direct work or bounded delegation. The various maintained design, research, test and quality Skills contribute when their task boundary matches; they do not all need to be loaded for every task.
 
-Prefer native model presets and configured agent-role routing, progress/jobs views, `archive` history retrieval and `/dump all` diagnostics to duplicated policy or helper mechanisms. There is no per-call subagent `model` override. The Main rule only activates the workflow; task-specific references load on demand. Maintained judgment Skills still contribute where native runtime mechanics do not decide intent, scope or acceptance.
+Prefer native model presets and configured agent-role routing, progress/jobs views, `archive` history retrieval and `/dump all` diagnostics to duplicated policy or helper mechanisms. Per-call subagent model selection is operator-controlled and off by default; see [configuration](omp-configuration.md). The Main rule only activates the workflow; task-specific references load on demand. Maintained judgment Skills still contribute where native runtime mechanics do not decide intent, scope or acceptance.
 
 Use task-local Issue/PR ownership for multi-session work when durable coordination is useful. Keep accepted behavior and rationale in current docs/design records, not only in Issues. Do not create a parallel phase dossier or local backlog mirror merely to preserve cross-session state.
 
 ## Observe and preserve
 
-Main or a worker may record reusable friction already encountered through `omp_kit_feedback`. Do not manufacture a reflection turn to find something to log.
-
-After normal work, use `evidence:collect` and `evidence:report` for quantitative session summaries. The CLI does not install a background scheduler. Routine data stays outside Git; select compact decision evidence into `evidence/experiments/` only when useful. See [session evidence](session-evidence.md) and [experiment lifecycle](experiments.md).
+OMP's native session/history and stats interfaces provide session records and usage metrics. They do not reproduce the retired omp-kit feedback analysis. Keep routine session data in OMP; commit only selected material decision evidence under [`evidence/experiments/`](../evidence/README.md) when it supports a durable conclusion.
 
 Preserve stable accepted decisions in their owning docs. Keep unresolved coordination task-local in Issues/PRs when useful, review/CI in PRs, and pure historical chronology in Git rather than introducing another global navigation or archive mirror.

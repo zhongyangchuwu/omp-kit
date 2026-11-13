@@ -3,44 +3,24 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "packageManager": "bun@1.4.2",
+  "packageManager": "bun@1.4.4",
   "files": [
     "agents",
     "skills",
     "rules",
-    "extensions",
-    "src",
-    "scripts/session_evidence.ts",
-    "scripts/session_assurance.ts",
     "docs",
     "evidence"
   ],
-  "bin": {
-    "omp-kit-evidence": "./scripts/session_evidence.ts",
-    "omp-kit-assurance": "./scripts/session_assurance.ts"
-  },
   "scripts": {
     "test:ts": "bun test ./tests/ts",
-    "typecheck": "tsc --noEmit",
-    "evidence:collect": "bun ./scripts/session_evidence.ts collect",
-    "evidence:report": "bun ./scripts/session_evidence.ts report",
-    "assurance:report": "bun ./scripts/session_assurance.ts",
-    "assurance:scan": "bun ./scripts/session_assurance.ts scan"
-  },
-  "dependencies": {
-    "@oh-my-pi/omp-stats": "18.11.0",
-    "@oh-my-pi/pi-coding-agent": "18.11.0"
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/bun": "1.4.2",
+    "@types/bun": "1.4.4",
     "typescript": "5.9.3"
   },
   "omp": {
     "name": "OMP Kit",
-    "description": "Model-neutral workers, maintained skills, session evidence, and main-session policy for Oh My Pi",
-    "extensions": [
-      "./extensions/feedback.ts",
-      "./extensions/assurance.ts"
-    ]
+    "description": "Model-neutral workers, maintained skills, and main-session policy for Oh My Pi"
   }
 }

@@ -47,7 +47,7 @@ accepted rationale/evidence      -> docs/design/*.md
 unresolved question/experiment   -> GitHub Issue
 chronological experiment updates -> Issue comments
 implementation/review            -> Pull Request
-routine session observations     -> local session-evidence store
+raw sessions / usage stats         -> OMP native stores
 material durable experiment      -> evidence/experiments/
 superseded phase chronology      -> Git and Issue/PR history
 ```
@@ -68,7 +68,7 @@ If a record names an open question that could change implementation or policy, l
 
 Worker capability conclusions (#5), routing economics (#8), and project-state experience (#11) should update the relevant existing record when accepted. Split a new mechanism-level record only when it provides a useful independent explanation, not to fill an architecture checklist.
 
-Shared feedback (#4) is bounded qualitative evidence, not mutation authority. Routine session collection (#21) is documented in [session evidence](../session-evidence.md). These do not require duplicate dedicated records until their accepted design needs a separate explanation.
+Feedback (#4) and routine session collection (#21) were retired with their implementations. Their validation remains historical; neither is a current omp-kit feature.
 
 Keep useful personal Skill knowledge as maintained resources. Repository cleanup is not an experiment proving that code-taste, product design or specialized planning guidance is unnecessary. #9 owns systematic behavioral analysis and remains unfinished.
 

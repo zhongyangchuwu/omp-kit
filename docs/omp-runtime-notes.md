@@ -39,13 +39,7 @@ Use a tool/CLI when deterministic work or complex side effects warrant an implem
 
 Use an extension when actual OMP hooks, lifecycle or custom-tool registration are required. Do not wrap every CLI in an extension just to make the diagram uniform.
 
-The feedback extension is deliberately bounded: it appends observed evidence
-with public session and `ctx.agent` identity (kind, registry id, name, depth and
-parent id) where available. It neither modifies the repository nor promotes
-reports to policy. The Assurance extension reads public session/runtime
-surfaces, rejects unpersisted fresh sessions, and writes only regenerable
-derived reports beneath the OMP agent root; it does not invoke a model or turn
-a report into authorization/safety policy.
+The current plugin has no runtime extension or CLI for feedback or session analysis. Use OMP's native session/history and stats interfaces for its own session data and usage metrics; these are not an equivalent to the retired feedback-analysis tool.
 
 ## MCP and service integrations
 
@@ -57,16 +51,16 @@ Service integrations must state their credentials, network/data-disclosure behav
 
 OMP owns raw sessions, history, task lifecycle, messaging and capability enforcement. Use the available public contracts rather than reconstructing a private journal format or adding a second scheduler/message/result store.
 
-On OMP 18.11.0, `wait` waits only for background jobs/services started by its
-caller and errors when there is no owned work. OMP's native wait-completion
-correctness fixes own job settlement; results and messages auto-deliver. Wait
-only when blocked, and use `read proc://` for a non-consuming status check when
-intervention needs evidence. Use native progress/completion estimates rather
-than an omp-kit timing loop. Messaging remains `write agent://<id>`; outputs and
-same-session transcripts remain `agent://<id>` and `history://<id>`. Semantic
-message filtering and per-agent read-only LSP remain separate concerns in #7.
+OMP owns job settlement; results and messages auto-deliver. `wait` can watch the
+caller's own background jobs/services or an outstanding direct-message reply;
+it is not a general peer polling API. Wait only when blocked, and use `read
+proc://` for a non-consuming status check when intervention needs evidence.
+Use native progress/completion estimates rather than an omp-kit timing loop.
+Messaging remains `write agent://<id>`; outputs and same-session transcripts
+remain `agent://<id>` and `history://<id>`. Semantic message filtering and
+per-agent read-only LSP remain separate concerns in #7.
 
-Ordinary `task` children return their final assistant message by default; schema-bearing `yield` completion is opt-in through `task.structured` or agent frontmatter `structured: true`. Eval `agent()` and workpool keep their structured completion contract. Per-call subagent model overrides are removed; agent roles, presets and native configuration own selection. See [configuration](omp-configuration.md).
+Ordinary `task` children return their final assistant message by default; schema-bearing `yield` completion is opt-in through `task.structured` or agent frontmatter `structured: true`. Eval `agent()` and workpool keep their structured completion contract. Per-call model selection is off by default and requires explicit operator authorization; see [configuration](omp-configuration.md).
 
 Saved-model restore failures are explicit rather than a silent fallback; an
 intentional route change uses OMP's explicit native model override. omp-kit does
@@ -75,26 +69,13 @@ remain OMP-owned, not kit implementations.
 
 Native `omp --restore <session>` is the crash-recovery path for an interrupted turn and its subagents, not an omp-kit worker-revival layer. Session entries now record the build that wrote them; `/session` lists those builds, which is more precise than the currently installed executable for a session spanning an upgrade. These native changes do not establish fresh lifecycle acceptance for #7 or #31.
 
-For cross-session retrieval, use the read-only native `archive` eval global;
-`/dump all` is the native full main/subagent diagnostic export. Neither replaces
-the purpose-specific assurance or quantitative evidence projection. Context notes
-assist current-session continuity, not cross-session memory: omit text for a read,
-and treat an empty string as a clear operation. Accepted project knowledge stays
-in repository docs, design and evidence.
+For cross-session retrieval, use the read-only native `archive` eval global; `/dump all` is the native full main/subagent transcript export. OMP's session/history and stats interfaces provide transcript and usage views, not the retired feedback analysis. Context notes assist current-session continuity, not cross-session memory: omit text for a read, and treat an empty string as a clear operation. Accepted project knowledge stays in repository docs, design and selected evidence.
 
-For shareable diagnostics, native `omp anonymize` and `/dump anon` redact session/subagent copies. Inspect the resulting artifact before sharing; these commands do not authorize publication, replace the private evidence store or complete #33.
+For shareable diagnostics, native `omp anonymize` and `/dump anon` redact session/subagent copies. Inspect the resulting artifact before sharing; these commands do not authorize publication.
 
 ## Observation
 
-OMP records sessions and normalizes usage. The session-evidence collector derives compact local summaries using published stats/trace interfaces; see [session evidence](session-evidence.md).
-
-The recorded 18.1.21 interaction exposed a storage-folder versus actual-cwd
-mismatch and remains historical acceptance evidence. OMP 18.2.1 repaired
-`SessionSummary.folder`; the current collector filters project paths from
-catalog summaries before trace reads. Stored evidence still retains trace cwd
-for provenance/backward-compatible report filtering. Provider data is sampled,
-cost is cost-equivalent rather than quota, and activity envelopes do not prove
-compute concurrency.
+OMP records sessions and normalizes usage. Use its native session/history and stats interfaces for these data; they do not provide an equivalent to the retired omp-kit feedback-analysis tool.
 
 ## Supply-chain and configuration discipline
 

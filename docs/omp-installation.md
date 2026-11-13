@@ -4,7 +4,7 @@
 
 For active omp-kit development, keep one long-lived checkout and install that working tree through OMP's native local install path:
 
-The maintained target is OMP 18.11.0 with Bun 1.4.2. Updating the SDK dependencies does not update the `omp` executable; check `omp --version` and `bun --version` before claiming runtime compatibility.
+The maintained target is OMP 18.20.0 with Bun 1.4.4. Updating the SDK dependencies does not update the `omp` executable; check `omp --version` and `bun --version` before claiming runtime compatibility.
 
 ```sh
 git clone git@github.com:zhongyangchuwu/omp-kit.git
@@ -20,7 +20,7 @@ omp install .
 omp plugin list
 ```
 
-OMP 18.2.0 exposes `omp install <target>` as the top-level convenience command. Local filesystem targets are routed to the native plugin link flow, so the registration points at the checkout instead of copying the source into another development directory. Normal source edits and `git pull` therefore keep the same registration. Restart the OMP session after changing loaded resources; rerun `just install` when dependencies or registration change.
+OMP exposes `omp install <target>` as a top-level convenience command. Local filesystem targets are routed to the native plugin link flow, so the registration points at the checkout instead of copying the source into another development directory. Normal source edits and `git pull` therefore keep the same registration. New or installed Skills can be discovered in the running session; restart affected sessions for other loaded resource changes and rerun `just install` when dependencies or registration change.
 
 ```sh
 just check-install
@@ -30,7 +30,7 @@ just uninstall
 
 `just check-install` reports the active OMP version and plugin registration. `omp plugin doctor` evaluates the active plugin root rather than omp-kit alone, so unrelated plugin problems can also appear there.
 
-The plugin exposes agents, maintained Skills, a Main workflow rule, the bounded feedback extension, and the current-session Assurance command extension. `/assurance` performs active-branch triage; `/assurance full` performs richer retained-Main-tree investigation and stores derived output under the active OMP agent root. The plugin does not install service credentials, external parser programs, MCP servers, model routes or normal OMP configuration.
+The plugin does not install service credentials, external parser programs, MCP servers, model routes or normal OMP configuration.
 
 ## Remote Git installation
 
@@ -70,6 +70,6 @@ Do not run a historical rollback blindly against a newer live profile. No automa
 
 ## Verification boundaries
 
-`omp plugin list` confirms registration, not every tool invocation. `omp plugin doctor` checks the plugin root but is not a full runtime acceptance test. Prior feedback/session-evidence acceptance used exact checkouts and released OMP runtime behavior; those claims remain scoped to the evidence recorded in `VALIDATION.md`.
+`omp plugin list` confirms registration, not every tool invocation. `omp plugin doctor` checks the plugin root but is not a full runtime acceptance test. Historical feedback/session-evidence checks describe retired features as they worked at the time; see [validation history](VALIDATION.md).
 
 A fresh or changed installation may need a small discovery smoke. Routine documentation/library edits do not require repeating model calls when the corresponding runtime implementation has not changed.

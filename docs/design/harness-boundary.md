@@ -45,9 +45,8 @@ omp-kit already follows this boundary:
 - duplicate unchanged full repository gates were removed while retaining one current integrated CI gate;
 - a separate `.planning/` phase dossier workflow was removed after issue-centered state became the preferred model and no current consumer justified maintaining a second project-state system;
 - OMP-native session/stats APIs replaced the obsolete local raw-session parser;
-- a real OMP capability-isolation audit demonstrated that prompt-described read-only intent is not a hard runtime boundary;
-- the feedback product was later deliberately narrowed in consequence rather than withheld: `omp_kit_feedback` is a shared evidence sink that cannot authorize or perform repository/policy/Issue mutation;
-- routine session evidence now derives compact summaries from OMP public stats/trace surfaces rather than rebuilding raw telemetry ownership.
+- before retirement, the feedback product was deliberately narrowed in consequence rather than withheld: `omp_kit_feedback` could not authorize or perform repository/policy/Issue mutation;
+- the former routine session-evidence collector derived compact summaries from OMP public stats/trace surfaces rather than rebuilding raw telemetry ownership.
 
 See `../architecture.md`, `../VALIDATION.md`, completed Issues #4/#13/#14/#18/#21, and open Issues #5/#8/#9/#11.
 
@@ -199,13 +198,13 @@ The former `.planning/` tree duplicated root state, phase lifecycle, handoffs an
 
 ## Evaluation / observed effect
 
-Current real-work evidence includes:
+Historical real-work evidence includes:
 
 - the project moved toward OMP-native plugin/resources instead of expanding a custom runtime;
 - the capability audit exposed a real distinction between role intent and runtime enforcement;
-- shared feedback runtime acceptance on OMP 18.1.21 showed bounded Main/worker reporting can ship without treating it as policy authority;
+- historical shared-feedback runtime acceptance on OMP 18.1.21 showed bounded Main/worker reporting could ship without treating feedback as policy authority;
 - the obsolete local raw-session parser was removed after OMP-native observability proved sufficient;
-- the v0 session-evidence collector now supplies routine model/tool/delegation/timing observations for future #5/#8/#9 decisions;
+- the former v0 session-evidence collector supplied routine model/tool/delegation/timing observations for future #5/#8/#9 decisions;
 - deterministic repository acceptance moved to GitHub Actions while released-runtime claims remain separate;
 - issue-centered task ownership replaced both the global work-state mirror and the separate `.planning/` dossier, reducing duplicated current-state owners.
 
@@ -215,9 +214,8 @@ The next phase is measured dogfood, not more speculative architecture. #5/#8/#11
 
 - Stronger models can skip obligations they consider obvious; some external structure remains useful when it enforces state/evidence rather than weak-model reasoning rituals.
 - A mechanism that looks like model compensation may encode organizational or safety semantics. Remove the recurring obligation, not the underlying evidence boundary, unless evidence supports that stronger change.
-- Shared feedback is safe only because its consequences are deliberately bounded. This conclusion must not be generalized to arbitrary worker write/mutation capabilities.
-- OMP 18.1.21 still lacks some desired per-agent capability/read-only contracts; future upstream hardening may justify narrower surfaces.
-- The session-evidence v1 provider field is sampled, not an exact per-request routing ledger.
+- The retired shared feedback tool was safe only because its consequences were deliberately bounded; this historical conclusion must not be generalized to arbitrary worker write/mutation capabilities.
+- The former session-evidence v1 provider field was sampled, not an exact per-request routing ledger.
 - CI cannot replace an installed-runtime/profile smoke when the claim depends on local OMP state.
 - External strong-model discussion remains design input rather than benchmark truth.
 - Issue-centered coordination depends on remote Issue availability for unresolved remote-only details; accepted truth and rationale must therefore remain in the checkout rather than being left only in GitHub discussion.
@@ -226,7 +224,7 @@ The next phase is measured dogfood, not more speculative architecture. #5/#8/#11
 
 **Accepted boundary principle; three opportunistic ablations accepted; systematic #9 audit not yet performed.**
 
-Issue #9 remains inactive until routine session evidence is sufficient to inventory and evaluate current model-compensation scaffolding, or until repeated friction makes a specific rule decision-relevant.
+Issue #9 remains inactive; revisit a systematic scaffolding audit only when a concrete question and suitable evidence source justify it. Historical session summaries are not a current input pipeline.
 
 ## Related implementation / Issues
 
@@ -237,7 +235,6 @@ Issue #9 remains inactive until routine session evidence is sufficient to invent
 - `../../.github/workflows/verify.yml`
 - `../../skills/omp-workflow/SKILL.md`
 - `../../skills/omp-workflow/references/execution.md`
-- `../../skills/omp-workflow/references/self-improvement.md`
 - completed Issue #4 — shared feedback acceptance and historical capability-boundary evidence
 - Issue #5 — natural worker-tool observations
 - Issue #8 — delegation economics
@@ -254,7 +251,7 @@ Re-audit this record when:
 - OMP introduces a native capability that duplicates omp-kit policy/runtime logic;
 - dogfood shows a rule adds latency/tokens/handoffs without new evidence;
 - repeated failures show the current Harness under-constrains a mechanical or external-state obligation;
-- event-triggered feedback misses reusable friction that the previous default reflection reliably surfaced;
+- recurring workflow friction goes unobserved during normal work;
 - focused checks repeatedly miss failures an earlier broad gate would materially catch;
 - stronger OMP capability scoping changes the consequence/benefit tradeoff for worker tools;
-- routine session evidence proves insufficient for #5/#8/#9 decisions.
+- OMP session evidence proves insufficient for #5/#8/#9 decisions.
